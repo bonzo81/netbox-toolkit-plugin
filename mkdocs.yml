@@ -1,7 +1,7 @@
 site_name: NetBox Toolkit Plugin
 site_description: NetBox plugin for running commands on network devices using Scrapli
 site_author: NetBox Toolkit Contributors
-site_url: https://github.com/bonzo81/netbox-toolkit-plugin
+site_url: https://bonzo81.github.io/netbox-toolkit-plugin/
 
 # Repository
 repo_name: netbox-toolkit-plugin
