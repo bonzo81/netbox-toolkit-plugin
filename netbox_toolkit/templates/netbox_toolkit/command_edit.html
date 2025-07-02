@@ -1,0 +1,10 @@
+{% extends 'generic/object_edit.html' %}
+{% load helpers %}
+
+{% block title %}
+  {% if object.pk %}
+    Edit Command
+  {% else %}
+    Add Command
+  {% endif %}
+{% endblock %}

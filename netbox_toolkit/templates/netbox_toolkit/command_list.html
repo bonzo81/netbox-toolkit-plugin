@@ -1,0 +1,12 @@
+{% extends 'generic/object_list.html' %}
+{% load helpers %}
+
+{% block title %}Commands{% endblock %}
+
+{% block buttons %}
+  {% if perms.netbox_toolkit.add_command %}
+    <a href="{% url 'plugins:netbox_toolkit:command_add' %}" class="btn btn-primary">
+      <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Command
+    </a>
+  {% endif %}
+{% endblock %}

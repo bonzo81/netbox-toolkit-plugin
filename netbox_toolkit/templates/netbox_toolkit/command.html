@@ -1,0 +1,108 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load static %}
+
+{% block style %}
+<link href="{% static 'netbox_toolkit/css/toolkit.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block buttons %}
+  {% if perms.netbox_toolkit.change_command %}
+    <a href="{% url 'plugins:netbox_toolkit:command_edit' pk=object.pk %}" class="btn btn-warning">
+      <i class="mdi mdi-pencil" aria-hidden="true"></i> Edit
+    </a>
+  {% endif %}
+  {% if perms.netbox_toolkit.delete_command %}
+    <a href="{% url 'plugins:netbox_toolkit:command_delete' pk=object.pk %}" class="btn btn-danger">
+      <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i> Delete
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Command</h3>
+        </div>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th scope="row">Name</th>
+              <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Platform</th>
+              <td>{{ object.platform|linkify }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Command Type</th>
+              <td>
+                {{ object.get_command_type_display }}
+                {% if can_execute %}
+                  <span class="badge bg-success ms-2">
+                    <i class="mdi mdi-check"></i> Executable
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary ms-2">
+                    <i class="mdi mdi-lock"></i> No Execute Permission
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Description</th>
+              <td>{{ object.description|placeholder }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/tags.html' %}
+    </div>
+    <div class="col col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Command Detail</h3>
+        </div>
+        <div class="card-body">
+          <pre>{{ object.command }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Recent Command Logs</h3>
+        </div>
+        <div class="card-body">
+          <table class="table table-hover table-headings">
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th>Username</th>
+                <th>Execution Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in object.logs.all|slice:":5" %}
+                <tr>
+                  <td>{{ log.device|linkify }}</td>
+                  <td>{{ log.username }}</td>
+                  <td>{{ log.execution_time }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="3" class="text-muted">No command executions recorded</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,124 @@
+site_name: NetBox Toolkit Plugin
+site_description: NetBox plugin for running commands on network devices using Scrapli
+site_author: NetBox Toolkit Contributors
+site_url: https://github.com/bonzo81/netbox-toolkit-plugin
+
+# Repository
+repo_name: netbox-toolkit-plugin
+repo_url: https://github.com/bonzo81/netbox-toolkit-plugin
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2025 NetBox Toolkit Contributors
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+# Plugins
+plugins:
+  - search:
+      lang: en
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - footnotes
+  - abbr
+  - def_list
+
+# Page tree
+nav:
+  - Home: README.md
+  - User Documentation:
+    - Getting Started:
+      - Installation: user/installation.md
+      - Plugin Configuration: user/configuration.md
+    - Command Management:
+      - Command Creation: user/command-creation.md
+      - Permissions Setup: user/permissions-setup-guide.md
+      - Permission Examples: user/permission-examples.md
+    - Troubleshooting:
+      - Debug Logging: user/debug-logging.md
+  - API Documentation:
+    - Overview: api/index.md
+    - API Reference: api/overview.md
+    - Commands API: api/commands.md
+    - Command Logs API: api/command-logs.md
+    - Authentication & Permissions: api/auth.md
+    - Error Handling: api/errors.md
+  - Development:
+    - Start Here: development/contributing.md
+    - Setup: development/setup.md
+    - Code Guide: development/code-guide.md
+    - Architecture: development/architecture.md
+    - Module Structure: development/module-structure.md
+  - Changelog: changelog.md
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/bonzo81/netbox-toolkit-plugin
+  version:
+    provider: mike
+
+# Custom CSS
+extra_css:
+  - stylesheets/extra.css
+
+# Watch extra files
+watch:
+  - netbox_toolkit/

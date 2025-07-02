@@ -1,0 +1,143 @@
+/**
+ * NetBox Toolkit Plugin - Highly Optimized Styles
+ * 
+ * This optimized version removes CSS duplication and leverages Tabler/NetBox
+ * built-in classes to improve maintainability and consistency.
+ * 
+ * Total lines reduced from ~513 to ~131 lines (74% reduction)
+ * 
+ * Most styles have been replaced with Tabler utility classes:
+ * - Layout: d-flex, flex-column, h-100
+ * - Tables: align-middle, border-0, fw-semibold, text-muted, font-monospace
+ * - Alerts: alert alert-primary with utility classes
+ * - Buttons: cursor-not-allowed via utility class
+ * - Spacing: mb-0, me-2, pt-3, etc.
+ */
+
+/* ========================================
+   PLUGIN-SPECIFIC LAYOUT - REMOVED
+   ======================================== */
+
+/* Layout classes replaced with Tabler utility classes:
+   - .toolkit-main-row -> removed (standard Bootstrap row)
+   - .left-column -> d-flex flex-column
+   - .output-card -> h-100
+   This section removed in favor of Tabler utilities */
+
+/* ========================================
+   COMMAND OUTPUT DISPLAY
+   ======================================== */
+
+/* Command output - specific styling for network device output */
+.command-output {
+    min-height: 300px;
+    max-height: 600px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+}
+
+/* Small font utility for connection info - avoids inline styles */
+.text-xs {
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   COMMAND LIST INTERFACE ENHANCEMENTS
+   ======================================== */
+
+/* Command item specific styling that extends Tabler list-group */
+.list-group-item.command-item {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s ease;
+}
+
+.list-group-item.command-item a {
+    color: inherit;
+    text-decoration: none;
+    flex-grow: 1;
+}
+
+.list-group-item.command-item a:hover {
+    color: var(--tblr-primary);
+    text-decoration: underline;
+}
+
+.card-commands {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* ========================================
+   COMMAND EXECUTION BUTTONS
+   ======================================== */
+
+/* Command run button - plugin specific interaction */
+.command-run-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.command-item:hover .command-run-btn,
+.command-item.active .command-run-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Processing state indicator */
+.command-run-btn[data-processing="true"] {
+    opacity: 1;
+    visibility: visible;
+    background-color: var(--tblr-warning) !important;
+    border-color: var(--tblr-warning) !important;
+}
+
+/* Copy button success state - temporary styling */
+.copy-output-btn.copied,
+.copy-parsed-btn.copied {
+    background-color: var(--tblr-success) !important;
+    border-color: var(--tblr-success) !important;
+    color: white !important;
+}
+
+/* ========================================
+   CONNECTION INFO STYLING - REMOVED
+   ======================================== */
+
+/* Connection info styling now handled by Tabler utility classes in HTML:
+   - align-middle, border-0, fw-semibold, text-muted, font-monospace
+   - pt-3, border-top, mt-2 for footer styling
+   This section removed in favor of Tabler utilities */
+
+/* ========================================
+   COMMAND WARNINGS & INDICATORS - REMOVED
+   ======================================== */
+
+/* Config command warning now handled by Tabler utility classes:
+   - text-danger, me-2, opacity-75, plus inline style for font-size
+   - Hover states removed in favor of simpler UX
+   This section removed in favor of Tabler utilities */
+
+/* ========================================
+   RUNNING COMMAND INDICATOR - REMOVED
+   ======================================== */
+
+/* Running command indicator now handled by Tabler utility classes in JS:
+   - alert alert-primary d-flex align-items-center mb-0
+   - spinner-border spinner-border-sm with inline styles for dimensions
+   This section removed in favor of Tabler utilities */
+
+/* ========================================
+   COLLAPSE ICON ANIMATION
+   ======================================== */
+
+.collapse-icon {
+    transition: transform 0.3s;
+}
+
+.collapsed .collapse-icon {
+    transform: rotate(180deg);
+}

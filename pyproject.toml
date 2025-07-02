@@ -1,0 +1,40 @@
+# See PEP 518 for the spec of this file
+# https://www.python.org/dev/peps/pep-0518/
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netbox-toolkit-plugin"
+version = "0.1.0"
+authors = [
+    {name = "Andy Norwood"},
+]
+description = "NetBox plugin for running pre-defined commands on network devices"
+readme = "README.md"
+
+classifiers=[
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: System Administrators',
+    'Natural Language :: English',
+    "Programming Language :: Python :: 3 :: Only",
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+
+requires-python = ">=3.10.0"
+
+dependencies = [
+    "scrapli>=2023.1.30",
+    "scrapli-netconf>=2023.1.30", 
+    "scrapli-community>=2023.1.30",
+    "netmiko>=4.0.0"
+]
+
+[project.entry-points."netbox.plugin"]
+netbox_toolkit_plugin = "netbox_toolkit:ToolkitConfig"
+
+[tool.setuptools.package-data]
+netbox_toolkit = ["templates/**", "static/**"]
