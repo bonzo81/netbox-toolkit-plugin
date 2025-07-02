@@ -16,16 +16,16 @@ pip install netbox-toolkit-plugin
 ```
 
 ### 2. **Enable in NetBox**
-Add `'netbox_toolkit'` to `PLUGINS` in your NetBox configuration
+Add `'netbox_toolkit_plugin'` to `PLUGINS` in your NetBox configuration
 ```python
 # In your NetBox configuration.py
 PLUGINS = [
-    'netbox_toolkit',
+    'netbox_toolkit_plugin',
     # ... other plugins
 ]
 
 PLUGINS_CONFIG = {
-    'netbox_toolkit': {
+    'netbox_toolkit_plugin': {
         'rate_limiting_enabled': True,      # Enable/disable rate limiting (default: True)
         'device_command_limit': 10,         # Max commands per device per time window (default: 10)
         'time_window_minutes': 5,           # Time window in minutes (default: 5)
