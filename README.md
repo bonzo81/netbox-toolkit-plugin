@@ -37,7 +37,7 @@ A NetBox plugin that allows you to run commands on network devices directly from
 
 #### 📋 Command Management  
 - [📋 Command Creation](./docs/user/command-creation.md) - Create platform-specific commands
-- [🔐 Permissions Setup](./docs/user/PERMISSIONS_SETUP_GUIDE.md) - Configure granular access control
+- [🔐 Permissions Setup](./docs/user/permissions_setup_guide.md) - Configure granular access control
 - [📝 Permission Examples](./docs/user/permission-examples.md) - Example permission configuration
 
 #### 🔧 Troubleshooting
