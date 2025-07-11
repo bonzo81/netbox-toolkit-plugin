@@ -121,4 +121,4 @@ extra_css:
 
 # Watch extra files
 watch:
-  - netbox_toolkit/
+  - netbox_toolkit_plugin/
