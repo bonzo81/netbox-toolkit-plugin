@@ -12,7 +12,7 @@ The plugin is configured in NetBox's `configuration.py` file using the `PLUGINS_
 ```python
 # In your NetBox configuration.py
 PLUGINS_CONFIG = {
-    'netbox_toolkit': {
+    'netbox_toolkit_plugin': {
         'rate_limiting_enabled': True,      # Enable/disable rate limiting (default: True)
         'device_command_limit': 10,         # Max commands per device per time window (default: 10)
         'time_window_minutes': 5,           # Time window in minutes (default: 5)

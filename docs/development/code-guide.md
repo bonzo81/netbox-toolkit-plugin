@@ -4,21 +4,21 @@ Quick navigation guide for developers working on the NetBox Toolkit Plugin codeb
 
 ## 📁 Key Files & Classes
 
-### Core Models (`netbox_toolkit/models.py`)
+### Core Models (`netbox_toolkit_plugin/models.py`)
 - **`Command`** - Platform-based commands (show/config types)
 - **`CommandLog`** - Execution history with error detection
 
-### Service Layer (`netbox_toolkit/services/`)
+### Service Layer (`netbox_toolkit_plugin/services/`)
 - **`CommandExecutionService`** - Main command execution logic
 - **`DeviceService`** - Device validation and connection info
 - **`RateLimitingService`** - Prevents command flooding
 
-### Connector Framework (`netbox_toolkit/connectors/`)
+### Connector Framework (`netbox_toolkit_plugin/connectors/`)
 - **`BaseDeviceConnector`** - Abstract interface for all connectors
 - **`ScrapliConnector`** - Scrapli-based implementation (primary)
 - **`ConnectorFactory`** - Creates platform-specific connectors
 
-### Views (`netbox_toolkit/views.py`)
+### Views (`netbox_toolkit_plugin/views.py`)
 - **`DeviceToolkitView`** - Custom "Toolkit" tab on device pages
 - **`CommandListView`** - Command management interface
 

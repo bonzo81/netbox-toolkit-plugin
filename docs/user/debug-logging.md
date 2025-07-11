@@ -7,7 +7,7 @@ Add this configuration to your NetBox `configuration.py` file to enable debug lo
 ```python
 # Plugin configuration
 PLUGINS_CONFIG = {
-    'netbox_toolkit': {
+    'netbox_toolkit_plugin': {
         # Enable debug logging for the toolkit plugin
         'debug_logging': True,
         
@@ -30,7 +30,7 @@ LOGGING = {
     },
     'filters': {  # Control which log messages are processed
         'require_toolkit_debug': {
-            '()': 'netbox_toolkit.utils.logging.RequireToolkitDebug',
+            '()': 'netbox_toolkit_plugin.utils.logging.RequireToolkitDebug',
         },
     },
     'handlers': {  # Define where log messages are sent (console, file, etc.)
@@ -42,7 +42,7 @@ LOGGING = {
         },
     },
     'loggers': {  # Configure which modules send logs and at what level
-        'netbox_toolkit': {
+        'netbox_toolkit_plugin': {
             'handlers': ['toolkit_console'],
             'level': 'DEBUG',
             'propagate': False,  # Don't send to parent loggers
@@ -63,7 +63,7 @@ You can adjust the logging level based on your needs:
 Example for less verbose logging:
 ```python
 'loggers': {
-    'netbox_toolkit': {
+    'netbox_toolkit_plugin': {
         'handlers': ['toolkit_console'],
         'level': 'INFO',  # Less verbose than DEBUG
         'propagate': False,
@@ -84,7 +84,7 @@ Example for less verbose logging:
 To disable plugin debug logging, simply set:
 ```python
 PLUGINS_CONFIG = {
-    'netbox_toolkit': {
+    'netbox_toolkit_plugin': {
         'debug_logging': False,  # Disable debug logging
     }
 }
@@ -96,9 +96,9 @@ Or remove the `debug_logging` setting entirely (default is `False`).
 
 When enabled, you'll see detailed logging like:
 ```
-[TOOLKIT] DEBUG 2025-06-05 10:30:15 netbox_toolkit.connectors.factory - Creating connector for device router-01 with platform cisco_ios
-[TOOLKIT] DEBUG 2025-06-05 10:30:15 netbox_toolkit.connectors.scrapli_connector - Attempting to connect to 192.168.1.1:22
-[TOOLKIT] INFO 2025-06-05 10:30:16 netbox_toolkit.connectors.scrapli_connector - Successfully connected to 192.168.1.1 using IOSXEDriver
-[TOOLKIT] DEBUG 2025-06-05 10:30:16 netbox_toolkit.services.command_service - Executing show command: show version
-[TOOLKIT] DEBUG 2025-06-05 10:30:17 netbox_toolkit.services.command_service - Command completed successfully in 0.8s
+[TOOLKIT] DEBUG 2025-06-05 10:30:15 netbox_toolkit_plugin.connectors.factory - Creating connector for device router-01 with platform cisco_ios
+[TOOLKIT] DEBUG 2025-06-05 10:30:15 netbox_toolkit_plugin.connectors.scrapli_connector - Attempting to connect to 192.168.1.1:22
+[TOOLKIT] INFO 2025-06-05 10:30:16 netbox_toolkit_plugin.connectors.scrapli_connector - Successfully connected to 192.168.1.1 using IOSXEDriver
+[TOOLKIT] DEBUG 2025-06-05 10:30:16 netbox_toolkit_plugin.services.command_service - Executing show command: show version
+[TOOLKIT] DEBUG 2025-06-05 10:30:17 netbox_toolkit_plugin.services.command_service - Command completed successfully in 0.8s
 ```
