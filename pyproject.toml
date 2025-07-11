@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.entry-points."netbox.plugin"]
-netbox_toolkit_plugin = "netbox_toolkit:ToolkitConfig"
+netbox_toolkit_plugin = "netbox_toolkit_plugin"
 
 [tool.setuptools.package-data]
-netbox_toolkit = ["templates/**", "static/**"]
+netbox_toolkit_plugin = ["templates/**", "static/**"]
