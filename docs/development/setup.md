@@ -16,11 +16,27 @@ Fork the 'netbox-toolkit-plugin' repo on GitHub.
 
 Clone your forked repository locally:
 
-```
+```bash
 $ git clone git@github.com:<username>/netbox-toolkit-plugin.git
+$ cd netbox-toolkit-plugin
+
+# Add upstream remote to sync with main repo
+$ git remote add upstream https://github.com/bonzo81/netbox-toolkit-plugin.git
 ```
 
-### 3. Create a Virtual Environment
+### 3. Select develop Branch
+
+```bash
+$ git checkout develop
+```
+
+⚠️ **Develop Branch Considerations:**
+- Contains latest development features and fixes
+- **Not for Production**: Unstable and may contain breaking changes
+- **Database Migrations**: Development migrations may change, requiring resets
+- **Active Development**: Code is actively changing and may contain bugs
+
+### 4. Create a Virtual Environment
 
 Activate the NetBox virtual environment (see the NetBox documentation under [Setting up a Development Environment](https://docs.netbox.dev/en/stable/development/getting-started/)):
 
@@ -28,7 +44,7 @@ Activate the NetBox virtual environment (see the NetBox documentation under [Set
 $ source /opt/netbox/venv/bin/activate
 ```
 
-### 4. Install plugin in Develop Mode
+### 5. Install plugin in Develop Mode
 
 Add the plugin to NetBox virtual environment in Develop mode (see [Plugins Development](https://docs.netbox.dev/en/stable/plugins/development/)):
 
@@ -39,30 +55,58 @@ To ease development, it is recommended to go ahead and install the plugin at thi
 $ pip install -e .
 ```
 
-### 5. Apply Migrations
+### 6. Apply Migrations
 
 ```bash
 cd /opt/netbox/netbox
 python manage.py migrate netbox_toolkit
 ```
 
-### 6. Collect Static Files
+### 7. Collect Static Files
 
 ```bash
 cd /opt/netbox/netbox
 python manage.py collectstatic --no-input
 ```
 
+## Development Workflow
 
-### 7. Create a branch for local development:
+### 8. Create a branch for local development:
 
+
+**For Develop Branch Development:**
+```bash
+$ git checkout develop
+$ git pull upstream develop
+$ git checkout -b feature/your-feature-name
 ```
-$ git checkout -b name-of-your-bugfix-or-feature
+
+### 9. Make Your Changes
+
+```bash
+# Make your changes locally
+# Edit files...
+
+# If you changed package structure, reinstall
+$ pip install -e .
+
+# Apply any new migrations
+$ cd /opt/netbox/netbox
+$ python manage.py migrate netbox_toolkit_plugin
 ```
 
-Now you can make your changes locally.
+### 10. Test Your Changes
 
-### 8. Commit your changes and push your branch to GitHub:
+```bash
+# Run NetBox development server
+$ cd /opt/netbox/netbox
+$ python manage.py runserver 0.0.0.0:8000
+
+# Test your changes in the browser
+# Check logs for any issues
+```
+
+### 11. Commit your changes and push your branch to GitHub:
 
 ```
 $ git add .
@@ -70,20 +114,26 @@ $ git commit -m "Your detailed description of your changes."
 $ git push origin name-of-your-bugfix-or-feature
 ```
 
-### 9. Submit a pull request through the GitHub website.
+### 12. Submit a pull request through the GitHub website
 
+After pushing to your fork:
 
-## Pull Request Guidelines
+1. **Navigate to your fork** on GitHub (e.g., `https://github.com/yourusername/netbox-toolkit-plugin`)
+2. **GitHub will often show a banner** suggesting to create a pull request for your recently pushed branch
+3. **Click "Compare & pull request"** or go to the "Pull requests" tab and click "New pull request"
+4. **Ensure the base repository is set correctly:**
+   - Base repository: `bonzo81/netbox-toolkit-plugin`
+   - Base branch: `develop` (for new features) or `main` (for hotfixes)
+   - Head repository: `yourusername/netbox-toolkit-plugin` 
+   - Compare branch: `feature/your-feature-name`
+5. **Fill out the pull request template** with details about your changes
+6. **Submit the pull request**
 
-Before you submit a pull request, check that it meets these guidelines:
-
-1. Ideally the pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.md.
-3. The pull request should work for Python 3.10+. Check
-   https://github.com/bonzo81/netbox-librenms-plugin/actions
-   and make sure that the tests pass for all supported Python versions.
+**Important Notes:**
+- Pull requests are **NOT created automatically** - you must create them manually
+- Your changes go to **your fork first**, then you request they be pulled into the main repository
+- For new features, target the **`develop` branch**
+- For bug fixes on released versions, target the **`main` branch**
 
 
 ## Deploying

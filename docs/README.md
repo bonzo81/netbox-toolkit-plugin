@@ -125,4 +125,4 @@ Optional detailed logging for troubleshooting:
 ### Core Documentation
 - [Architecture Overview](./development/architecture.md) - System design and patterns
 - [Module Structure](./development/module-structure.md) - Code organization and key classes
-- [Development Setup](./development/setup.md) - Environment setup and workflows
+- [Development Setup](./development/setup.md) - Environment setup and workflows (includes develop branch)
