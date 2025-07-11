@@ -70,7 +70,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 
 #### Permission 1: Toolkit - View Commands
 - **Name**: `Toolkit - View Commands`
-- **Object Types**: Select `Command Toolkit | command`
+- **Object Types**: Select `Command Toolkit Plugin | command`
 - **Actions**: Check `view`
 - **Additional Actions**: Leave empty
 - **Groups**: Select `Junior Network Engineers`, `Senior Network Engineers`, `Network Administrators`
@@ -79,7 +79,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 
 #### Permission 2: Toolkit - Execute Show Commands
 - **Name**: `Toolkit - Execute Show Commands`
-- **Object Types**: Select `Command Toolkit | command`
+- **Object Types**: Select `Command Toolkit Plugin | command`
 - **Actions**: Leave the checkboxes empty
 - **Additional Actions**: Type `execute_show`
 - **Groups**: Select `Junior Network Engineers`, `Senior Network Engineers`, `Network Administrators`
@@ -88,7 +88,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 
 #### Permission 3: Toolkit - Execute Config Commands
 - **Name**: `Toolkit - Execute Config Commands`
-- **Object Types**: Select `Command Toolkit | command`
+- **Object Types**: Select `Command Toolkit Plugin | command`
 - **Actions**: Leave the checkboxes empty
 - **Additional Actions**: Type `execute_config`
 - **Groups**: Select `Senior Network Engineers`, `Network Administrators` (NOT Junior Engineers)
@@ -97,7 +97,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 
 #### Permission 4: Toolkit - Manage Commands
 - **Name**: `Toolkit - Manage Commands`
-- **Object Types**: Select `Command Toolkit | command`
+- **Object Types**: Select `Command Toolkit Plugin | command`
 - **Actions**: Check `add`, `change`, `delete`
 - **Additional Actions**: Leave empty
 - **Groups**: Select `Network Administrators` (ONLY Admins)
@@ -106,7 +106,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 
 #### Permission 5: Toolkit - View Command Logs
 - **Name**: `Toolkit - View Command Logs`
-- **Object Types**: Select `Command Toolkit | command log`
+- **Object Types**: Select `Command Toolkit Plugin | command log`
 - **Actions**: Check `view`
 - **Additional Actions**: Leave empty
 - **Groups**: Select `Junior Network Engineers`, `Senior Network Engineers`, `Network Administrators`
@@ -115,7 +115,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 
 #### Permission 6: Toolkit - Manage Command Logs
 - **Name**: `Toolkit - Manage Command Logs`
-- **Object Types**: Select `Command Toolkit | command log`
+- **Object Types**: Select `Command Toolkit Plugin | command log`
 - **Actions**: Check `add`, `change`, `delete`
 - **Additional Actions**: Leave empty
 - **Groups**: Select `Network Administrators` (ONLY Admins)
@@ -138,7 +138,7 @@ Navigate to **Admin → Users → Permissions** and create the following **reusa
 #### Permission 1: View Show Version Commands Only
 ```json
 Name: "Toolkit - View Show Version Commands Only"
-Object Types: Command Toolkit | command
+Object Types: Command Toolkit Plugin | command
 Actions: ✓ view
 Additional Actions: (leave empty)
 Constraints: {
@@ -151,7 +151,7 @@ Groups: Junior Network Engineers
 #### Permission 2: Execute Show Version Commands Only
 ```json
 Name: "Toolkit - Execute Show Version Commands Only"
-Object Types: Command Toolkit | command
+Object Types: Command Toolkit Plugin | command
 Actions: (leave unchecked)
 Additional Actions: execute_show
 Constraints: {
@@ -172,7 +172,7 @@ Groups: Junior Network Engineers
 #### Permission 1: View Cisco Commands
 ```json
 Name: "Toolkit - View Cisco Commands"
-Object Types: Command Toolkit | command
+Object Types: Command Toolkit Plugin | command
 Actions: ✓ view
 Constraints: {
   "platform__slug__in": ["cisco_ios", "cisco_nxos", "cisco_iosxr"]
@@ -183,7 +183,7 @@ Groups: Network Team
 #### Permission 2: Execute Cisco Show Commands
 ```json
 Name: "Toolkit - Execute Cisco Show Commands"
-Object Types: Command Toolkit | command
+Object Types: Command Toolkit Plugin | command
 Additional Actions: execute_show
 Constraints: {
   "command_type": "show",
@@ -199,7 +199,7 @@ Groups: Network Team
 #### Permission: Safe Monitoring Commands
 ```json
 Name: "Toolkit - Safe Monitoring Commands"
-Object Types: Command Toolkit | command
+Object Types: Command Toolkit Plugin | command
 Actions: ✓ view
 Additional Actions: execute_show
 Constraints: {
