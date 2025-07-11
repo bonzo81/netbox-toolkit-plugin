@@ -18,6 +18,7 @@ We love your input! We want to make contributing to this project as easy and tra
 - Discuss major changes in issues first
 - Follow existing patterns
 - Update documentation
+- Use the develop branch for latest features (see [Development Setup](./setup.md))
 
 ### 📚 Documentation
 - Improve clarity and examples
@@ -28,6 +29,12 @@ We love your input! We want to make contributing to this project as easy and tra
 - Add test coverage
 - Improve existing tests
 - Add integration tests
+
+## 🚀 Development Workflow
+
+For detailed development setup and workflow, see:
+- **[Development Setup](./setup.md)** - Complete environment setup including develop branch usage
+- **[Code Guide](./code-guide.md)** - Navigate the codebase
 
 ### Submit Feedback
 

@@ -83,28 +83,28 @@ markdown_extensions:
 nav:
   - Home: README.md
   - User Documentation:
-    - Getting Started:
-      - Installation: user/installation.md
-      - Plugin Configuration: user/configuration.md
-    - Command Management:
-      - Command Creation: user/command-creation.md
-      - Permissions Setup: user/permissions-setup-guide.md
-      - Permission Examples: user/permission-examples.md
-    - Troubleshooting:
-      - Debug Logging: user/debug-logging.md
+      - Getting Started:
+          - Installation: user/installation.md
+          - Plugin Configuration: user/configuration.md
+      - Command Management:
+          - Command Creation: user/command-creation.md
+          - Permissions Setup: user/permissions-setup-guide.md
+          - Permission Examples: user/permission-examples.md
+      - Troubleshooting:
+          - Debug Logging: user/debug-logging.md
   - API Documentation:
-    - Overview: api/index.md
-    - API Reference: api/overview.md
-    - Commands API: api/commands.md
-    - Command Logs API: api/command-logs.md
-    - Authentication & Permissions: api/auth.md
-    - Error Handling: api/errors.md
+      - Overview: api/index.md
+      - API Reference: api/overview.md
+      - Commands API: api/commands.md
+      - Command Logs API: api/command-logs.md
+      - Authentication & Permissions: api/auth.md
+      - Error Handling: api/errors.md
   - Development:
-    - Start Here: development/contributing.md
-    - Setup: development/setup.md
-    - Code Guide: development/code-guide.md
-    - Architecture: development/architecture.md
-    - Module Structure: development/module-structure.md
+      - Start Here: development/contributing.md
+      - Setup: development/setup.md
+      - Code Guide: development/code-guide.md
+      - Architecture: development/architecture.md
+      - Module Structure: development/module-structure.md
   - Changelog: changelog.md
 
 # Extra
