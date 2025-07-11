@@ -16,7 +16,7 @@
 ## Directory Structure
 
 ```
-netbox_toolkit/
+netbox_toolkit_plugin/
 ├── __init__.py             # Plugin initialization
 ├── admin.py                # Django admin interface definitions
 ├── config.py               # Plugin configuration settings
@@ -46,13 +46,13 @@ netbox_toolkit/
 │   ├── device_service.py   # Device management service
 │   └── rate_limiting_service.py # Rate limiting service
 ├── static/                 # Static assets (CSS, JavaScript)
-│   └── netbox_toolkit/
+│   └── netbox_toolkit_plugin/
 │       ├── css/
 │       │   └── toolkit.css
 │       └── js/
 │           └── toolkit.js
 ├── templates/              # Django HTML templates
-│   └── netbox_toolkit/
+│   └── netbox_toolkit_plugin/
 │       ├── command.html
 │       ├── command_edit.html
 │       ├── command_list.html
@@ -73,7 +73,7 @@ netbox_toolkit/
 
 - **models.py**: `Command` (platform-based commands), `CommandLog` (execution history)
 - **views.py**: `DeviceToolkitView` (device tab), view classes for command management
-- **config.py**: `ToolkitConfig` class with connection timeouts and SSH settings
+- **config.py**: `ToolkitSettings` class with connection timeouts and SSH settings
 - **exceptions.py**: `DeviceConnectionError`, `CommandExecutionError`, `UnsupportedPlatformError`
 
 ### Service Layer (`services/`)

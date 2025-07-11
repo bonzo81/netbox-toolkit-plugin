@@ -31,7 +31,7 @@ netbox_toolkit/
 - `@register_model_view(Device, name='toolkit', path='toolkit')` - Adds "Toolkit" tab to device pages
 - `ViewTab(label='Toolkit')` - Custom device tab integration
 - `ObjectPermission` - NetBox's permission system for command execution
-- URL namespace: `plugins:netbox_toolkit:*` for all plugin URLs
+- URL namespace: `plugins:netbox_toolkit_plugin:*` for all plugin URLs
 
 ### Unique Models & Relationships
 - **Command**: Platform-based commands (not device-type based)
