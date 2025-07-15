@@ -1,0 +1,58 @@
+# Example: Extra NetBox Configuration
+# Copy this file to 'extra-configuration.py' and customize as needed
+#
+# Note: This file is loaded after environment variables, so settings here
+# will override any environment variable configurations.
+
+import os
+
+# Example: Custom logging configuration
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             'class': 'logging.FileHandler',
+#             'filename': '/opt/netbox/logs/netbox.log',
+#         },
+#     },
+#     'loggers': {
+#         'netbox_toolkit_plugin': {
+#             'handlers': ['file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }
+
+# Example: Custom time zone (use environment variable if set, otherwise default)
+# TIME_ZONE = os.environ.get('TIME_ZONE', 'America/New_York')
+
+# Example: Enable additional authentication backends
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.RemoteUserBackend',
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
+
+# Example: Custom media and static file settings
+# MEDIA_ROOT = '/opt/netbox/netbox/media'
+# STATIC_ROOT = '/opt/netbox/netbox/static'
+
+# Banner configuration for development environment
+# These override any environment variables if they were set
+BANNER_TOP = "Development Environment"
+BANNER_BOTTOM = "NetBox Toolkit Plugin Dev Container"
+BANNER_LOGIN = "NetBox Toolkit Plugin Development access only"
+
+# Example: Plugin-specific configuration
+# PLUGINS_CONFIG = {
+#     'netbox_toolkit_plugin': {
+#         'debug_logging': True,
+#         'rate_limiting_enabled': True,
+#         'device_command_limit': 10,
+#         'time_window_minutes': 5,
+#     },
+# }
+# BANNER_BOTTOM = 'NetBox Toolkit Plugin Dev Container'
+# BANNER_LOGIN = 'Development access only'
