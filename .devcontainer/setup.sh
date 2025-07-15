@@ -109,6 +109,19 @@ if [ -f /etc/netbox/config/configuration.py ]; then
         fi
     fi
 
+    # Add Codespaces-specific configuration if running in Codespaces
+    if [ "$CODESPACES" = "true" ] && [ -f /workspaces/netbox-toolkit-plugin/.devcontainer/codespaces-configuration.py ]; then
+        echo "🔗 Adding GitHub Codespaces configuration..."
+        if ! grep -q "# GitHub Codespaces NetBox Configuration" /etc/netbox/config/configuration.py 2>/dev/null; then
+            echo "" >> /etc/netbox/config/configuration.py
+            echo "# GitHub Codespaces NetBox Configuration" >> /etc/netbox/config/configuration.py
+            cat /workspaces/netbox-toolkit-plugin/.devcontainer/codespaces-configuration.py >> /etc/netbox/config/configuration.py
+            echo "✅ Added GitHub Codespaces configuration"
+        else
+            echo "✅ GitHub Codespaces configuration already exists"
+        fi
+    fi
+
     if grep -q "netbox_toolkit_plugin" /etc/netbox/config/configuration.py 2>/dev/null; then
         echo "✅ Plugin configuration exists in NetBox settings"
     fi

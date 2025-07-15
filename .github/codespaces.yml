@@ -15,3 +15,5 @@ env:
   CODESPACES: "true"
   # Disable some features that might not work well in Codespaces
   NETBOX_ALLOW_INSECURE_HTTP: "true"
+  # Development settings for better debugging
+  DEBUG: "true"

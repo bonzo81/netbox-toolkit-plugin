@@ -12,6 +12,17 @@ echo "🌐 Starting NetBox development server..."
 export SECRET_KEY="${SECRET_KEY:-dummydummydummydummydummydummydummydummydummydummydummydummy}"
 export DEBUG="${DEBUG:-True}"
 
+# Detect Codespaces and show appropriate access URL
+if [ "$CODESPACES" = "true" ] && [ -n "$CODESPACE_NAME" ]; then
+    GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+    ACCESS_URL="https://${CODESPACE_NAME}-8000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+    echo "🔗 GitHub Codespaces detected"
+    echo "📍 Access NetBox at: $ACCESS_URL"
+else
+    ACCESS_URL="http://localhost:8000"
+    echo "📍 Access NetBox at: $ACCESS_URL"
+fi
+
 # Activate NetBox virtual environment
 source /opt/netbox/venv/bin/activate
 
@@ -20,7 +31,6 @@ cd /opt/netbox/netbox
 
 if [ "$BACKGROUND" = true ]; then
     echo "🚀 Starting NetBox in background"
-    echo "📍 Access NetBox at: http://localhost:8000"
 
     # Start NetBox in background with proper environment preservation
     (
@@ -40,6 +50,5 @@ if [ "$BACKGROUND" = true ]; then
     echo "🛑 Stop NetBox with: netbox-stop"
 else
     echo "🌐 Starting NetBox in foreground"
-    echo "📍 Access NetBox at: http://localhost:8000"
     python manage.py runserver 0.0.0.0:8000
 fi
