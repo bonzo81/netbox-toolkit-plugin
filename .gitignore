@@ -199,3 +199,8 @@ logs/
 test_outputs/
 debug_logs/
 device_configs/
+
+# Extra devcontainer configuration (user-customizable)
+.devcontainer/extra-plugins.py
+.devcontainer/extra-configuration.py
+.devcontainer/extra-requirements.txt

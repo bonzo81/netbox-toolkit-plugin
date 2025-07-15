@@ -1,0 +1,57 @@
+# Ruff configuration for NetBox Toolkit Plugin
+# Based on netbox-community/netbox/ruff.toml with plugin-specific enhancements
+
+exclude = [
+    "netbox_toolkit_plugin/static/**",
+    "*/migrations/*.py",
+    "build/",
+    "dist/"
+]
+line-length = 88
+target-version = "py310"
+indent-width = 4
+
+[lint]
+# Enable comprehensive rule categories
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "DJ",   # flake8-django
+    "PIE",  # flake8-pie
+    "SIM",  # flake8-simplify
+]
+
+# Ignore specific rules that conflict with NetBox patterns
+ignore = [
+    "DJ001",  # Avoid using `null=True` on string-based fields - NetBox uses this pattern
+    "E501",   # Line too long - handled by formatter
+    "B008",   # Do not perform function calls in argument defaults - Django uses this
+    "F403",   # Star imports - common in NetBox
+    "F405",   # Name may be undefined from star import - common in NetBox
+]
+
+[lint.per-file-ignores]
+"tests/*.py" = ["B018"]  # Allow assert statements in tests
+
+[lint.isort]
+# NetBox Toolkit Plugin specific import configuration
+known-first-party = ["netbox_toolkit_plugin"]
+known-third-party = ["scrapli", "scrapli_community", "scrapli_netconf", "netmiko"]
+section-order = ["future", "standard-library", "django", "netbox", "third-party", "first-party", "local-folder"]
+
+[lint.isort.sections]
+"django" = ["django"]
+"netbox" = ["netbox", "dcim", "extras", "users", "core", "utilities"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+preview = true
