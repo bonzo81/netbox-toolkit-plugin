@@ -13,7 +13,7 @@ from netmiko.exceptions import (
 )
 
 from .base import BaseDeviceConnector, ConnectionConfig, CommandResult
-from ..config import ToolkitSettings
+from ..settings import ToolkitSettings
 from ..exceptions import (
     DeviceConnectionError,
     CommandExecutionError,

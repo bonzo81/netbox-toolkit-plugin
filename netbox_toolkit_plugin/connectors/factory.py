@@ -7,7 +7,7 @@ from django.db.models import Model
 from dcim.models import Device
 
 from ..exceptions import UnsupportedPlatformError, DeviceConnectionError
-from ..config import ToolkitSettings
+from ..settings import ToolkitSettings
 from ..utils.logging import get_toolkit_logger
 from .base import BaseDeviceConnector, ConnectionConfig
 from .scrapli_connector import ScrapliConnector

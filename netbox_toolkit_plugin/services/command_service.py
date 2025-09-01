@@ -10,7 +10,7 @@ from ..connectors.factory import ConnectorFactory
 from ..connectors.base import CommandResult
 from ..connectors.netmiko_connector import NetmikoConnector
 from ..exceptions import DeviceConnectionError, CommandExecutionError
-from ..config import ToolkitSettings
+from ..settings import ToolkitSettings
 from ..utils.logging import get_toolkit_logger
 
 logger = get_toolkit_logger(__name__)

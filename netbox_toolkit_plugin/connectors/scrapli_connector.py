@@ -8,7 +8,7 @@ from scrapli.driver.generic import GenericDriver
 from scrapli.exceptions import ScrapliException
 
 from .base import BaseDeviceConnector, ConnectionConfig, CommandResult
-from ..config import ToolkitSettings
+from ..settings import ToolkitSettings
 from ..exceptions import (
     DeviceConnectionError,
     CommandExecutionError,
