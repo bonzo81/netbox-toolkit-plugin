@@ -1,20 +1,15 @@
 """Scrapli-based device connector implementation."""
 
 import time
-from typing import Dict, Any, Type, Optional
+from typing import Any
 
-from scrapli.driver.core import IOSXEDriver, NXOSDriver, IOSXRDriver
+from scrapli.driver.core import IOSXEDriver, IOSXRDriver, NXOSDriver
 from scrapli.driver.generic import GenericDriver
-from scrapli.exceptions import ScrapliException
 
-from .base import BaseDeviceConnector, ConnectionConfig, CommandResult
-from ..settings import ToolkitSettings
 from ..exceptions import (
     DeviceConnectionError,
-    CommandExecutionError,
-    UnsupportedPlatformError,
 )
-from ..utils.network import validate_device_connectivity
+from ..settings import ToolkitSettings
 from ..utils.connection import (
     cleanup_connection_resources,
     validate_connection_health,
@@ -22,6 +17,8 @@ from ..utils.connection import (
 )
 from ..utils.error_parser import VendorErrorParser
 from ..utils.logging import get_toolkit_logger
+from ..utils.network import validate_device_connectivity
+from .base import BaseDeviceConnector, CommandResult, ConnectionConfig
 
 logger = get_toolkit_logger(__name__)
 
@@ -80,7 +77,7 @@ class ScrapliConnector(BaseDeviceConnector):
 
         return normalized
 
-    def _get_driver_class(self) -> Type:
+    def _get_driver_class(self) -> type:
         """Get the appropriate Scrapli driver class for the platform."""
         if not self.config.platform:
             logger.debug("No platform specified, using GenericDriver")
@@ -100,7 +97,7 @@ class ScrapliConnector(BaseDeviceConnector):
 
         return driver_class
 
-    def _build_connection_params(self) -> Dict[str, Any]:
+    def _build_connection_params(self) -> dict[str, Any]:
         """Build connection parameters for Scrapli."""
         # Use fast test timeouts for initial attempts if in fast fail mode
         if self._fast_fail_mode:
@@ -171,7 +168,7 @@ class ScrapliConnector(BaseDeviceConnector):
 
         return params
 
-    def _get_transport_options(self) -> Dict[str, Any]:
+    def _get_transport_options(self) -> dict[str, Any]:
         """Get transport-specific options for Scrapli."""
         ssh_options = ToolkitSettings.get_ssh_transport_options()
 
@@ -320,7 +317,7 @@ class ScrapliConnector(BaseDeviceConnector):
                 logger.debug("Connection cleanup completed successfully")
             except Exception as e:
                 logger.warning(f"Error during connection cleanup: {str(e)}")
-                pass  # Cleanup error ignored
+                # Cleanup error ignored
             finally:
                 self._connection = None
                 # Give time for socket cleanup to complete
@@ -515,7 +512,7 @@ class ScrapliConnector(BaseDeviceConnector):
                 logger.debug(
                     "TextFSM parsing returned empty result (no matching template)"
                 )
-                pass  # TextFSM parsing returned empty result
+                # TextFSM parsing returned empty result
 
         except Exception as e:
             # TextFSM parsing failed - this is common for commands without templates

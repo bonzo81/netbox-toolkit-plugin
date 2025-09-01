@@ -1,27 +1,24 @@
 """Netmiko-based device connector implementation."""
 
 import time
-from typing import Dict, Any, Optional, Tuple
+from typing import Any
 
 from netmiko import ConnectHandler, SSHDetect
 from netmiko.exceptions import (
-    NetmikoTimeoutException,
     NetmikoAuthenticationException,
     NetmikoBaseException,
-    ConnectionException,
-    ConfigInvalidException,
+    NetmikoTimeoutException,
 )
 
-from .base import BaseDeviceConnector, ConnectionConfig, CommandResult
-from ..settings import ToolkitSettings
 from ..exceptions import (
-    DeviceConnectionError,
     CommandExecutionError,
-    UnsupportedPlatformError,
+    DeviceConnectionError,
 )
-from ..utils.network import validate_device_connectivity
+from ..settings import ToolkitSettings
 from ..utils.error_parser import VendorErrorParser
 from ..utils.logging import get_toolkit_logger
+from ..utils.network import validate_device_connectivity
+from .base import BaseDeviceConnector, CommandResult, ConnectionConfig
 
 logger = get_toolkit_logger(__name__)
 
@@ -71,7 +68,7 @@ class NetmikoConnector(BaseDeviceConnector):
             f"Initialized NetmikoConnector for {config.hostname} with platform '{config.platform}'"
         )
 
-    def _filter_valid_netmiko_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _filter_valid_netmiko_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Filter parameters to only include those supported by Netmiko."""
         # Define valid Netmiko connection parameters
         valid_netmiko_params = {
@@ -182,7 +179,7 @@ class NetmikoConnector(BaseDeviceConnector):
             logger.warning(f"Auto-detection error for {self.config.hostname}: {str(e)}")
             return "generic_termserver"
 
-    def _build_connection_params(self) -> Dict[str, Any]:
+    def _build_connection_params(self) -> dict[str, Any]:
         """Build connection parameters for Netmiko."""
         device_type = self._get_device_type()
 
@@ -423,7 +420,7 @@ class NetmikoConnector(BaseDeviceConnector):
                 execution_time=execution_time,
             )
 
-    def _execute_show_command(self, command: str) -> Tuple[str, Optional[list]]:
+    def _execute_show_command(self, command: str) -> tuple[str, list | None]:
         """Execute a show/display command and return both raw output and parsed data.
 
         Args:
@@ -441,8 +438,9 @@ class NetmikoConnector(BaseDeviceConnector):
             parsed_data = None
             try:
                 # Import textfsm here to avoid dependency issues if not installed
-                import textfsm
                 import os
+
+                import textfsm
                 from ntc_templates.parse import parse_output
 
                 # Try to parse using ntc-templates (which is what Netmiko uses)
