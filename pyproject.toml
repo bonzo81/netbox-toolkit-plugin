@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-toolkit-plugin"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
     {name = "Andy Norwood"},
 ]
@@ -28,7 +28,7 @@ requires-python = ">=3.10.0"
 
 dependencies = [
     "scrapli>=2023.1.30",
-    "scrapli-netconf>=2023.1.30", 
+    "scrapli-netconf>=2023.1.30",
     "scrapli-community>=2023.1.30",
     "netmiko>=4.0.0"
 ]
