@@ -1,15 +1,15 @@
 """Service for handling command execution on devices."""
 
 import traceback
-from typing import Optional, Any
+from typing import Any
 
 from dcim.models import Device
 
-from ..models import Command, CommandLog
-from ..connectors.factory import ConnectorFactory
 from ..connectors.base import CommandResult
+from ..connectors.factory import ConnectorFactory
 from ..connectors.netmiko_connector import NetmikoConnector
-from ..exceptions import DeviceConnectionError, CommandExecutionError
+from ..exceptions import DeviceConnectionError
+from ..models import Command, CommandLog
 from ..settings import ToolkitSettings
 from ..utils.logging import get_toolkit_logger
 

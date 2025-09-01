@@ -1,17 +1,13 @@
 """Factory for creating device connectors."""
 
-import logging
-from typing import Type, Optional
-
-from django.db.models import Model
 from dcim.models import Device
 
-from ..exceptions import UnsupportedPlatformError, DeviceConnectionError
+from ..exceptions import DeviceConnectionError, UnsupportedPlatformError
 from ..settings import ToolkitSettings
 from ..utils.logging import get_toolkit_logger
 from .base import BaseDeviceConnector, ConnectionConfig
-from .scrapli_connector import ScrapliConnector
 from .netmiko_connector import NetmikoConnector
+from .scrapli_connector import ScrapliConnector
 
 logger = get_toolkit_logger(__name__)
 
@@ -59,7 +55,7 @@ class ConnectorFactory:
         device: Device,
         username: str,
         password: str,
-        connector_type: Optional[str] = None,
+        connector_type: str | None = None,
         use_fallback: bool = True,
     ) -> BaseDeviceConnector:
         """
@@ -173,7 +169,7 @@ class ConnectorFactory:
 
     @classmethod
     def _prepare_connector_config(
-        cls, base_config: ConnectionConfig, connector_class: Type[BaseDeviceConnector]
+        cls, base_config: ConnectionConfig, connector_class: type[BaseDeviceConnector]
     ) -> ConnectionConfig:
         """Prepare a clean configuration for a specific connector type."""
         # Create a copy of the base config
@@ -262,7 +258,7 @@ class ConnectorFactory:
         return config
 
     @classmethod
-    def _get_connector_by_type(cls, connector_type: str) -> Type[BaseDeviceConnector]:
+    def _get_connector_by_type(cls, connector_type: str) -> type[BaseDeviceConnector]:
         """Get connector class by explicit type."""
         connector_type_lower = connector_type.lower()
         if connector_type_lower == "scrapli":
@@ -276,8 +272,8 @@ class ConnectorFactory:
 
     @classmethod
     def _get_primary_connector_by_platform(
-        cls, platform: Optional[str]
-    ) -> Type[BaseDeviceConnector]:
+        cls, platform: str | None
+    ) -> type[BaseDeviceConnector]:
         """Get primary connector class by device platform."""
         if not platform:
             return cls.PRIMARY_CONNECTOR
@@ -301,8 +297,8 @@ class ConnectorFactory:
 
     @classmethod
     def _get_connector_by_platform(
-        cls, platform: Optional[str]
-    ) -> Type[BaseDeviceConnector]:
+        cls, platform: str | None
+    ) -> type[BaseDeviceConnector]:
         """Legacy method for backward compatibility."""
         return cls._get_primary_connector_by_platform(platform)
 
@@ -349,7 +345,7 @@ class ConnectorFactory:
         return False
 
     @classmethod
-    def get_recommended_connector(cls, platform: Optional[str]) -> str:
+    def get_recommended_connector(cls, platform: str | None) -> str:
         """Get recommended connector type for a platform."""
         connector_class = cls._get_primary_connector_by_platform(platform)
         if connector_class == ScrapliConnector:
