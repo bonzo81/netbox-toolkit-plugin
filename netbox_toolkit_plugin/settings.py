@@ -1,7 +1,17 @@
 """Configuration settings for the NetBox Toolkit plugin."""
 
-from typing import Dict, Any
+from typing import Any
+
 from django.conf import settings
+
+# Plugin metadata - required by NetBox's plugin discovery system
+__version__ = "0.1.1"
+__author__ = "Andy Norwood"
+
+# Make these available as module-level attributes for NetBox's plugin system
+version = __version__
+author = __author__
+release_track = "stable"  # or "beta", "alpha" - indicates the release track
 
 
 class ToolkitSettings:
@@ -104,7 +114,7 @@ class ToolkitSettings:
     }
 
     @classmethod
-    def get_fast_test_timeouts(cls) -> Dict[str, int]:
+    def get_fast_test_timeouts(cls) -> dict[str, int]:
         """Get fast connection test timeouts for initial viability testing."""
         return cls.FAST_TEST_TIMEOUTS.copy()
 
@@ -117,7 +127,7 @@ class ToolkitSettings:
         )
 
     @classmethod
-    def get_timeouts_for_device(cls, device_type_model: str = "") -> Dict[str, int]:
+    def get_timeouts_for_device(cls, device_type_model: str = "") -> dict[str, int]:
         """Get timeout configuration for a specific device type."""
         timeouts = cls.DEFAULT_TIMEOUTS.copy()
 
@@ -140,17 +150,17 @@ class ToolkitSettings:
         return cls.PLATFORM_ALIASES.get(platform_lower, platform_lower)
 
     @classmethod
-    def get_ssh_options(cls) -> Dict[str, Any]:
+    def get_ssh_options(cls) -> dict[str, Any]:
         """Get SSH transport options."""
         return cls.SSH_TRANSPORT_OPTIONS.copy()
 
     @classmethod
-    def get_retry_config(cls) -> Dict[str, int]:
+    def get_retry_config(cls) -> dict[str, int]:
         """Get retry configuration."""
         return cls.RETRY_CONFIG.copy()
 
     @classmethod
-    def get_ssh_transport_options(cls) -> Dict[str, Any]:
+    def get_ssh_transport_options(cls) -> dict[str, Any]:
         """Get SSH transport options for Scrapli."""
         user_config = getattr(settings, "PLUGINS_CONFIG", {}).get(
             "netbox_toolkit_plugin", {}
@@ -158,7 +168,7 @@ class ToolkitSettings:
         return {**cls.SSH_TRANSPORT_OPTIONS, **user_config.get("ssh_options", {})}
 
     @classmethod
-    def get_netmiko_config(cls) -> Dict[str, Any]:
+    def get_netmiko_config(cls) -> dict[str, Any]:
         """Get Netmiko configuration for fallback connections."""
         user_config = getattr(settings, "PLUGINS_CONFIG", {}).get(
             "netbox_toolkit_plugin", {}

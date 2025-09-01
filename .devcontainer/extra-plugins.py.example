@@ -1,0 +1,22 @@
+# Example: Extra Plugins Configuration
+# Copy this file to 'extra-plugins.py' and customize as needed
+
+# Add additional plugins to the PLUGINS list
+# PLUGINS.extend([
+#     'netbox_secrets',
+#     'netbox_topology_views',
+#     'netbox_dns',
+# ])
+
+# Configure additional plugins
+# PLUGINS_CONFIG.update({
+#     'netbox_secrets': {
+#         'apps': ['dcim', 'ipam'],
+#     },
+#     'netbox_topology_views': {
+#         'static_image_directory': '/opt/netbox/netbox/media/topology_views',
+#     },
+#     'netbox_dns': {
+#         'feature_ipam_coupling': True,
+#     }
+# })

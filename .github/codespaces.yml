@@ -1,0 +1,19 @@
+# GitHub Codespaces configuration
+# This file contains Codespaces-specific settings
+
+# Minimum machine type for NetBox development
+minInstanceType: "standardLinux32gb"
+
+# Pre-build configuration
+prebuild:
+  - apt-get update
+  - apt-get install -y net-tools
+
+# Environment variables specific to Codespaces
+env:
+  # Codespaces-specific NetBox settings
+  CODESPACES: "true"
+  # Disable some features that might not work well in Codespaces
+  NETBOX_ALLOW_INSECURE_HTTP: "true"
+  # Development settings for better debugging
+  DEBUG: "true"
