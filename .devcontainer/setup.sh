@@ -204,9 +204,45 @@ alias netbox-start="/workspaces/netbox-toolkit-plugin/.devcontainer/start-netbox
 alias netbox-run="/workspaces/netbox-toolkit-plugin/.devcontainer/start-netbox.sh"
 alias netbox-restart="netbox-stop && sleep 1 && netbox-start"
 alias netbox-reload="cd /workspaces/netbox-toolkit-plugin && uv pip install -e . && netbox-restart"
-alias netbox-stop="[ -f /tmp/netbox.pid ] && kill \$(cat /tmp/netbox.pid) && rm /tmp/netbox.pid && echo 'NetBox stopped' || echo 'NetBox not running'"
+alias netbox-stop='
+    if [ -f /tmp/netbox.pid ]; then
+        PID=$(cat /tmp/netbox.pid)
+        if kill -0 "$PID" 2>/dev/null; then
+            kill "$PID" && rm /tmp/netbox.pid && echo "NetBox stopped (PID: $PID)"
+        else
+            rm /tmp/netbox.pid && echo "NetBox PID file was stale, cleaned up"
+        fi
+    else
+        # Fallback: try to find and kill any running NetBox processes
+        NETBOX_PIDS=$(pgrep -f "manage.py runserver")
+        if [ -n "$NETBOX_PIDS" ]; then
+            echo "Found running NetBox processes: $NETBOX_PIDS"
+            kill $NETBOX_PIDS && echo "NetBox processes stopped"
+        else
+            echo "NetBox not running"
+        fi
+    fi
+'
 alias netbox-logs="tail -f /tmp/netbox.log"
-alias netbox-status="[ -f /tmp/netbox.pid ] && kill -0 \$(cat /tmp/netbox.pid) 2>/dev/null && echo 'NetBox is running (PID: '\$(cat /tmp/netbox.pid)')' || echo 'NetBox is not running'"
+alias netbox-status='
+    if [ -f /tmp/netbox.pid ]; then
+        PID=$(cat /tmp/netbox.pid)
+        if kill -0 "$PID" 2>/dev/null; then
+            echo "NetBox is running (PID: $PID)"
+        else
+            echo "NetBox PID file exists but process not running (stale PID: $PID)"
+            false
+        fi
+    else
+        NETBOX_PIDS=$(pgrep -f "manage.py runserver")
+        if [ -n "$NETBOX_PIDS" ]; then
+            echo "NetBox is running without PID file (PIDs: $NETBOX_PIDS)"
+        else
+            echo "NetBox is not running"
+            false
+        fi
+    fi
+'
 alias netbox-shell="cd /opt/netbox/netbox && source /opt/netbox/venv/bin/activate && python manage.py shell"
 alias netbox-test="cd /workspaces/netbox-toolkit-plugin && source /opt/netbox/venv/bin/activate && python -m pytest"
 alias netbox-manage="cd /opt/netbox/netbox && source /opt/netbox/venv/bin/activate && python manage.py"
