@@ -244,7 +244,6 @@ class NetmikoConnector(BaseDeviceConnector):
 
         max_retries = self._retry_config["max_retries"]
         retry_delay = self._retry_config["retry_delay"]
-        last_error = None
 
         for attempt in range(max_retries + 1):
             try:
@@ -277,10 +276,9 @@ class NetmikoConnector(BaseDeviceConnector):
                 logger.error(
                     f"Authentication failed for {self.config.hostname}: {str(e)}"
                 )
-                raise DeviceConnectionError(f"Authentication failed: {str(e)}")
+                raise DeviceConnectionError(f"Authentication failed: {str(e)}") from e
 
             except NetmikoTimeoutException as e:
-                last_error = e
                 logger.warning(
                     f"Connection timeout for {self.config.hostname}: {str(e)}"
                 )
@@ -288,21 +286,21 @@ class NetmikoConnector(BaseDeviceConnector):
                 if attempt >= max_retries:
                     raise DeviceConnectionError(
                         f"Connection timeout after {max_retries + 1} attempts: {str(e)}"
-                    )
+                    ) from e
 
             except NetmikoBaseException as e:
-                last_error = e
                 logger.warning(f"Netmiko error for {self.config.hostname}: {str(e)}")
 
                 if attempt >= max_retries:
-                    raise DeviceConnectionError(f"Netmiko connection failed: {str(e)}")
+                    raise DeviceConnectionError(
+                        f"Netmiko connection failed: {str(e)}"
+                    ) from e
 
             except Exception as e:
-                last_error = e
                 logger.warning(f"Unexpected error for {self.config.hostname}: {str(e)}")
 
                 if attempt >= max_retries:
-                    raise DeviceConnectionError(f"Connection failed: {str(e)}")
+                    raise DeviceConnectionError(f"Connection failed: {str(e)}") from e
 
     def disconnect(self) -> None:
         """Close connection to the device."""
@@ -438,9 +436,6 @@ class NetmikoConnector(BaseDeviceConnector):
             parsed_data = None
             try:
                 # Import textfsm here to avoid dependency issues if not installed
-                import os
-
-                import textfsm
                 from ntc_templates.parse import parse_output
 
                 # Try to parse using ntc-templates (which is what Netmiko uses)
@@ -473,20 +468,17 @@ class NetmikoConnector(BaseDeviceConnector):
 
         except Exception as e:
             logger.error(f"Show command failed: {str(e)}")
-            raise CommandExecutionError(f"Show command failed: {str(e)}")
+            raise CommandExecutionError(f"Show command failed: {str(e)}") from e
 
     def _execute_config_command(self, command: str) -> str:
         """Execute a configuration command."""
         try:
-            if isinstance(command, str):
-                commands = [command]
-            else:
-                commands = command
+            commands = [command] if isinstance(command, str) else command
 
             return self._connection.send_config_set(commands)
         except Exception as e:
             logger.error(f"Config command failed: {str(e)}")
-            raise CommandExecutionError(f"Config command failed: {str(e)}")
+            raise CommandExecutionError(f"Config command failed: {str(e)}") from e
 
     # Note: The _attempt_parsing method has been removed as parsing is now handled
     # directly in _execute_show_command to avoid re-executing commands on the device

@@ -1,5 +1,7 @@
+from netbox.tables import NetBoxTable
+
 import django_tables2 as tables
-from netbox.tables import NetBoxTable, columns
+
 from .models import Command, CommandLog
 
 
@@ -17,6 +19,13 @@ class CommandTable(NetBoxTable):
 
 
 class CommandLogTable(NetBoxTable):
+    pk = tables.Column(
+        linkify=(
+            "plugins:netbox_toolkit_plugin:commandlog_view",
+            [tables.A("pk")],
+        ),
+        verbose_name="ID",
+    )
     command = tables.Column(
         linkify=(
             "plugins:netbox_toolkit_plugin:command_detail",

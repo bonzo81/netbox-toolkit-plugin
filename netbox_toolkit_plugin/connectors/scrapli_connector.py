@@ -216,7 +216,9 @@ class ScrapliConnector(BaseDeviceConnector):
             logger.error(
                 f"Pre-connection validation failed for {self.config.hostname}: {str(e)}"
             )
-            raise DeviceConnectionError(f"Pre-connection validation failed: {str(e)}")
+            raise DeviceConnectionError(
+                f"Pre-connection validation failed: {str(e)}"
+            ) from e
 
         # Use fast-fail mode for first attempt to quickly detect incompatible scenarios
         self._fast_fail_mode = True
@@ -289,7 +291,9 @@ class ScrapliConnector(BaseDeviceConnector):
                 ):
                     logger.info(f"Fast-fail pattern detected: {error_msg}")
                     logger.info("Triggering immediate fallback to Netmiko")
-                    raise DeviceConnectionError(f"Fast-fail to Netmiko: {error_msg}")
+                    raise DeviceConnectionError(
+                        f"Fast-fail to Netmiko: {error_msg}"
+                    ) from None
 
                 # Clean up failed connection attempt
                 if self._connection:
@@ -305,7 +309,7 @@ class ScrapliConnector(BaseDeviceConnector):
                     logger.error(
                         f"All connection attempts failed for {self.config.hostname}: {error_msg}"
                     )
-                    raise DeviceConnectionError(error_msg)
+                    raise DeviceConnectionError(error_msg) from e
 
     def disconnect(self) -> None:
         """Close connection to the device with proper socket cleanup."""

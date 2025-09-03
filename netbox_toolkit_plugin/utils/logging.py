@@ -1,6 +1,7 @@
 """Logging utilities for NetBox Toolkit plugin."""
 
 import logging
+
 from django.conf import settings
 
 

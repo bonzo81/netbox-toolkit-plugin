@@ -1,5 +1,6 @@
 from netbox.api.routers import NetBoxRouter
-from .views import CommandViewSet, CommandLogViewSet
+
+from .views import CommandLogViewSet, CommandViewSet
 
 app_name = "netbox_toolkit_plugin"
 

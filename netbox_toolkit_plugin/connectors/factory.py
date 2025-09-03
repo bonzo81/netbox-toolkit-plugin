@@ -141,7 +141,9 @@ class ConnectorFactory:
                 )
                 return cls._create_fallback_connector(config, device.name, error_msg)
             else:
-                raise DeviceConnectionError(f"Connector creation failed: {error_msg}")
+                raise DeviceConnectionError(
+                    f"Connector creation failed: {error_msg}"
+                ) from e
 
     @classmethod
     def _create_fallback_connector(
@@ -165,7 +167,7 @@ class ConnectorFactory:
             raise DeviceConnectionError(
                 f"Both connectors failed. Primary error: {primary_error}. "
                 f"Fallback error: {str(fallback_error)}"
-            )
+            ) from fallback_error
 
     @classmethod
     def _prepare_connector_config(
@@ -327,7 +329,7 @@ class ConnectorFactory:
             return True
 
         # Check partial matches
-        for supported_platform in cls.CONNECTOR_MAP.keys():
+        for supported_platform in cls.CONNECTOR_MAP:
             if (
                 platform_lower in supported_platform
                 or supported_platform in platform_lower
@@ -335,14 +337,12 @@ class ConnectorFactory:
                 return True
 
         # Check if either connector supports it
-        if platform_lower in [
-            p.lower() for p in ScrapliConnector.get_supported_platforms()
-        ] or platform_lower in [
-            p.lower() for p in NetmikoConnector.get_supported_platforms()
-        ]:
-            return True
-
-        return False
+        return bool(
+            platform_lower
+            in [p.lower() for p in ScrapliConnector.get_supported_platforms()]
+            or platform_lower
+            in [p.lower() for p in NetmikoConnector.get_supported_platforms()]
+        )
 
     @classmethod
     def get_recommended_connector(cls, platform: str | None) -> str:
