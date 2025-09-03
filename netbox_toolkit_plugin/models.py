@@ -1,7 +1,6 @@
 from django.db import models
-from django.core.exceptions import ValidationError
+
 from netbox.models import NetBoxModel
-from dcim.models import Device
 
 
 class Command(NetBoxModel):
@@ -55,25 +54,11 @@ class CommandLog(NetBoxModel):
     username = models.CharField(max_length=100)
     execution_time = models.DateTimeField(auto_now_add=True)
 
-    # Execution details added in migration
+    # Execution details
     success = models.BooleanField(default=True)
     error_message = models.TextField(blank=True)
     execution_duration = models.FloatField(
         blank=True, null=True, help_text="Command execution time in seconds"
-    )
-
-    # Parsing details for TextFSM
-    parsed_data = models.JSONField(
-        blank=True, null=True, help_text="Parsed structured data from command output"
-    )
-    parsing_success = models.BooleanField(
-        default=False, help_text="Whether the output was successfully parsed"
-    )
-    parsing_template = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text="Name of the TextFSM template used for parsing",
     )
 
     def __str__(self):

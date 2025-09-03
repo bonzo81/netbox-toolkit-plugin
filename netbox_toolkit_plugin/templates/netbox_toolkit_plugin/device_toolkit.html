@@ -15,8 +15,8 @@
             <div class="card-header">
                 <h3 class="card-title">Connection Info</h3>
                 <div class="card-actions">
-                    <button class="btn btn-icon" type="button" data-bs-toggle="collapse" 
-                            data-bs-target="#connectionInfoCollapse" aria-expanded="true" 
+                    <button class="btn btn-icon" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#connectionInfoCollapse" aria-expanded="true"
                             aria-controls="connectionInfoCollapse">
                         <i class="mdi mdi-chevron-up collapse-icon"></i>
                     </button>
@@ -77,15 +77,15 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Rate Limiting Status -->
         {% if rate_limit_status.enabled %}
         <div class="card mt-3">
             <div class="card-header">
                 <h3 class="card-title">Rate Limiting</h3>
                 <div class="card-actions">
-                    <button class="btn btn-icon" type="button" data-bs-toggle="collapse" 
-                            data-bs-target="#rateLimitCollapse" aria-expanded="true" 
+                    <button class="btn btn-icon" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#rateLimitCollapse" aria-expanded="true"
                             aria-controls="rateLimitCollapse">
                         <i class="mdi mdi-chevron-up collapse-icon"></i>
                     </button>
@@ -132,7 +132,7 @@
                                 {{ rate_limit_status.message }}
                             </small>
                         </div>
-                        
+
                         {% if rate_limit_status.is_exceeded %}
                         <div class="alert alert-danger mt-3 mb-0">
                             <i class="mdi mdi-block-helper me-2"></i>
@@ -151,7 +151,7 @@
             </div>
         </div>
         {% endif %}
-        
+
         <!-- Commands List -->
         <div class="card flex-grow-1">
             <div class="card-header">
@@ -169,27 +169,27 @@
                 {% if commands %}
                     <div class="list-group list-group-flush">
                         {% for command in commands %}
-                        <div class="list-group-item list-group-item-action command-item" 
-                             data-command-id="{{ command.id }}" data-command-name="{{ command.name }}" 
+                        <div class="list-group-item list-group-item-action command-item"
+                             data-command-id="{{ command.id }}" data-command-name="{{ command.name }}"
                              title="{{ command.description }}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
                                     {% if command.command_type == 'config' %}
-                                        <i class="mdi mdi-alert-outline text-danger me-2 opacity-75" 
+                                        <i class="mdi mdi-alert-outline text-danger me-2 opacity-75"
                                            style="font-size: 1.25rem;"
                                            title="Configuration command - use with caution"></i>
                                     {% endif %}
-                                    <a href="{% url 'plugins:netbox_toolkit_plugin:command_detail' pk=command.pk %}" 
+                                    <a href="{% url 'plugins:netbox_toolkit_plugin:command_detail' pk=command.pk %}"
                                        class="text-decoration-none text-body">
                                         {{ command.name }}
                                     </a>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <!-- Run button (hidden by default, shown on hover) -->
-                                    <button type="button" 
-                                            class="btn btn-sm btn-success command-run-btn" 
+                                    <button type="button"
+                                            class="btn btn-sm btn-success command-run-btn"
                                             title="Execute command"
-                                            data-command-id="{{ command.id }}" 
+                                            data-command-id="{{ command.id }}"
                                             data-command-name="{{ command.name }}">
                                         <i class="mdi mdi-play me-1"></i>Run
                                     </button>
@@ -218,7 +218,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <!-- Recent Command History -->
         <div class="card mt-3">
             <div class="card-header">
@@ -252,7 +252,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Right Column with Output -->
     <div class="col-md-9">
         <div class="card h-100">
@@ -260,8 +260,8 @@
                 <h3 class="card-title">Command Output</h3>
                 {% if executed_command %}
                 <div class="card-actions">
-                    <a href="{% url 'plugins:netbox_toolkit_plugin:command_detail' pk=executed_command.pk %}" 
-                       class="text-decoration-none text-muted" 
+                    <a href="{% url 'plugins:netbox_toolkit_plugin:command_detail' pk=executed_command.pk %}"
+                       class="text-decoration-none text-muted"
                        title="View command details">
                         {{ executed_command.name }}
                         <i class="mdi mdi-open-in-new ms-1" style="font-size: 0.8rem;"></i>
@@ -283,14 +283,14 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            
+
                             <!-- Tabbed output interface -->
                             <div class="card">
                                 <div class="card-header">
                                     <ul class="nav nav-tabs nav-fill" id="outputTabs" role="tablist">
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="raw-output-tab" data-bs-toggle="tab" 
-                                                    data-bs-target="#raw-output" type="button" role="tab" 
+                                            <button class="nav-link active" id="raw-output-tab" data-bs-toggle="tab"
+                                                    data-bs-target="#raw-output" type="button" role="tab"
                                                     aria-controls="raw-output" aria-selected="true">
                                                 <i class="mdi mdi-console me-1"></i>
                                                 Raw Output
@@ -298,8 +298,8 @@
                                         </li>
                                         {% if parsed_data %}
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="parsed-data-tab" data-bs-toggle="tab" 
-                                                    data-bs-target="#parsed-data" type="button" role="tab" 
+                                            <button class="nav-link" id="parsed-data-tab" data-bs-toggle="tab"
+                                                    data-bs-target="#parsed-data" type="button" role="tab"
                                                     aria-controls="parsed-data" aria-selected="false">
                                                 <i class="mdi mdi-table me-1"></i>
                                                 Parsed Data
@@ -311,12 +311,12 @@
                                 <div class="card-body p-0">
                                     <div class="tab-content" id="outputTabContent">
                                         <!-- Raw Output Tab -->
-                                        <div class="tab-pane fade show active" id="raw-output" role="tabpanel" 
+                                        <div class="tab-pane fade show active" id="raw-output" role="tabpanel"
                                              aria-labelledby="raw-output-tab">
                                             <div class="d-flex justify-content-between align-items-start py-3 px-3 border-bottom">
                                                 <h6 class="mb-0 mt-1">Command Output</h6>
                                                 <div class="btn-list">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary copy-output-btn" 
+                                                    <button type="button" class="btn btn-sm btn-outline-primary copy-output-btn"
                                                             title="Copy raw output to clipboard">
                                                         <i class="mdi mdi-content-copy me-1"></i>Copy
                                                     </button>
@@ -325,10 +325,10 @@
                                                 <pre class="command-output bg-surface p-3 rounded font-monospace">{{ command_output }}</pre>
                             </div>
                                         </div>
-                                        
+
                                         <!-- Parsed Data Tab -->
                                         {% if parsed_data %}
-                                        <div class="tab-pane fade" id="parsed-data" role="tabpanel" 
+                                        <div class="tab-pane fade" id="parsed-data" role="tabpanel"
                                              aria-labelledby="parsed-data-tab">
                                             <div class="d-flex justify-content-between align-items-start py-3 px-3 border-bottom">
                                                 <div class="mt-1">
@@ -340,9 +340,13 @@
                                                 {% if parsed_data|length > 0 %}
                                                 {{ parsed_data|json_script:"parsed-data-json" }}
                                                 <div class="btn-list">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary copy-parsed-btn" 
+                                                    <button type="button" class="btn btn-sm btn-outline-primary copy-parsed-btn"
                                                             title="Copy parsed data as JSON">
                                                         <i class="mdi mdi-content-copy me-1"></i>Copy JSON
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-info download-csv-btn"
+                                                            title="Download parsed data as CSV">
+                                                        <i class="mdi mdi-file-table me-1"></i>Download CSV
                                                     </button>
                                                 </div>
                                                 {% endif %}
@@ -355,7 +359,7 @@
                                                             <table class="table table-sm table-striped mb-0">
                                                                 <thead>
                                                                     <tr>
-                                                                        {% for key in parsed_data.0.keys %}
+                                                                        {% for key, value in parsed_data.0.items %}
                                                                             <th>{{ key|title }}</th>
                                                                         {% endfor %}
                                                                     </tr>
@@ -363,7 +367,7 @@
                                                                 <tbody>
                                                                     {% for row in parsed_data %}
                                                                         <tr>
-                                                                            {% for value in row.values %}
+                                                                            {% for key, value in row.items %}
                                                                                 <td>{{ value }}</td>
                                                                             {% endfor %}
                                                                         </tr>
@@ -468,7 +472,7 @@
                         Enter your credentials to execute: <strong id="commandToExecute"></strong>
                     </p>
                 </div>
-                
+
                 <!-- Rate Limiting Information in Modal -->
                 {% if rate_limit_status.enabled and not rate_limit_status.bypassed %}
                 <div class="alert {% if rate_limit_status.is_exceeded %}alert-danger{% elif rate_limit_status.is_warning %}alert-warning{% else %}alert-info{% endif %} mb-3">
@@ -476,7 +480,7 @@
                         <i class="mdi {% if rate_limit_status.is_exceeded %}mdi-block-helper{% elif rate_limit_status.is_warning %}mdi-alert-outline{% else %}mdi-information-outline{% endif %} me-2 mt-1"></i>
                         <div>
                             <small>
-                                <strong>Rate Limiting:</strong> {{ rate_limit_status.remaining }} commands remaining 
+                                <strong>Rate Limiting:</strong> {{ rate_limit_status.remaining }} commands remaining
                                 ({{ rate_limit_status.current_count }}/{{ rate_limit_status.limit }} successful commands used)
                                 {% if rate_limit_status.is_exceeded %}
                                 <br><span class="text-danger">Error: Rate limit exceeded! Commands are blocked.</span>
@@ -488,7 +492,7 @@
                     </div>
                 </div>
                 {% endif %}
-                
+
                 <form id="modalCredentialsForm">
                     <div class="mb-3">
                         <label for="modalUsername" class="form-label">Username</label>

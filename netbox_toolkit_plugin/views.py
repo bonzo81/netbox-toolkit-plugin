@@ -1,18 +1,18 @@
-from django.shortcuts import render
-from django.views.generic import View
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.shortcuts import render
+
 from dcim.models import Device
-from .models import Command, CommandLog
-from .forms import CommandForm, CommandLogForm, CommandExecutionForm
 from netbox.views.generic import (
-    ObjectView,
-    ObjectListView,
-    ObjectEditView,
-    ObjectDeleteView,
     ObjectChangeLogView,
+    ObjectDeleteView,
+    ObjectEditView,
+    ObjectListView,
+    ObjectView,
 )
 from utilities.views import ViewTab, register_model_view
+
+from .forms import CommandExecutionForm, CommandForm
+from .models import Command, CommandLog
 from .services.command_service import CommandExecutionService
 from .services.device_service import DeviceService
 from .services.rate_limiting_service import RateLimitingService
@@ -81,6 +81,7 @@ class DeviceToolkitView(ObjectView):
     def _user_has_action_permission(self, user, obj, action):
         """Check if user has permission for a specific action on an object using NetBox's ObjectPermission system"""
         from django.contrib.contenttypes.models import ContentType
+
         from users.models import ObjectPermission
 
         # Get content type for the object
@@ -128,12 +129,24 @@ class DeviceToolkitView(ObjectView):
                 # Check for 'execute_show' action permission
                 if self._user_has_action_permission(user, command, "execute_show"):
                     commands.append(command)
-            elif command.command_type == "config":
+            elif command.command_type == "config" and self._user_has_action_permission(
+                user, command, "execute_config"
+            ):
                 # Check for 'execute_config' action permission
-                if self._user_has_action_permission(user, command, "execute_config"):
-                    commands.append(command)
+                commands.append(command)
 
         return commands
+
+    def _order_parsed_data(self, parsed_data):
+        """
+        Return parsed data preserving original TextFSM template field order.
+
+        For live parsing results, we preserve the original order from TextFSM
+        since it represents the logical field sequence defined in the template.
+        """
+        # For live parsing, the original order from TextFSM should be preserved
+        # No reordering needed as the data comes directly from TextFSM parsing
+        return parsed_data
 
     def post(self, request, pk):
         self.kwargs = {"pk": pk}  # Set kwargs for get_object
@@ -156,14 +169,13 @@ class DeviceToolkitView(ObjectView):
                     "You don't have permission to execute configuration commands.",
                 )
                 return self.get(request, pk)
-        elif command.command_type == "show":
-            if not self._user_has_action_permission(
-                request.user, command, "execute_show"
-            ):
-                messages.error(
-                    request, "You don't have permission to execute show commands."
-                )
-                return self.get(request, pk)
+        elif command.command_type == "show" and not self._user_has_action_permission(
+            request.user, command, "execute_show"
+        ):
+            messages.error(
+                request, "You don't have permission to execute show commands."
+            )
+            return self.get(request, pk)
 
         # Create a form with the POST data
         form_data = {
@@ -263,7 +275,7 @@ class DeviceToolkitView(ObjectView):
                     "has_syntax_error": result.has_syntax_error,
                     "syntax_error_type": result.syntax_error_type,
                     "syntax_error_vendor": result.syntax_error_vendor,
-                    "parsed_data": result.parsed_output,
+                    "parsed_data": self._order_parsed_data(result.parsed_output),
                     "parsing_success": result.parsing_success,
                     "parsing_template": result.parsing_method,
                     "device_valid": is_valid,
@@ -387,6 +399,7 @@ class CommandView(ObjectView):
     def _user_has_action_permission(self, user, obj, action):
         """Check if user has permission for a specific action on an object using NetBox's ObjectPermission system"""
         from django.contrib.contenttypes.models import ContentType
+
         from users.models import ObjectPermission
 
         # Get content type for the object
@@ -463,5 +476,21 @@ class CommandLogView(ObjectView):
     template_name = "netbox_toolkit_plugin/commandlog.html"
 
 
-class CommandLogChangeLogView(ObjectChangeLogView):
+class CommandLogEditView(ObjectEditView):
+    queryset = CommandLog.objects.all()
+    form = None  # No form since we don't want manual editing
+    template_name = "netbox_toolkit_plugin/commandlog_edit.html"
+
+    def get(self, request, *args, **kwargs):
+        # Redirect to the detail view since we don't allow editing
+        from django.shortcuts import redirect
+
+        if "pk" in kwargs:
+            return redirect(
+                "plugins:netbox_toolkit_plugin:commandlog_view", pk=kwargs["pk"]
+            )
+        return redirect("plugins:netbox_toolkit_plugin:commandlog_list")
+
+
+class CommandLogDeleteView(ObjectDeleteView):
     queryset = CommandLog.objects.all()

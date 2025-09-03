@@ -1,6 +1,8 @@
-from rest_framework import serializers
+from dcim.api.serializers import DeviceSerializer, PlatformSerializer
 from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializer
-from dcim.api.serializers import PlatformSerializer, DeviceSerializer
+
+from rest_framework import serializers
+
 from ..models import Command, CommandLog
 
 
@@ -44,8 +46,8 @@ class CommandExecutionSerializer(serializers.Serializer):
                     "Device must have a primary IP address for command execution"
                 )
             return value
-        except Device.DoesNotExist:
-            raise serializers.ValidationError("Device not found")
+        except Device.DoesNotExist as e:
+            raise serializers.ValidationError("Device not found") from e
 
     def validate(self, data):
         """Cross-field validation and object retrieval"""
@@ -130,9 +132,6 @@ class CommandLogSerializer(NetBoxModelSerializer):
             "success",
             "error_message",
             "execution_duration",
-            "parsed_data",
-            "parsing_success",
-            "parsing_template",
             "created",
             "last_updated",
         )
@@ -176,8 +175,8 @@ class BulkCommandExecutionSerializer(serializers.Serializer):
         try:
             Command.objects.get(id=value)
             return value
-        except Command.DoesNotExist:
-            raise serializers.ValidationError("Command not found")
+        except Command.DoesNotExist as e:
+            raise serializers.ValidationError("Command not found") from e
 
     def validate_device_id(self, value):
         """Validate that the device exists"""
@@ -190,5 +189,5 @@ class BulkCommandExecutionSerializer(serializers.Serializer):
                     "Device must have a platform assigned"
                 )
             return value
-        except Device.DoesNotExist:
-            raise serializers.ValidationError("Device not found")
+        except Device.DoesNotExist as e:
+            raise serializers.ValidationError("Device not found") from e

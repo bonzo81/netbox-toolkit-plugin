@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
-from django.utils import timezone
+from datetime import timedelta
+
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.utils import timezone
+
 from ..models import CommandLog
 
 
