@@ -1,7 +1,13 @@
 # see: https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 name: Publish Python 🐍 distribution 📦 to PyPI
 
-on: push
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build:
@@ -44,6 +50,19 @@ jobs:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for tag checking
+    - name: Check if tag is from main branch
+      run: |
+        # Check if the tag is reachable from main branch
+        git fetch origin main
+        if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+          echo "Tag is not from main branch. Skipping PyPI publish."
+          exit 1
+        fi
+        echo "Tag is from main branch. Proceeding with PyPI publish."
     - name: Download all the dists
       uses: actions/download-artifact@v4
       with:
