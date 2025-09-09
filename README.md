@@ -46,7 +46,7 @@ A NetBox plugin that allows you to run commands on network devices directly from
 
 ## Contributing
 
-**🚀 Want to Contribute?** Start with the [Contributor Guide](./docs/contributing.md) for a fast overview of the codebase.
+**🚀 Want to Contribute?** Start with the [Contributor Guide](./docs/development/contributing.md) for a fast overview of the codebase.
 
 
 ## Future ideas:
