@@ -1,10 +1,9 @@
 # NetBox Command Toolkit Plugin
 
-> ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️  
+> ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️
 > This plugin is in very early development and not recommended for production use. There will be bugs and possible incomplete functionality. Use at your own risk! If you do, give some feedback in [Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
 
-A NetBox plugin that allows you to run commands on network devices directly from the device page. 
-
+A NetBox plugin that allows you to run commands on network devices directly from the device page.
 
 
 ### 📋 Feature Overview
@@ -35,7 +34,7 @@ A NetBox plugin that allows you to run commands on network devices directly from
 - [📦 Installation](./docs/user/installation.md) - Install the plugin in your NetBox environment
 - [⚙️ Configuration](./docs/user/configuration.md) - Configure plugin settings and options
 
-#### 📋 Command Management  
+#### 📋 Command Management
 - [📋 Command Creation](./docs/user/command-creation.md) - Create platform-specific commands
 - [🔐 Permissions Setup](./docs/user/permissions-setup-guide.md) - Configure granular access control
 - [📝 Permission Examples](./docs/user/permission-examples.md) - Example permission configuration
@@ -43,6 +42,9 @@ A NetBox plugin that allows you to run commands on network devices directly from
 #### 🔧 Troubleshooting
 - [🐛 Debug Logging](./docs/user/debug-logging.md) - Enable detailed logging for debugging
 
+## Demo
+
+![Plugin Demo](docs/img/demo1.gif)
 
 ## Contributing
 

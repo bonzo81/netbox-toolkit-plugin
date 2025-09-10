@@ -197,6 +197,7 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
 
         /**
          * Handle downloading parsed data as CSV
+         * Uses data URLs instead of blob URLs to avoid COOP issues in non-HTTPS environments
          */
         handleDownloadCSV: function (event) {
             const btn = event.target.closest('.download-csv-btn');
@@ -232,12 +233,30 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 const csvContent = this.convertToCSV(parsedData);
 
                 // Create and trigger download
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
 
                 if (link.download !== undefined) { // Feature detection
-                    const url = URL.createObjectURL(blob);
-                    link.setAttribute('href', url);
+                    // For smaller files, use data URL to avoid COOP issues in non-HTTPS environments
+                    // For larger files, fall back to blob URL which is more efficient
+                    const maxDataUrlSize = 1024 * 1024; // 1MB limit for data URLs
+
+                    if (csvContent.length < maxDataUrlSize) {
+                        // Use data URL for smaller files (avoids COOP issues)
+                        const encodedCSV = encodeURIComponent(csvContent);
+                        const dataUrl = 'data:text/csv;charset=utf-8,' + encodedCSV;
+                        link.setAttribute('href', dataUrl);
+                    } else {
+                        // Use blob URL for larger files (more efficient but may trigger COOP in non-HTTPS)
+                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        link.setAttribute('href', url);
+
+                        // Clean up blob URL after download
+                        link.addEventListener('click', function () {
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                    }
+
                     link.setAttribute('download', 'parsed_data.csv');
                     link.style.visibility = 'hidden';
                     document.body.appendChild(link);
