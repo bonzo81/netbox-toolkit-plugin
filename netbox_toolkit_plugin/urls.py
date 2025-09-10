@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 app_name = "netbox_toolkit_plugin"
@@ -23,11 +24,17 @@ urlpatterns = [
     ),
     # Command Log views
     path("logs/", views.CommandLogListView.as_view(), name="commandlog_list"),
+    path("logs/add/", views.CommandLogEditView.as_view(), name="commandlog_add"),
     path("logs/<int:pk>/", views.CommandLogView.as_view(), name="commandlog_view"),
     path(
-        "logs/<int:pk>/changelog/",
-        views.CommandLogChangeLogView.as_view(),
-        name="commandlog_changelog",
+        "logs/<int:pk>/edit/",
+        views.CommandLogEditView.as_view(),
+        name="commandlog_edit",
+    ),
+    path(
+        "logs/<int:pk>/delete/",
+        views.CommandLogDeleteView.as_view(),
+        name="commandlog_delete",
     ),
     # Device toolkit view
     path(

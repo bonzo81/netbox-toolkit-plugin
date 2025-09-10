@@ -1,10 +1,11 @@
 """
 Import all viewsets for easier access
 """
-from .commands import CommandViewSet
+
 from .command_logs import CommandLogViewSet
+from .commands import CommandViewSet
 
 __all__ = [
-    'CommandViewSet',
-    'CommandLogViewSet',
+    "CommandViewSet",
+    "CommandLogViewSet",
 ]

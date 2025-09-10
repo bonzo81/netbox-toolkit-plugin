@@ -24,7 +24,7 @@ class CommandExecutionService:
 
     def execute_command_with_retry(
         self,
-        command: "PredefinedCommand",
+        command: "Command",
         device: Any,
         username: str,
         password: str,
@@ -231,7 +231,7 @@ class CommandExecutionService:
             success = False
             error_message = result.error_message or ""
 
-        # Create log entry with execution details
+        # Create log entry with execution details (raw output only)
         command_log = CommandLog.objects.create(
             command=command,
             device=device,
@@ -240,9 +240,6 @@ class CommandExecutionService:
             success=success,
             error_message=error_message,
             execution_duration=result.execution_time,
-            parsed_data=result.parsed_output,
-            parsing_success=result.parsing_success,
-            parsing_template=result.parsing_method,
         )
 
         if result.has_syntax_error:
