@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 0.1.3 (2025-10-09)
+* Simplify type hints in connectors
+* Add permissions to navigation menu items
+* Enhance netbox stop and status commands
+* Add CSV download functionality and refactor codebase
+
+
 ## 0.1.2 (2025-09-1)
 
 * Add Dev container setup for local or codespace container development
