@@ -1,7 +1,7 @@
 from netbox.plugins import PluginConfig
 
 __author__ = "Andy Norwood"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 class ToolkitPluginConfig(PluginConfig):
