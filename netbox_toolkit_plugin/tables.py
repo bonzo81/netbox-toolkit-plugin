@@ -9,13 +9,21 @@ class CommandTable(NetBoxTable):
     name = tables.Column(
         linkify=("plugins:netbox_toolkit_plugin:command_detail", [tables.A("pk")])
     )
-    platform = tables.Column(linkify=True)
+    platforms = tables.TemplateColumn(
+        template_code="""
+        {% for platform in record.platforms.all %}
+            <a href="{{ platform.get_absolute_url }}">{{ platform }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+        """,
+        verbose_name="Platforms",
+        orderable=False,
+    )
     command_type = tables.Column()
 
     class Meta(NetBoxTable.Meta):
         model = Command
-        fields = ("pk", "id", "name", "platform", "command_type", "description")
-        default_columns = ("pk", "name", "platform", "command_type", "description")
+        fields = ("pk", "id", "name", "platforms", "command_type", "description")
+        default_columns = ("pk", "name", "platforms", "command_type", "description")
 
 
 class CommandLogTable(NetBoxTable):

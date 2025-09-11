@@ -9,12 +9,12 @@ from .models import Command, CommandLog
 class CommandFilterSet(NetBoxModelFilterSet):
     """Enhanced filtering for commands"""
 
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platforms = django_filters.ModelMultipleChoiceFilter(
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
+        label="Platforms",
     )
     platform_slug = django_filters.CharFilter(
-        field_name="platform__slug", lookup_expr="icontains", label="Platform slug"
+        field_name="platforms__slug", lookup_expr="icontains", label="Platform slug"
     )
     command_type = django_filters.ChoiceFilter(
         choices=[("show", "Show Command"), ("config", "Configuration Command")]
@@ -34,7 +34,7 @@ class CommandFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = Command
-        fields = ("name", "platform", "command_type", "description")
+        fields = ("name", "platforms", "command_type", "description")
 
 
 class CommandLogFilterSet(NetBoxModelFilterSet):

@@ -8,12 +8,11 @@ class Command(NetBoxModel):
     command = models.TextField()
     description = models.TextField(blank=True)
 
-    # Platform-based association (required)
-    platform = models.ForeignKey(
+    # Platform-based association (supports multiple platforms)
+    platforms = models.ManyToManyField(
         to="dcim.Platform",
-        on_delete=models.CASCADE,
         related_name="toolkit_commands",
-        help_text="Platform this command is designed for (e.g., cisco_ios, cisco_nxos, generic)",
+        help_text="Platforms this command is designed for (e.g., cisco_ios, cisco_nxos, generic)",
     )
 
     # Command categorization
@@ -28,11 +27,33 @@ class Command(NetBoxModel):
     )
 
     class Meta:
-        ordering = ["platform", "name"]
-        unique_together = [["platform", "name"]]
+        ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} ({self.platform})"
+        try:
+            # Safely get platform names, avoiding recursion during deletion
+            if hasattr(self, "_state") and self._state.adding:
+                # Object is being created, platforms not yet available
+                return self.name
+
+            platform_names = []
+            try:
+                platforms = self.platforms.all()[:3]
+                platform_names = [str(p) for p in platforms]
+
+                if self.platforms.count() > 3:
+                    platform_names.append(f"+{self.platforms.count() - 3} more")
+            except Exception:
+                # If there's any issue accessing platforms, just return the name
+                return self.name
+
+            if platform_names:
+                return f"{self.name} ({', '.join(platform_names)})"
+            else:
+                return f"{self.name}"
+        except Exception:
+            # Fallback to just the name if anything goes wrong
+            return getattr(self, "name", "Command")
 
     def get_absolute_url(self):
         """Return the URL for this object"""

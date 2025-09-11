@@ -2,20 +2,21 @@ from django import forms
 
 from dcim.models import Platform
 from netbox.forms import NetBoxModelForm
-from utilities.forms.fields import DynamicModelChoiceField
+from utilities.forms.fields import DynamicModelMultipleChoiceField
 
 from .models import Command, CommandLog
 
 
 class CommandForm(NetBoxModelForm):
-    platform = DynamicModelChoiceField(
+    platforms = DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(),
-        help_text="Platform this command is designed for (e.g., cisco_ios, cisco_nxos, generic)",
+        help_text="Platforms this command is designed for (e.g., cisco_ios, cisco_nxos, generic)",
+        required=True,
     )
 
     class Meta:
         model = Command
-        fields = ("name", "command", "description", "platform", "command_type", "tags")
+        fields = ("name", "command", "description", "platforms", "command_type", "tags")
 
 
 class CommandLogForm(NetBoxModelForm):

@@ -10,7 +10,7 @@ class CommandIndex(SearchIndex):
         ("command", 200),
         ("description", 500),
     )
-    display_attrs = ("platform", "command_type", "description")
+    display_attrs = ("platforms", "command_type", "description")
 
 
 class CommandLogIndex(SearchIndex):

@@ -90,7 +90,7 @@ class CommandSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name="plugins-api:netbox_toolkit_plugin-api:command-detail"
     )
-    platform = PlatformSerializer(nested=True)
+    platforms = PlatformSerializer(nested=True, many=True)
 
     class Meta:
         model = Command
@@ -101,14 +101,14 @@ class CommandSerializer(NetBoxModelSerializer):
             "name",
             "command",
             "description",
-            "platform",
+            "platforms",
             "command_type",
             "tags",
             "custom_fields",
             "created",
             "last_updated",
         )
-        brief_fields = ("id", "url", "display", "name", "command_type", "platform")
+        brief_fields = ("id", "url", "display", "name", "command_type", "platforms")
 
 
 class CommandLogSerializer(NetBoxModelSerializer):

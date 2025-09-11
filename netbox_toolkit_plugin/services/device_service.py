@@ -22,7 +22,8 @@ class DeviceService:
         if not device.platform:
             return []
 
-        commands = Command.objects.filter(platform=device.platform)
+        # Filter commands that include the device's platform in their platforms field
+        commands = Command.objects.filter(platforms=device.platform)
 
         return list(commands)
 
