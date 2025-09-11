@@ -92,6 +92,26 @@ class CommandExecutionService:
                     "Command execution attempt %d failed: %s", attempt + 1, error_msg
                 )
 
+                # Check for authentication errors and fail fast with clear message
+                if "Authentication failed" in error_msg or "authentication failed" in error_msg.lower():
+                    logger.error(
+                        "Authentication failure detected for device %s: %s",
+                        device.name, error_msg
+                    )
+                    # Create a failed result with authentication error details
+                    auth_failed_result = CommandResult(
+                        command=command.command,
+                        output="",
+                        success=False,
+                        error_message=f"Authentication failed: {error_msg}"
+                    )
+                    self._log_command_execution(
+                        command, device, auth_failed_result, username
+                    )
+                    # Return the failed result instead of raising an exception
+                    # This allows the web interface to handle it gracefully
+                    return auth_failed_result
+
                 # Check for fast-fail scenario and automatically retry with Netmiko
                 if (
                     "Fast-fail to Netmiko" in error_msg
@@ -154,11 +174,12 @@ class CommandExecutionService:
             command=command.command,
             output="",
             success=False,
-            error_message=str(last_error),
+            error_message=str(last_error) if last_error else "Unknown error",
         )
 
-        # Add detailed error information
-        error_result = self._enhance_error_result(error_result, last_error, device)
+        # Add detailed error information if we have an error
+        if last_error:
+            error_result = self._enhance_error_result(error_result, last_error, device)
 
         # Log the failed execution
         self._log_command_execution(command, device, error_result, username)

@@ -244,9 +244,16 @@ class DeviceToolkitView(ObjectView):
                     f"Command '{command.name}' executed but syntax error detected: {result.syntax_error_type}",
                 )
             else:
-                messages.error(
-                    request, f"Command execution failed: {result.error_message}"
-                )
+                # For failures, show brief message in notification and details in output area
+                if result.error_message and "Authentication failed" in result.error_message:
+                    # Short notification for authentication errors
+                    messages.error(request, "Authentication failed. Check credentials and try again.")
+                elif result.error_message and any(pattern in result.error_message.lower() for pattern in ["connection", "timeout", "refused"]):
+                    # Short notification for connection errors
+                    messages.error(request, "Connection failed. Check device connectivity.")
+                else:
+                    # Generic error notification
+                    messages.error(request, f"Command '{command.name}' execution failed.")
 
             # Return a new empty form after execution
             empty_form = CommandExecutionForm()
@@ -260,6 +267,9 @@ class DeviceToolkitView(ObjectView):
                 device, request.user
             )
 
+            # Prepare output for display - use error message if output is empty
+            display_output = result.output if result.output else result.error_message
+
             return render(
                 request,
                 self.template_name,
@@ -268,7 +278,7 @@ class DeviceToolkitView(ObjectView):
                     "tab": self.tab,
                     "commands": commands,
                     "form": empty_form,  # Use an empty form for the next command
-                    "command_output": result.output,
+                    "command_output": display_output,
                     "executed_command": command,
                     "execution_success": overall_success,
                     "execution_time": result.execution_time,

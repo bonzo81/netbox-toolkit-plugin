@@ -285,6 +285,12 @@ class ScrapliConnector(BaseDeviceConnector):
                     f"Connection attempt {attempt + 1} failed for {self.config.hostname}: {error_msg}"
                 )
 
+                # Check for authentication failure first (before fast-fail patterns)
+                if self._is_authentication_error(error_msg):
+                    logger.error(f"Authentication failure detected for {self.config.hostname}")
+                    formatted_error = self._format_connection_error(e)
+                    raise DeviceConnectionError(formatted_error) from e
+
                 # Check for fast-fail patterns on first attempt
                 if attempt == 0 and ToolkitSettings.should_fast_fail_to_netmiko(
                     error_msg
@@ -560,12 +566,59 @@ class ScrapliConnector(BaseDeviceConnector):
                 "\n- A firewall or security device is intercepting the connection"
                 "\n- The SSH implementation on the device is non-standard or very old"
             )
-        elif "Authentication failed" in error_message:
+        elif self._is_authentication_error(error_message):
+            formatted_msg = f"Authentication failed for {self.config.hostname}: {error_message}"
             formatted_msg += (
-                "\n\nAuthentication failed. Please verify:"
+                "\n\nThis appears to be an authentication failure. Please verify:"
                 "\n- Username and password are correct"
-                "\n- The account is not locked"
-                "\n- The device allows the authentication method being used"
+                "\n- The account is not locked or disabled"
+                "\n- The device allows password authentication (not just key-based)"
+                "\n- Account permissions allow SSH access"
+                "\n- Maximum authentication attempts not exceeded"
             )
 
         return formatted_msg
+
+    def _is_authentication_error(self, error_message: str) -> bool:
+        """
+        Detect if an error message indicates authentication failure.
+        
+        Scrapli doesn't have specific authentication exceptions like Netmiko,
+        so we need to detect patterns in error messages that suggest auth failure.
+        """
+        error_lower = error_message.lower()
+        
+        # Common authentication failure patterns
+        auth_patterns = [
+            "password prompt seen more than once",
+            "authentication failed",
+            "auth failed",
+            "login failed",
+            "access denied",
+            "permission denied",
+            "authentication error",
+            "invalid password",
+            "invalid username",
+            "login incorrect",
+            "authentication timeout",
+            "too many authentication failures",
+            "authentication attempts exceeded",
+            # EOF patterns that often indicate auth failure
+            "encountered eof reading from transport",
+            "connection closed by peer",
+            "connection reset by peer",
+            # Patterns from SSH banner/auth sequence
+            "ssh handshake failed",
+            "ssh authentication failed",
+            "publickey authentication failed",
+            "password authentication failed",
+            "keyboard-interactive authentication failed"
+        ]
+        
+        # Check if any authentication pattern is found
+        for pattern in auth_patterns:
+            if pattern in error_lower:
+                logger.debug(f"Authentication error pattern detected: '{pattern}' in '{error_message}'")
+                return True
+                
+        return False

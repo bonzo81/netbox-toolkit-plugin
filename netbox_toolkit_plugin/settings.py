@@ -101,6 +101,20 @@ class ToolkitSettings:
         "Unable to connect to port 22",
         "Name or service not known",
         "Network is unreachable",
+        # Authentication failure patterns - these should fail fast to provide clear errors
+        "password prompt seen more than once",
+        "authentication failed",
+        "auth failed",
+        "login failed",
+        "access denied",
+        "permission denied",
+        "authentication error",
+        "invalid password",
+        "invalid username",
+        "login incorrect",
+        "authentication timeout",
+        "too many authentication failures",
+        "authentication attempts exceeded",
     ]
 
     # Platform mappings for better recognition
