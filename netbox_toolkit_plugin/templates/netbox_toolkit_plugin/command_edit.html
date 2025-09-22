@@ -1,5 +1,8 @@
 {% extends 'generic/object_edit.html' %}
 {% load helpers %}
+{% load static %}
+{% load form_helpers %}
+{% load toolkit_extras %}
 
 {% block title %}
   {% if object.pk %}
@@ -7,4 +10,81 @@
   {% else %}
     Add Command
   {% endif %}
+{% endblock %}
+
+{% block form %}
+  <!-- Render the main form using NetBox's standard form helpers -->
+  <div class="field-group mb-5">
+    {% render_form form %}
+  </div>
+
+  <!-- Variables Section - integrated with main form styling -->
+  {% if form.variable_formset %}
+    <div class="field-group mb-5">
+      <div class="row mb-3">
+        <div class="col-sm-3 text-lg-end">
+          <label class="col-form-label d-inline-block fw-bold">
+            Command Variables
+          </label>
+        </div>
+        <div class="col">
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            hx-get="{% url 'plugins:netbox_toolkit_plugin:command_add_variable' object.pk|default:0 %}"
+            hx-target="#variable-forms"
+            hx-swap="beforeend"
+            hx-vals='js:{"total_forms": document.querySelector("#id_variables-TOTAL_FORMS").value}'>
+            <i class="mdi mdi-plus"></i> Add Variable
+          </button>
+          <div class="form-text mt-1">Define variables that users can provide when executing this command.</div>
+        </div>
+      </div>
+
+      {{ form.variable_formset.management_form }}
+      <div id="variable-forms">
+        {% for variable_form in form.variable_formset %}
+          <div class="variable-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+            {% for field in variable_form.hidden_fields %}
+              {{ field }}
+            {% endfor %}
+            {% for field in variable_form.visible_fields %}
+              {% if field.name != 'DELETE' %}
+                {% render_field field %}
+              {% endif %}
+            {% endfor %}
+            <div class="row mb-3">
+              <div class="col-sm-3"></div>
+              <div class="col text-end">
+                {% if variable_form.DELETE %}{{ variable_form.DELETE }}{% endif %}
+                <button type="button" class="btn btn-outline-danger btn-sm delete-variable">
+                  <i class="mdi mdi-delete"></i> Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <div class="col">
+              <p class="text-muted">No variables defined. Click "Add Variable" to create one.</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block javascript %}
+<!-- Variable formset functionality is handled by centralized toolkit.js -->
+<script src="{% static 'netbox_toolkit_plugin/js/toolkit.js' %}"></script>
+{% endblock %}
+
+{% block extra_css %}
+{{ form.media.css }}
+{% endblock %}
+
+{% block extra_js %}
+{{ form.media.js }}
 {% endblock %}

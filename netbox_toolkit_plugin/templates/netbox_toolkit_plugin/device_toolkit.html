@@ -1,15 +1,40 @@
 {% extends 'dcim/device.html' %}
+{% load toolkit_extras %}
 {% load helpers %}
 {% load static %}
 
 {% block style %}
 <link href="{% static 'netbox_toolkit_plugin/css/toolkit.css' %}" rel="stylesheet">
+<style>
+    /* HTMX loading indicators */
+    .htmx-indicator {
+        display: none;
+    }
+    .htmx-request .htmx-indicator {
+        display: inline-block;
+    }
+    .htmx-request.htmx-indicator {
+        display: inline-block;
+    }
+    /* Variable fields container styling */
+    .variable-fields-container .variable-field {
+        background-color: var(--tblr-bg-surface-secondary);
+        border: 1px solid var(--tblr-border-color);
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .variable-fields-container .variable-field:last-child {
+        margin-bottom: 0;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- Left Column with Commands -->
-    <div class="col-md-3">
+<div class="container-fluid py-3">
+    <div class="row">
+        <!-- Left Column with Commands -->
+        <div class="col-lg-3 col-md-4">
         <!-- Device Connection Info -->
         <div class="card mb-3">
             <div class="card-header">
@@ -23,47 +48,45 @@
                 </div>
             </div>
             <div class="collapse show" id="connectionInfoCollapse">
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <tbody>
-                            <tr>
-                                <td class="align-middle border-0 fw-semibold text-muted" style="width: 40%; padding: 0.5rem 0;">Hostname / IP</td>
-                                <td class="align-middle border-0" style="width: 60%; padding: 0.5rem 0;">
-                                    <div class="font-monospace text-xs">
-                                        {% if connection_info.hostname %}
-                                            {{ connection_info.hostname }}
-                                        {% else %}
-                                            <span class="text-danger fst-italic">Missing</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="align-middle border-0 fw-semibold text-muted" style="width: 40%; padding: 0.5rem 0;">Platform</td>
-                                <td class="align-middle border-0" style="width: 60%; padding: 0.5rem 0;">
-                                    <div class="font-monospace text-xs">
-                                        {% if connection_info.platform %}
-                                            {{ connection_info.platform }}
-                                        {% else %}
-                                            <span class="text-danger fst-italic">Missing</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="align-middle border-0 fw-semibold text-muted" style="width: 40%; padding: 0.5rem 0;">Connection</td>
-                                <td class="align-middle border-0" style="width: 60%; padding: 0.5rem 0;">
-                                    <div class="font-monospace text-xs">
-                                        {% if device_valid %}
-                                            <span class="text-success">Ready</span>
-                                        {% else %}
-                                            <span class="text-danger">Not Ready</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card-body p-2">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0 py-1 border-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span class="fw-semibold text-muted" style="flex-shrink: 0; max-width: 60%;">Hostname / IP</span>
+                                <div class="font-monospace text-xs text-end" style="flex-shrink: 1; margin-left: 8px; max-width: 40%; overflow: hidden; white-space: nowrap;">
+                                    {% if connection_info.hostname %}
+                                        {{ connection_info.hostname }}
+                                    {% else %}
+                                        <span class="text-danger fst-italic">Missing</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 py-1 border-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span class="fw-semibold text-muted" style="flex-shrink: 0; max-width: 60%;">Platform</span>
+                                <div class="font-monospace text-xs text-end" style="flex-shrink: 1; margin-left: 8px; max-width: 40%; overflow: hidden; white-space: nowrap;">
+                                    {% if connection_info.platform %}
+                                        {{ connection_info.platform }}
+                                    {% else %}
+                                        <span class="text-danger fst-italic">Missing</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 py-1 border-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span class="fw-semibold text-muted" style="flex-shrink: 0; max-width: 60%;">Connection</span>
+                                <div class="font-monospace text-xs text-end" style="flex-shrink: 1; margin-left: 8px; max-width: 40%; overflow: hidden; white-space: nowrap;">
+                                    {% if device_valid %}
+                                        <span class="text-success">Ready</span>
+                                    {% else %}
+                                        <span class="text-danger">Not Ready</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="pt-3 border-top mt-2">
                         <small class="text-muted">
                             <i class="mdi mdi-information-outline me-1"></i>
@@ -92,61 +115,8 @@
                 </div>
             </div>
             <div class="collapse show" id="rateLimitCollapse">
-                <div class="card-body">
-                    {% if rate_limit_status.bypassed %}
-                        <div class="alert alert-info mb-3">
-                            <i class="mdi mdi-shield-check me-2"></i>
-                            <strong>Rate Limiting Bypassed</strong><br>
-                            <small>You have unlimited command execution privileges.</small>
-                        </div>
-                    {% else %}
-                        <table class="table table-sm">
-                            <tbody>
-                                <tr>
-                                    <td class="align-middle border-0 fw-semibold text-muted" style="width: 40%; padding: 0.5rem 0;">Commands Remaining</td>
-                                    <td class="align-middle border-0" style="width: 60%; padding: 0.5rem 0;">
-                                        <div class="font-monospace text-xs">
-                                            <span class="{% if rate_limit_status.is_exceeded %}text-danger{% elif rate_limit_status.is_warning %}text-warning{% else %}text-success{% endif %}">
-                                                {{ rate_limit_status.remaining }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle border-0 fw-semibold text-muted" style="width: 40%; padding: 0.5rem 0;">Successful Commands Used</td>
-                                    <td class="align-middle border-0" style="width: 60%; padding: 0.5rem 0;">
-                                        <div class="font-monospace text-xs">{{ rate_limit_status.current_count }} / {{ rate_limit_status.limit }}</div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle border-0 fw-semibold text-muted" style="width: 40%; padding: 0.5rem 0;">Time Window</td>
-                                    <td class="align-middle border-0" style="width: 60%; padding: 0.5rem 0;">
-                                        <div class="font-monospace text-xs">{{ rate_limit_status.time_window_minutes }} minutes</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div class="pt-3 border-top mt-2">
-                            <small class="text-muted">
-                                <i class="mdi mdi-clock-outline me-1"></i>
-                                {{ rate_limit_status.message }}
-                            </small>
-                        </div>
-
-                        {% if rate_limit_status.is_exceeded %}
-                        <div class="alert alert-danger mt-3 mb-0">
-                            <i class="mdi mdi-block-helper me-2"></i>
-                            <strong>Rate Limit Exceeded</strong><br>
-                            <small>Command execution is blocked. Wait for the time window to reset or contact an administrator.</small>
-                        </div>
-                        {% elif rate_limit_status.is_warning %}
-                        <div class="alert alert-warning mt-3 mb-0">
-                            <i class="mdi mdi-alert-outline me-2"></i>
-                            <strong>Rate Limit Warning</strong><br>
-                            <small>You are approaching the command execution limit. Commands will be blocked if the limit is exceeded.</small>
-                        </div>
-                        {% endif %}
-                    {% endif %}
+                <div class="card-body" id="rate-limit-card-content">
+                    {% include "netbox_toolkit_plugin/htmx/rate_limit_card.html" %}
                 </div>
             </div>
         </div>
@@ -156,15 +126,20 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Available Commands</h3>
-                {% if command_count is not None and total_command_count != command_count %}
-                    <div class="card-subtitle">
-                        <small class="text-muted">
-                            <i class="mdi mdi-information-outline"></i>
-                            Showing {{ command_count }} of {{ total_command_count }} based on your permissions
-                        </small>
-                    </div>
-                {% endif %}
             </div>
+            {% if commands %}
+            <div class="card-header border-top-0 pt-0">
+                <div class="input-icon">
+                    <input type="text"
+                           class="form-control form-control-sm"
+                           placeholder="Search commands..."
+                           id="command-search">
+                    <span class="input-icon-addon">
+                        <i class="mdi mdi-magnify"></i>
+                    </span>
+                </div>
+            </div>
+            {% endif %}
             <div class="card-body card-commands p-1">
                 {% if commands %}
                     <div class="list-group list-group-flush">
@@ -183,14 +158,23 @@
                                        class="text-decoration-none text-body">
                                         {{ command.name }}
                                     </a>
+                                    {% if command.variables.exists %}
+                                        <i class="mdi mdi-code-braces text-info ms-2"
+                                           style="font-size: 1rem;"
+                                           title="This command has variables that can be customized"
+                                           data-bs-toggle="tooltip"></i>
+                                    {% endif %}
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <!-- Run button (hidden by default, shown on hover) -->
                                     <button type="button"
-                                            class="btn btn-sm btn-success command-run-btn"
+                                            class="btn btn-sm {% if command.command_type == 'config' %}btn-warning{% else %}btn-success{% endif %} command-run-btn"
                                             title="Execute command"
                                             data-command-id="{{ command.id }}"
-                                            data-command-name="{{ command.name }}">
+                                            data-command-name="{{ command.name }}"
+                                            hx-get="{% url 'plugins:netbox_toolkit_plugin:device_execution_modal' pk=object.pk %}?command_id={{ command.id }}"
+                                            hx-target="#htmx-modal-container"
+                                            hx-swap="innerHTML">
                                         <i class="mdi mdi-play me-1"></i>Run
                                     </button>
                                 </div>
@@ -227,34 +211,14 @@
                     <small class="text-muted">Last 3</small>
                 </div>
             </div>
-            <div class="card-body p-2">
-                {% if object.command_logs.all %}
-                    <div class="list-group list-group-flush">
-                        {% for log in object.command_logs.all|dictsortreversed:"execution_time"|slice:":3" %}
-                        <div class="list-group-item px-0 py-1 border-0">
-                            <div class="d-flex flex-column">
-                                <div class="text-truncate" style="font-size: 0.85rem; line-height: 1.2;" title="{{ log.command }}">
-                                    <strong>{{ log.command|truncatechars:40 }}</strong>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <small class="text-muted text-truncate" style="flex-shrink: 1;">{{ log.username }}</small>
-                                    <small class="text-muted" style="flex-shrink: 0; margin-left: 8px;">{{ log.execution_time|timesince }} ago</small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted py-2">
-                        <small>No history available</small>
-                    </div>
-                {% endif %}
+            <div class="card-body p-2" id="recentHistoryContainer">
+                {% include "netbox_toolkit_plugin/htmx/recent_history.html" with recent_history=object.command_logs.all|dictsortreversed:"execution_time"|slice:":3" %}
             </div>
         </div>
     </div>
 
     <!-- Right Column with Output -->
-    <div class="col-md-9">
+    <div class="col-lg-9 col-md-8">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Command Output</h3>
@@ -271,270 +235,81 @@
             </div>
             <div class="card-body">
                 <div id="commandOutputContainer">
-                    {% if command_output %}
-                        {% if execution_success %}
-                            <!-- Successful command output -->
-                            <div class="alert alert-success d-flex align-items-start mb-3">
-                                <i class="mdi mdi-check-circle me-2 mt-1"></i>
-                                <div>
-                                    <strong>Command executed successfully</strong>
-                                    {% if execution_time %}
-                                        <br><small class="text-muted">Execution time: {{ execution_time|floatformat:3 }}s</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Tabbed output interface -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <ul class="nav nav-tabs nav-fill" id="outputTabs" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="raw-output-tab" data-bs-toggle="tab"
-                                                    data-bs-target="#raw-output" type="button" role="tab"
-                                                    aria-controls="raw-output" aria-selected="true">
-                                                <i class="mdi mdi-console me-1"></i>
-                                                Raw Output
-                                            </button>
-                                        </li>
-                                        {% if parsed_data %}
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="parsed-data-tab" data-bs-toggle="tab"
-                                                    data-bs-target="#parsed-data" type="button" role="tab"
-                                                    aria-controls="parsed-data" aria-selected="false">
-                                                <i class="mdi mdi-table me-1"></i>
-                                                Parsed Data
-                                            </button>
-                                        </li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="tab-content" id="outputTabContent">
-                                        <!-- Raw Output Tab -->
-                                        <div class="tab-pane fade show active" id="raw-output" role="tabpanel"
-                                             aria-labelledby="raw-output-tab">
-                                            <div class="d-flex justify-content-between align-items-start py-3 px-3 border-bottom">
-                                                <h6 class="mb-0 mt-1">Command Output</h6>
-                                                <div class="btn-list">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary copy-output-btn"
-                                                            title="Copy raw output to clipboard">
-                                                        <i class="mdi mdi-content-copy me-1"></i>Copy
-                                                    </button>
-                                                </div>
-                                            </div>                            <div class="p-3">
-                                                <pre class="command-output bg-surface p-3 rounded font-monospace">{{ command_output }}</pre>
-                            </div>
-                                        </div>
-
-                                        <!-- Parsed Data Tab -->
-                                        {% if parsed_data %}
-                                        <div class="tab-pane fade" id="parsed-data" role="tabpanel"
-                                             aria-labelledby="parsed-data-tab">
-                                            <div class="d-flex justify-content-between align-items-start py-3 px-3 border-bottom">
-                                                <div class="mt-1">
-                                                    <h6 class="mb-0">Structured Data</h6>
-                                                    {% if parsing_template %}
-                                                        <small class="text-muted">Template: {{ parsing_template }}</small>
-                                                    {% endif %}
-                                                </div>
-                                                {% if parsed_data|length > 0 %}
-                                                {{ parsed_data|json_script:"parsed-data-json" }}
-                                                <div class="btn-list">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary copy-parsed-btn"
-                                                            title="Copy parsed data as JSON">
-                                                        <i class="mdi mdi-content-copy me-1"></i>Copy JSON
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-info download-csv-btn"
-                                                            title="Download parsed data as CSV">
-                                                        <i class="mdi mdi-file-table me-1"></i>Download CSV
-                                                    </button>
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                            <div class="p-3">
-                                                {% if parsed_data|length > 0 %}
-                                                    {% if parsed_data.0 %}
-                                                        <!-- Table format for structured data -->
-                                                        <div class="table-responsive">
-                                                            <table class="table table-sm table-striped mb-0">
-                                                                <thead>
-                                                                    <tr>
-                                                                        {% for key, value in parsed_data.0.items %}
-                                                                            <th>{{ key|title }}</th>
-                                                                        {% endfor %}
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {% for row in parsed_data %}
-                                                                        <tr>
-                                                                            {% for key, value in row.items %}
-                                                                                <td>{{ value }}</td>
-                                                                            {% endfor %}
-                                                                        </tr>
-                                                                    {% endfor %}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    {% else %}
-                                                        <!-- JSON format for other data types -->
-                                                        <pre class="bg-light p-3 rounded mb-0">{{ parsed_data|pprint }}</pre>
-                                                    {% endif %}
-                                                {% else %}
-                                                    <div class="alert alert-info mb-0">
-                                                        <i class="mdi mdi-information-outline me-1"></i>
-                                                        No structured data found in the output.
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% elif has_syntax_error %}
-                            <!-- Syntax error output -->
-                            <div class="alert alert-warning alert-dismissible" role="alert">
-                                <div class="d-flex">
-                                    <div>
-                                        <svg class="icon alert-icon" width="24" height="24">
-                                            <use xlink:href="#tabler-alert-triangle"></use>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="alert-title">Command executed with syntax error detected</h4>
-                                        {% if syntax_error_type and syntax_error_vendor %}
-                                            <div class="text-secondary">Error Type: {{ syntax_error_type|title }} | Vendor: {{ syntax_error_vendor|title }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-header bg-warning-subtle">
-                                    <h6 class="card-title mb-0">
-                                        <i class="mdi mdi-alert-outline me-1"></i>
-                                        Syntax Error Details and Guidance
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <pre class="command-output font-monospace">{{ command_output }}</pre>
-                                </div>
-                            </div>
-                        {% else %}
-                            <!-- Error output -->
-                            <div class="alert alert-danger alert-dismissible" role="alert">
-                                <div class="d-flex">
-                                    <div>
-                                        <svg class="icon alert-icon" width="24" height="24">
-                                            <use xlink:href="#tabler-alert-circle"></use>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="alert-title">Command execution failed</h4>
-                                        <div class="text-secondary">Check the error details below for troubleshooting information.</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-header bg-danger-subtle">
-                                    <h6 class="card-title mb-0">
-                                        <i class="mdi mdi-information-outline me-1"></i>
-                                        Error Details and Troubleshooting
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <pre class="command-output font-monospace">{{ command_output }}</pre>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                    <div class="alert alert-info" id="defaultMessage">
-                        Select a command to execute from the list on the left.
-                    </div>
-                    {% endif %}
+                    {% include "netbox_toolkit_plugin/htmx/command_output.html" %}
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </div>
 
-<!-- Credential and Confirmation Modal -->
-<div class="modal fade credential-modal" id="credentialModal" tabindex="-1" aria-labelledby="credentialModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="credentialModalLabel">Execute Command</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <p class="text-muted mb-3">
-                        <i class="mdi mdi-information-outline me-1"></i>
-                        Enter your credentials to execute: <strong id="commandToExecute"></strong>
-                    </p>
-                </div>
 
-                <!-- Rate Limiting Information in Modal -->
-                {% if rate_limit_status.enabled and not rate_limit_status.bypassed %}
-                <div class="alert {% if rate_limit_status.is_exceeded %}alert-danger{% elif rate_limit_status.is_warning %}alert-warning{% else %}alert-info{% endif %} mb-3">
-                    <div class="d-flex align-items-start">
-                        <i class="mdi {% if rate_limit_status.is_exceeded %}mdi-block-helper{% elif rate_limit_status.is_warning %}mdi-alert-outline{% else %}mdi-information-outline{% endif %} me-2 mt-1"></i>
-                        <div>
-                            <small>
-                                <strong>Rate Limiting:</strong> {{ rate_limit_status.remaining }} commands remaining
-                                ({{ rate_limit_status.current_count }}/{{ rate_limit_status.limit }} successful commands used)
-                                {% if rate_limit_status.is_exceeded %}
-                                <br><span class="text-danger">Error: Rate limit exceeded! Commands are blocked.</span>
-                                {% elif rate_limit_status.is_warning %}
-                                <br><span class="text-warning">Warning: Approaching command limit!</span>
-                                {% endif %}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
 
-                <form id="modalCredentialsForm">
-                    <div class="mb-3">
-                        <label for="modalUsername" class="form-label">Username</label>
-                        <input type="text" id="modalUsername" class="form-control" required autocomplete="username">
-                    </div>
-                    <div class="mb-3">
-                        <label for="modalPassword" class="form-label">Password</label>
-                        <input type="password" id="modalPassword" class="form-control" required autocomplete="current-password">
-                    </div>
-                    <div class="alert alert-warning">
-                        <i class="mdi mdi-shield-lock-outline me-1"></i>
-                        <small>Credentials are not stored and are required for each command execution.</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <div class="btn-list w-100 justify-content-end">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="executeCommandBtn" {% if rate_limit_status.enabled and not rate_limit_status.bypassed and rate_limit_status.is_exceeded %}disabled{% endif %}>
-                        <i class="mdi mdi-play me-1"></i>
-                        {% if rate_limit_status.enabled and not rate_limit_status.bypassed and rate_limit_status.is_exceeded %}
-                            Rate Limited
-                        {% else %}
-                            Execute Command
-                        {% endif %}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+
+<!-- HTMX Modal Container -->
+<div id="htmx-modal-container">
+    <!-- HTMX-loaded modals will appear here -->
 </div>
-
-<form id="commandExecutionForm" method="post" style="display: none;">
-    {% csrf_token %}
-    <input type="hidden" name="command_id" id="selectedCommandId">
-    <input type="hidden" name="username" id="formUsername">
-    <input type="hidden" name="password" id="formPassword">
-</form>
 
 {% endblock %}
 
 {% block javascript %}
+<!-- Load HTMX for dynamic content loading -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 <!-- Load NetBox Toolkit consolidated JavaScript -->
 <script src="{% static 'netbox_toolkit_plugin/js/toolkit.js' %}"></script>
+
+<!-- Command Search Functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('command-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const commandItems = document.querySelectorAll('.command-item');
+
+            commandItems.forEach(function(item) {
+                const commandName = item.dataset.commandName.toLowerCase();
+                const commandTitle = item.getAttribute('title') ? item.getAttribute('title').toLowerCase() : '';
+
+                const matches = commandName.includes(searchTerm) || commandTitle.includes(searchTerm);
+
+                if (matches || searchTerm === '') {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Show/hide "no results" message
+            const visibleItems = document.querySelectorAll('.command-item:not([style*="display: none"])');
+            let noResultsMsg = document.getElementById('no-search-results');
+
+            if (visibleItems.length === 0 && searchTerm !== '') {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.id = 'no-search-results';
+                    noResultsMsg.className = 'alert alert-info mt-3';
+                    noResultsMsg.innerHTML = '<i class="mdi mdi-magnify"></i> No commands match your search.';
+                    document.querySelector('.card-commands .list-group').appendChild(noResultsMsg);
+                }
+                noResultsMsg.style.display = 'block';
+            } else {
+                if (noResultsMsg) {
+                    noResultsMsg.style.display = 'none';
+                }
+            }
+        });
+
+        // Clear search functionality (optional enhancement)
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.target.value = '';
+                e.target.dispatchEvent(new Event('input'));
+                e.target.blur();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
