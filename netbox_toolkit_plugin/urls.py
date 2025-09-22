@@ -22,6 +22,12 @@ urlpatterns = [
         views.CommandChangeLogView.as_view(),
         name="command_changelog",
     ),
+    # HTMX endpoints
+    path(
+        "commands/<int:pk>/add-variable/",
+        views.CommandVariableFormView.as_view(),
+        name="command_add_variable",
+    ),
     # Command Log views
     path("logs/", views.CommandLogListView.as_view(), name="commandlog_list"),
     path("logs/add/", views.CommandLogEditView.as_view(), name="commandlog_add"),
@@ -36,10 +42,36 @@ urlpatterns = [
         views.CommandLogDeleteView.as_view(),
         name="commandlog_delete",
     ),
+    path(
+        "logs/<int:pk>/export-csv/",
+        views.CommandLogExportCSVView.as_view(),
+        name="commandlog_export_csv",
+    ),
     # Device toolkit view
     path(
         "devices/<int:pk>/toolkit/",
         views.DeviceToolkitView.as_view(),
         name="device_toolkit",
+    ),
+    # HTMX endpoints for device toolkit
+    path(
+        "devices/<int:pk>/execution-modal/",
+        views.DeviceExecutionModalView.as_view(),
+        name="device_execution_modal",
+    ),
+    path(
+        "devices/<int:pk>/rate-limit-update/",
+        views.DeviceRateLimitUpdateView.as_view(),
+        name="rate_limit_update",
+    ),
+    path(
+        "devices/<int:pk>/command-output/",
+        views.DeviceCommandOutputView.as_view(),
+        name="command_output_update",
+    ),
+    path(
+        "devices/<int:pk>/recent-history/",
+        views.DeviceRecentHistoryView.as_view(),
+        name="recent_history_update",
     ),
 ]
