@@ -68,6 +68,7 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
         device_id = validated_data["device_id"]
         username = validated_data["username"]
         password = validated_data["password"]
+        variables = validated_data.get("variables", {})
 
         # Get device object
         try:
@@ -77,6 +78,32 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                 {"error": f"Device with ID {device_id} not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        # Process command variables if present
+        if command.variables.exists():
+            from ...models import Command as CommandModel
+            from ...utils.variable_parser import CommandVariableParser
+
+            processed_command_text, is_valid, errors = (
+                CommandVariableParser.prepare_command_for_execution(command, variables)
+            )
+
+            if not is_valid:
+                return Response(
+                    {"error": "Variable validation failed", "details": errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Create temporary command object with processed text
+            temp_command = CommandModel(
+                id=command.id,
+                name=command.name,
+                command=processed_command_text,
+                command_type=command.command_type,
+                description=command.description,
+            )
+            temp_command.platforms.set(command.platforms.all())
+            command = temp_command
 
         # Check permissions based on command type using NetBox's object-based permissions
         if command.command_type == "config":

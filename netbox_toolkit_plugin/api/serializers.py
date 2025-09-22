@@ -23,6 +23,12 @@ class CommandExecutionSerializer(serializers.Serializer):
         help_text="Password for device authentication",
         trim_whitespace=False,
     )
+    variables = serializers.DictField(
+        child=serializers.CharField(max_length=500),
+        required=False,
+        default=dict,
+        help_text="Variable values for command substitution (key-value pairs)",
+    )
     timeout = serializers.IntegerField(
         required=False,
         default=30,
