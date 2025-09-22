@@ -1,0 +1,205 @@
+{% comment %}
+HTMX template for loading complete execution modal with variables and credentials
+This replaces the static modal with dynamic content
+{% endcomment %}
+
+{% if error %}
+    <div class="alert alert-danger">
+        <i class="mdi mdi-alert-circle me-1"></i>
+        Error: {{ error }}
+    </div>
+{% else %}
+    <!-- Complete Modal Dialog -->
+    <div class="modal fade credential-modal show" id="htmxExecutionModal" tabindex="-1" style="display: block;" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="modal-title mb-0">Execute Command</h5>
+                            <button type="button" class="btn-close" data-modal-close aria-label="Close"></button>
+                        </div>
+                        <!-- Rate Limiting Information in Header -->
+                        {% if rate_limit_status.enabled and not rate_limit_status.bypassed %}
+                        <div class="text-muted small">
+                            <i class="mdi {% if rate_limit_status.is_exceeded %}mdi-block-helper text-danger{% elif rate_limit_status.is_warning %}mdi-alert-outline text-warning{% else %}mdi-information-outline{% endif %} me-1"></i>
+                            <span class="{% if rate_limit_status.is_exceeded %}text-danger{% elif rate_limit_status.is_warning %}text-warning{% endif %}">
+                                Rate Limit: {{ rate_limit_status.remaining }} of {{ rate_limit_status.limit }} commands remaining
+                                {% if rate_limit_status.is_exceeded %}
+                                (Commands blocked)
+                                {% elif rate_limit_status.is_warning %}
+                                (Approaching limit)
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p class="text-muted mb-2">
+                            <i class="mdi mdi-information-outline me-1"></i>
+                            Execute: <strong>{{ command.name }}</strong>
+                        </p>
+                        <pre class="command-output bg-surface p-2 rounded font-monospace border"><span class="text-muted"># </span>{{ command.command }}</pre>
+                    </div>
+
+                    <!-- Complete Form including Variables and Credentials -->
+                    <form hx-post="{% url 'plugins:netbox_toolkit_plugin:command_output_update' pk=device.pk %}"
+                          hx-target="#commandOutputContainer"
+                          hx-swap="innerHTML"
+                          hx-indicator="#execution-spinner"
+                          id="commandExecutionForm"
+                          data-device-pk="{{ device.pk }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="command_id" value="{{ command.id }}">
+
+                        <!-- Command Variables Section -->
+                        {% if has_variables %}
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-3">Command Variables</h6>
+                                {% for var_field in variable_fields %}
+                                    <div class="mb-3">
+                                        <label for="{{ var_field.field.id_for_label }}" class="form-label">
+                                            {{ var_field.label }}
+                                            {% if var_field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% else %}
+                                                <span class="text-muted">(optional)</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ var_field.field }}
+                                        {% if var_field.help_text %}
+                                            <small class="form-text text-muted">{{ var_field.help_text }}</small>
+                                        {% endif %}
+                                        {% if var_field.field.errors %}
+                                            <div class="text-danger">
+                                                {% for error in var_field.field.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <h6 class="text-muted mb-3">Device Credentials</h6>
+                        <div class="mb-3">
+                            <label for="modalUsername" class="form-label">Username</label>
+                            <input type="text" name="username" id="modalUsername" class="form-control" required autocomplete="username">
+                        </div>
+                        <div class="mb-3">
+                            <label for="modalPassword" class="form-label">Password</label>
+                            <input type="password" name="password" id="modalPassword" class="form-control" required autocomplete="current-password">
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="mdi mdi-shield-lock-outline me-1"></i>
+                            <small>Credentials are not stored and are required for each command execution.</small>
+                        </div>
+
+                        <div class="modal-footer">
+                            <div class="btn-list w-100 justify-content-end">
+                                <button type="button" class="btn btn-secondary" data-modal-close>
+                                    Cancel
+                                </button>
+                                <button type="submit" class="btn btn-primary"
+                                        {% if rate_limit_status.enabled and not rate_limit_status.bypassed and rate_limit_status.is_exceeded %}disabled{% endif %}>
+                                    <span id="execution-spinner" class="htmx-indicator">
+                                        <i class="mdi mdi-loading mdi-spin me-1"></i>
+                                    </span>
+                                    <i class="mdi mdi-play me-1"></i>
+                                    {% if rate_limit_status.enabled and not rate_limit_status.bypassed and rate_limit_status.is_exceeded %}
+                                        Rate Limited
+                                    {% else %}
+                                        Execute Command
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div class="modal-backdrop fade show"></div>
+
+    <!-- JavaScript for HTMX event handling -->
+    <script>
+        // Function to set up modal event handlers
+        function setupModalEventHandlers() {
+            // Handle modal close buttons
+            function closeModal() {
+                const modal = document.getElementById('htmxExecutionModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                }
+                document.getElementById('htmx-modal-container').innerHTML = '';
+            }
+
+            // Add event listeners for close buttons
+            document.querySelectorAll('[data-modal-close]').forEach(button => {
+                button.addEventListener('click', closeModal);
+            });
+
+            // Get the form and submit button
+            const form = document.getElementById('commandExecutionForm');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            if (!form || !submitButton) {
+                return;
+            }
+
+            // Remove any existing event listeners by cloning the form (this removes all event listeners)
+            const newForm = form.cloneNode(true);
+            form.parentNode.replaceChild(newForm, form);
+
+            // Re-get references after cloning
+            const freshForm = document.getElementById('commandExecutionForm');
+            const freshSubmitButton = freshForm.querySelector('button[type="submit"]');
+
+            // Re-add close button listeners after cloning
+            document.querySelectorAll('[data-modal-close]').forEach(button => {
+                button.addEventListener('click', closeModal);
+            });
+
+            // Listen for HTMX beforeRequest event to disable button
+            freshForm.addEventListener('htmx:beforeRequest', function(event) {
+                freshSubmitButton.disabled = true;
+            });
+
+            // Listen for HTMX afterRequest event on the form
+            freshForm.addEventListener('htmx:afterRequest', function(event) {
+                // Re-enable the button regardless of success/failure
+                freshSubmitButton.disabled = false;
+
+                // Check if the request was successful (status 200)
+                if (event.detail.xhr.status === 200) {
+                    const devicePk = this.getAttribute('data-device-pk');
+
+                    // Close the modal
+                    closeModal();
+
+                    // Update rate limiting card
+                    htmx.ajax('GET', '{% url "plugins:netbox_toolkit_plugin:rate_limit_update" pk=device.pk %}', {
+                        target: '#rate-limit-card-content',
+                        swap: 'innerHTML'
+                    });
+
+                    // Update recent history
+                    htmx.ajax('GET', '{% url "plugins:netbox_toolkit_plugin:recent_history_update" pk=device.pk %}', {
+                        target: '#recentHistoryContainer',
+                        swap: 'innerHTML'
+                    });
+                }
+            });
+
+        }
+
+        // Set up event handlers when this modal loads
+        setupModalEventHandlers();
+    </script>
+    </script>
+{% endif %}

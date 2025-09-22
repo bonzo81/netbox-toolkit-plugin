@@ -1,0 +1,89 @@
+{% load form_helpers %}
+
+<div class="variable-form border rounded p-3 mb-3" data-form-index="{{ form_index }}">
+    {% for field in form.hidden_fields %}
+        {{ field|safe }}
+    {% endfor %}
+    {% for field in form.visible_fields %}
+        {% if field.name != 'DELETE' %}
+            <div class="row mb-3{% if field.errors %} has-errors{% endif %}">
+                <div class="col-sm-3 text-lg-end">
+                    <label for="{{ field.id_for_label }}" class="col-form-label d-inline-block{% if field.field.required %} required{% endif %}">
+                        {{ field.label }}
+                    </label>
+                </div>
+                <div class="col">
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="form-text text-danger">
+                            {% for error in field.errors %}{{ error }}{% if not forloop.last %}<br />{% endif %}{% endfor %}
+                        </div>
+                    {% elif field.field.required %}
+                        <div class="invalid-feedback">This field is required.</div>
+                    {% endif %}
+                    {% if field.help_text %}
+                        <span class="form-text">{{ field.help_text|safe }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+    <div class="row mb-3">
+        <div class="col-sm-3"></div>
+        <div class="col text-end">
+            {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+            <button type="button" class="btn btn-outline-danger btn-sm delete-variable">
+                <i class="mdi mdi-delete"></i> Remove
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Execute immediately when this content is loaded by HTMX
+    (function() {
+        console.log('Processing new variable form with index {{ form_index }}');
+
+        // Update the total forms count
+        const totalFormsInput = document.querySelector('#id_variables-TOTAL_FORMS');
+        if (totalFormsInput) {
+            const currentCount = parseInt(totalFormsInput.value) || 0;
+            totalFormsInput.value = currentCount + 1;
+            console.log('Updated TOTAL_FORMS to:', currentCount + 1);
+        }
+
+        // Find the newly added form and fix the __prefix__ placeholders
+        const newForm = document.querySelector('.variable-form[data-form-index="{{ form_index }}"]');
+        if (newForm) {
+            const formIndex = '{{ form_index }}';
+            console.log('Replacing __prefix__ with index:', formIndex);
+
+            // Update all elements that contain __prefix__
+            const elementsToUpdate = newForm.querySelectorAll('*');
+            let replacementCount = 0;
+
+            elementsToUpdate.forEach(function(element) {
+                ['name', 'id', 'for'].forEach(function(attr) {
+                    if (element.hasAttribute(attr)) {
+                        const value = element.getAttribute(attr);
+                        if (value && value.includes('__prefix__')) {
+                            const newValue = value.replace(/__prefix__/g, formIndex);
+                            element.setAttribute(attr, newValue);
+                            replacementCount++;
+                            console.log(`Replaced ${attr}: ${value} → ${newValue}`);
+                        }
+                    }
+                });
+
+                // Also check innerHTML for any __prefix__ occurrences
+                if (element.innerHTML && element.innerHTML.includes('__prefix__')) {
+                    element.innerHTML = element.innerHTML.replace(/__prefix__/g, formIndex);
+                    replacementCount++;
+                    console.log('Replaced innerHTML __prefix__');
+                }
+            });
+
+            console.log(`Total replacements made: ${replacementCount}`);
+        }
+    })();
+</script>

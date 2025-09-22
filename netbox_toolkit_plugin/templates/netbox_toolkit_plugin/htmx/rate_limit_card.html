@@ -1,0 +1,59 @@
+{% comment %}
+HTMX partial template for rate limiting card content
+This allows the rate limiting card to be updated independently without reloading the entire page
+{% endcomment %}
+
+{% if rate_limit_status.enabled %}
+    {% if rate_limit_status.bypassed %}
+        <div class="alert alert-info mb-3">
+            <i class="mdi mdi-shield-check me-2"></i>
+            <strong>Rate Limiting Bypassed</strong><br>
+            <small>You have unlimited command execution privileges.</small>
+        </div>
+    {% else %}
+        <div class="list-group list-group-flush">
+            <div class="list-group-item px-0 py-1 border-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <span class="fw-semibold text-muted" style="flex-shrink: 0; max-width: 60%;">Commands Remaining</span>
+                    <div class="font-monospace text-xs text-end" style="flex-shrink: 1; margin-left: 8px; max-width: 40%; overflow: hidden; white-space: nowrap;">
+                        <span class="{% if rate_limit_status.is_exceeded %}text-danger{% elif rate_limit_status.is_warning %}text-warning{% else %}text-success{% endif %}">
+                            {{ rate_limit_status.remaining }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="list-group-item px-0 py-1 border-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <span class="fw-semibold text-muted" style="flex-shrink: 0; max-width: 60%;">Successful Commands Used</span>
+                    <div class="font-monospace text-xs text-end" style="flex-shrink: 1; margin-left: 8px; max-width: 40%; overflow: hidden; white-space: nowrap;">{{ rate_limit_status.current_count }}/{{ rate_limit_status.limit }}</div>
+                </div>
+            </div>
+            <div class="list-group-item px-0 py-1 border-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <span class="fw-semibold text-muted" style="flex-shrink: 0; max-width: 60%;">Time Window</span>
+                    <div class="font-monospace text-xs text-end" style="flex-shrink: 1; margin-left: 8px; max-width: 40%; overflow: hidden; white-space: nowrap;">{{ rate_limit_status.time_window_minutes }} minutes</div>
+                </div>
+            </div>
+        </div>
+        <div class="pt-3 border-top mt-2">
+            <small class="text-muted">
+                <i class="mdi mdi-clock-outline me-1"></i>
+                {{ rate_limit_status.message }}
+            </small>
+        </div>
+
+        {% if rate_limit_status.is_exceeded %}
+        <div class="alert alert-danger mt-3 mb-0">
+            <i class="mdi mdi-block-helper me-2"></i>
+            <strong>Rate Limit Exceeded</strong><br>
+            <small>Command execution is blocked. Wait for the time window to reset or contact an administrator.</small>
+        </div>
+        {% elif rate_limit_status.is_warning %}
+        <div class="alert alert-warning mt-3 mb-0">
+            <i class="mdi mdi-alert-outline me-2"></i>
+            <strong>Rate Limit Warning</strong><br>
+            <small>You are approaching the command execution limit. Commands will be blocked if the limit is exceeded.</small>
+        </div>
+        {% endif %}
+    {% endif %}
+{% endif %}
