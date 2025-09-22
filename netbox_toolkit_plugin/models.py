@@ -92,3 +92,63 @@ class CommandLog(NetBoxModel):
         return reverse(
             "plugins:netbox_toolkit_plugin:commandlog_view", kwargs={"pk": self.pk}
         )
+
+
+class CommandVariable(models.Model):
+    """Model for defining variables that can be used in commands."""
+
+    command = models.ForeignKey(
+        to=Command,
+        on_delete=models.CASCADE,
+        related_name="variables",
+        help_text="The command this variable belongs to",
+    )
+
+    name = models.CharField(
+        max_length=100,
+        help_text="Variable name as used in the command (e.g., 'interface_name')",
+    )
+
+    display_name = models.CharField(
+        max_length=200,
+        help_text="Human-readable variable name shown to users",
+    )
+
+    VARIABLE_TYPES = [
+        ("text", "Free Text"),
+        ("netbox_interface", "Device Interface"),
+        ("netbox_vlan", "VLAN"),
+        ("netbox_ip", "IP Address"),
+    ]
+
+    variable_type = models.CharField(
+        max_length=50,
+        choices=VARIABLE_TYPES,
+        default="text",
+        help_text="Type of variable - determines the input method",
+    )
+
+    required = models.BooleanField(
+        default=True,
+        help_text="Whether this variable must be provided to execute the command",
+    )
+
+    help_text = models.TextField(
+        blank=True,
+        help_text="Additional help text shown to users for this variable",
+    )
+
+    default_value = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Default value for this variable (optional)",
+    )
+
+    class Meta:
+        ordering = ["command", "name"]
+        unique_together = ("command", "name")
+
+    def __str__(self):
+        if hasattr(self, "command") and self.command:
+            return f"{self.command.name} - {self.display_name}"
+        return f"Variable: {self.display_name}"
