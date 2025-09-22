@@ -125,7 +125,8 @@ class NetmikoConnector(BaseDeviceConnector):
             "nexus": "cisco_nxos",
             "iosxr": "cisco_iosxr",
             "ios-xr": "cisco_iosxr",
-            "ios-xe": "cisco_xe",
+            "ios-xe": "cisco_ios",  # Use cisco_ios for better template coverage
+            "iosxe": "cisco_ios",  # Use cisco_ios for better template coverage
             "eos": "arista_eos",
             "junos": "juniper_junos",
             "asa": "cisco_asa",
@@ -273,9 +274,7 @@ class NetmikoConnector(BaseDeviceConnector):
                 return
 
             except NetmikoAuthenticationException as e:
-                logger.error(
-                    f"Authentication failed for {self.config.hostname}: {str(e)}"
-                )
+                logger.error(f"Authentication failed for {self.config.hostname}")
                 raise DeviceConnectionError(f"Authentication failed: {str(e)}") from e
 
             except NetmikoTimeoutException as e:
@@ -289,7 +288,7 @@ class NetmikoConnector(BaseDeviceConnector):
                     ) from e
 
             except NetmikoBaseException as e:
-                logger.warning(f"Netmiko error for {self.config.hostname}: {str(e)}")
+                logger.warning(f"Netmiko connection error for {self.config.hostname}")
 
                 if attempt >= max_retries:
                     raise DeviceConnectionError(
@@ -297,7 +296,7 @@ class NetmikoConnector(BaseDeviceConnector):
                     ) from e
 
             except Exception as e:
-                logger.warning(f"Unexpected error for {self.config.hostname}: {str(e)}")
+                logger.warning(f"Connection error for {self.config.hostname}")
 
                 if attempt >= max_retries:
                     raise DeviceConnectionError(f"Connection failed: {str(e)}") from e

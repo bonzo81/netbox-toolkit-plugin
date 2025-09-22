@@ -1,6 +1,5 @@
 """Service for handling command execution on devices."""
 
-import traceback
 from typing import Any
 
 from dcim.models import Device
@@ -82,32 +81,68 @@ class CommandExecutionService:
                 logger.info(
                     "Command execution completed successfully on %s", device.name
                 )
-                self._log_command_execution(command, device, result, username)
+                command_log = self._log_command_execution(
+                    command, device, result, username
+                )
+                result.command_log_id = command_log.id
                 return result
 
             except Exception as e:
                 last_error = e
                 error_msg = str(e)
-                logger.warning(
-                    "Command execution attempt %d failed: %s", attempt + 1, error_msg
-                )
+
+                # Distinguish between connection failures and command execution failures
+                if (
+                    "Fast-fail to Netmiko" in error_msg
+                    or ToolkitSettings.should_fast_fail_to_netmiko(error_msg)
+                ):
+                    # Extract the original error message from the fast-fail wrapper
+                    if "Fast-fail to Netmiko:" in error_msg:
+                        original_error = error_msg.split("Fast-fail to Netmiko:", 1)[
+                            1
+                        ].strip()
+                        logger.warning(
+                            "Connection attempt %d failed for %s (fast-failing to Netmiko): %s",
+                            attempt + 1,
+                            device.name,
+                            original_error,
+                        )
+                    else:
+                        logger.warning(
+                            "Connection attempt %d failed for %s (fast-failing to Netmiko): %s",
+                            attempt + 1,
+                            device.name,
+                            error_msg,
+                        )
+                else:
+                    logger.warning(
+                        "Command execution attempt %d failed for %s: %s",
+                        attempt + 1,
+                        device.name,
+                        error_msg,
+                    )
 
                 # Check for authentication errors and fail fast with clear message
-                if "Authentication failed" in error_msg or "authentication failed" in error_msg.lower():
+                if self._is_authentication_error(error_msg):
                     logger.error(
-                        "Authentication failure detected for device %s: %s",
-                        device.name, error_msg
+                        "Authentication failure detected for device %s",
+                        device.name,
                     )
                     # Create a failed result with authentication error details
                     auth_failed_result = CommandResult(
                         command=command.command,
                         output="",
                         success=False,
-                        error_message=f"Authentication failed: {error_msg}"
+                        error_message=f"Authentication failed: {error_msg}",
                     )
-                    self._log_command_execution(
+                    # Enhance the error result with troubleshooting guidance
+                    auth_failed_result = self._enhance_error_result(
+                        auth_failed_result, e, device
+                    )
+                    command_log = self._log_command_execution(
                         command, device, auth_failed_result, username
                     )
+                    auth_failed_result.command_log_id = command_log.id
                     # Return the failed result instead of raising an exception
                     # This allows the web interface to handle it gracefully
                     return auth_failed_result
@@ -142,16 +177,16 @@ class CommandExecutionService:
                                 "Command executed successfully using Netmiko fallback on %s",
                                 device.name,
                             )
-                            self._log_command_execution(
+                            command_log = self._log_command_execution(
                                 command, device, result, username
                             )
+                            result.command_log_id = command_log.id
                             return result
 
                     except Exception as fallback_error:
                         logger.warning(
-                            "Netmiko fallback also failed for device %s: %s",
+                            "Netmiko fallback also failed for device %s",
                             device.name,
-                            str(fallback_error),
                         )
                         last_error = fallback_error
                         break  # Don't retry after fallback failure
@@ -182,55 +217,12 @@ class CommandExecutionService:
             error_result = self._enhance_error_result(error_result, last_error, device)
 
         # Log the failed execution
-        self._log_command_execution(command, device, error_result, username)
+        command_log = self._log_command_execution(
+            command, device, error_result, username
+        )
+        error_result.command_log_id = command_log.id
 
         return error_result
-
-    def execute_command(
-        self, command: Command, device: Device, username: str, password: str
-    ) -> CommandResult:
-        """
-        Execute a command on a device and log the result.
-
-        Args:
-            command: Command to execute
-            device: Target device
-            username: Authentication username
-            password: Authentication password
-
-        Returns:
-            CommandResult with execution details
-        """
-        try:
-            # Create appropriate connector for the device
-            connector = self.connector_factory.create_connector(
-                device, username, password
-            )
-
-            # Execute command using context manager for proper cleanup
-            with connector:
-                result = connector.execute_command(
-                    command.command, command.command_type
-                )
-
-            # Log the execution
-            self._log_command_execution(command, device, result, username)
-
-            return result
-
-        except Exception as e:
-            # Create error result
-            error_result = CommandResult(
-                command=command.command, output="", success=False, error_message=str(e)
-            )
-
-            # Add detailed error information
-            error_result = self._enhance_error_result(error_result, e, device)
-
-            # Log the failed execution
-            self._log_command_execution(command, device, error_result, username)
-
-            return error_result
 
     def _log_command_execution(
         self, command: Command, device: Device, result: CommandResult, username: str
@@ -246,13 +238,22 @@ class CommandExecutionService:
                 success = True
                 error_message = ""
         else:
-            output = f"Error executing command: {result.error_message}"
-            if result.output:
-                output += f"\n\nOutput: {result.output}"
-            success = False
-            error_message = result.error_message or ""
+            # For failed commands, log a concise technical message rather than the user-friendly guidance
+            # Extract just the core error from the enhanced user message
+            core_error = result.error_message or "Unknown error"
 
-        # Create log entry with execution details (raw output only)
+            # If result.output contains user guidance, extract just the first line for logging
+            if result.output and "\n\n" in result.output:
+                # Take just the first part before user guidance starts
+                log_output = result.output.split("\n\n")[0]
+            else:
+                log_output = core_error
+
+            output = f"Command execution failed: {log_output}"
+            success = False
+            error_message = core_error
+
+        # Create log entry with concise technical details
         command_log = CommandLog.objects.create(
             command=command,
             device=device,
@@ -273,32 +274,37 @@ class CommandExecutionService:
     def _enhance_error_result(
         self, result: CommandResult, error: Exception, device: Device
     ) -> CommandResult:
-        """Enhance error result with detailed troubleshooting information."""
+        """Enhance error result with user-friendly troubleshooting information."""
         error_message = str(error)
-        error_details = traceback.format_exc()
 
-        enhanced_output = f"Error executing command: {error_message}"
-
-        # Add specific guidance for common errors
-        guidance_added = False
-
+        # For DeviceConnectionError, the connector has already provided a formatted message
+        # with guidance, so we just need to clean it up for user display
         if isinstance(error, DeviceConnectionError):
-            enhanced_output += self._get_connection_error_guidance(
-                error_message, device
-            )
-            guidance_added = True
-        elif "Bad file descriptor" in error_details:
-            enhanced_output += self._get_bad_descriptor_guidance(device)
-            guidance_added = True
-        elif "Error reading SSH protocol banner" in error_details:
-            enhanced_output += self._get_banner_error_guidance(device)
-            guidance_added = True
+            enhanced_output = error_message
 
-        # Check for connection/authentication errors in the error message even if not DeviceConnectionError
-        if not guidance_added:
-            error_lower = error_message.lower()
-            if any(
-                error_term in error_lower
+            # Remove any duplicate "Authentication failed for" prefixes that might occur
+            if (
+                enhanced_output.startswith("Authentication failed for")
+                and "Authentication failed for" in enhanced_output[25:]
+            ):
+                # Find the second occurrence and use everything from there
+                second_occurrence = enhanced_output.find(
+                    "Authentication failed for", 25
+                )
+                if second_occurrence != -1:
+                    enhanced_output = enhanced_output[second_occurrence:]
+
+        else:
+            # For other errors, provide basic error info with guidance
+            enhanced_output = f"Command execution failed: {error_message}"
+
+            # Add specific guidance for common non-connection errors
+            if "Bad file descriptor" in str(error):
+                enhanced_output += self._get_bad_descriptor_guidance(device)
+            elif "Error reading SSH protocol banner" in str(error):
+                enhanced_output += self._get_banner_error_guidance(device)
+            elif any(
+                error_term in error_message.lower()
                 for error_term in [
                     "connect",
                     "connection",
@@ -313,18 +319,14 @@ class CommandExecutionService:
                 enhanced_output += self._get_connection_error_guidance(
                     error_message, device
                 )
-                guidance_added = True
-
-        # Add general troubleshooting if no specific guidance was provided
-        if not guidance_added:
-            enhanced_output += (
-                "\n\nGeneral Troubleshooting:"
-                "\n- Verify device connectivity and SSH service status"
-                "\n- Check credentials and device configuration"
-                "\n- Review the debug information below for more details"
-            )
-
-        enhanced_output += f"\n\nDebug information:\n{error_details}"
+            else:
+                # Generic troubleshooting for unknown errors
+                enhanced_output += (
+                    "\n\nTroubleshooting:"
+                    "\n- Verify device connectivity and SSH service status"
+                    "\n- Check credentials and device configuration"
+                    "\n- Ensure the device is reachable and responding"
+                )
 
         return CommandResult(
             command=result.command,
@@ -400,6 +402,51 @@ class CommandExecutionService:
         guidance += f"\n- Try connecting manually: ssh {hostname}"
 
         return guidance
+
+    def _is_authentication_error(self, error_message: str) -> bool:
+        """
+        Detect if an error message indicates authentication failure.
+
+        Uses the same comprehensive patterns as ScrapliConnector for consistency.
+        """
+        error_lower = error_message.lower()
+
+        # Common authentication failure patterns
+        auth_patterns = [
+            "password prompt seen more than once",
+            "authentication failed",
+            "auth failed",
+            "login failed",
+            "access denied",
+            "permission denied",
+            "authentication error",
+            "invalid password",
+            "invalid username",
+            "login incorrect",
+            "authentication timeout",
+            "too many authentication failures",
+            "authentication attempts exceeded",
+            # EOF patterns that often indicate auth failure
+            "encountered eof reading from transport",
+            "connection closed by peer",
+            "connection reset by peer",
+            # Patterns from SSH banner/auth sequence
+            "ssh handshake failed",
+            "ssh authentication failed",
+            "publickey authentication failed",
+            "password authentication failed",
+            "keyboard-interactive authentication failed",
+        ]
+
+        # Check if any authentication pattern is found
+        for pattern in auth_patterns:
+            if pattern in error_lower:
+                logger.debug(
+                    f"Authentication error pattern detected: '{pattern}' in '{error_message}'"
+                )
+                return True
+
+        return False
 
     def _get_bad_descriptor_guidance(self, device: Device) -> str:
         """Get guidance for 'Bad file descriptor' errors."""

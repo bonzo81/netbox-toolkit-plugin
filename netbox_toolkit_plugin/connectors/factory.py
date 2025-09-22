@@ -22,22 +22,10 @@ class ConnectorFactory:
     FALLBACK_CONNECTOR = NetmikoConnector
 
     # Platform-specific connector mappings
+    # Only override platforms that should skip Scrapli and go straight to Netmiko
     CONNECTOR_MAP = {
-        # Scrapli-optimized platforms (use primary connector)
-        "cisco_ios": ScrapliConnector,
-        "cisco_nxos": ScrapliConnector,
-        "cisco_iosxr": ScrapliConnector,
-        "cisco_xe": ScrapliConnector,
-        "ios": ScrapliConnector,
-        "nxos": ScrapliConnector,
-        "iosxr": ScrapliConnector,
-        "ios-xe": ScrapliConnector,
-        "ios-xr": ScrapliConnector,
-        # Platforms that may work better with Netmiko fallback
-        "juniper_junos": ScrapliConnector,  # Try Scrapli first
-        "arista_eos": ScrapliConnector,  # Try Scrapli first
-        "linux": ScrapliConnector,  # Try Scrapli first
-        # Legacy/specialized platforms - direct to Netmiko
+        # Legacy/specialized platforms that work better with Netmiko
+        # These platforms have limited or no Scrapli support
         "hp_procurve": NetmikoConnector,
         "hp_comware": NetmikoConnector,
         "dell_os10": NetmikoConnector,
@@ -47,6 +35,7 @@ class ConnectorFactory:
         "fortinet": NetmikoConnector,
         "mikrotik_routeros": NetmikoConnector,
         "ubiquiti_edge": NetmikoConnector,
+        # All other platforms use PRIMARY_CONNECTOR (Scrapli) with Netmiko fallback
     }
 
     @classmethod
@@ -276,17 +265,23 @@ class ConnectorFactory:
     def _get_primary_connector_by_platform(
         cls, platform: str | None
     ) -> type[BaseDeviceConnector]:
-        """Get primary connector class by device platform."""
+        """
+        Get primary connector class by device platform.
+
+        Strategy:
+        1. Check if platform should be forced to Netmiko (CONNECTOR_MAP)
+        2. Otherwise, use PRIMARY_CONNECTOR (Scrapli) with fallback capability
+        """
         if not platform:
             return cls.PRIMARY_CONNECTOR
 
         platform_lower = platform.lower()
 
-        # Check for exact match first
+        # Check for platforms that should skip Scrapli and go straight to Netmiko
         if platform_lower in cls.CONNECTOR_MAP:
             return cls.CONNECTOR_MAP[platform_lower]
 
-        # Check for partial matches (e.g., 'ios' in 'cisco_ios')
+        # Check for partial matches (legacy support)
         for supported_platform, connector_class in cls.CONNECTOR_MAP.items():
             if (
                 platform_lower in supported_platform
@@ -294,7 +289,7 @@ class ConnectorFactory:
             ):
                 return connector_class
 
-        # If no specific match, use primary connector
+        # Default: use primary connector (Scrapli) with fallback mechanism
         return cls.PRIMARY_CONNECTOR
 
     @classmethod

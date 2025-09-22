@@ -281,13 +281,17 @@ class ScrapliConnector(BaseDeviceConnector):
             except Exception as e:
                 last_error = e
                 error_msg = str(e)
-                logger.warning(
+                # Log connection attempts at DEBUG level to avoid duplicate messages
+                # The CommandExecutionService will handle user-facing logging
+                logger.debug(
                     f"Connection attempt {attempt + 1} failed for {self.config.hostname}: {error_msg}"
                 )
 
                 # Check for authentication failure first (before fast-fail patterns)
                 if self._is_authentication_error(error_msg):
-                    logger.error(f"Authentication failure detected for {self.config.hostname}")
+                    logger.error(
+                        f"Authentication failure detected for {self.config.hostname}"
+                    )
                     formatted_error = self._format_connection_error(e)
                     raise DeviceConnectionError(formatted_error) from e
 
@@ -295,8 +299,8 @@ class ScrapliConnector(BaseDeviceConnector):
                 if attempt == 0 and ToolkitSettings.should_fast_fail_to_netmiko(
                     error_msg
                 ):
-                    logger.info(f"Fast-fail pattern detected: {error_msg}")
-                    logger.info("Triggering immediate fallback to Netmiko")
+                    logger.debug(f"Fast-fail pattern detected: {error_msg}")
+                    logger.debug("Triggering immediate fallback to Netmiko")
                     raise DeviceConnectionError(
                         f"Fast-fail to Netmiko: {error_msg}"
                     ) from None
@@ -567,7 +571,9 @@ class ScrapliConnector(BaseDeviceConnector):
                 "\n- The SSH implementation on the device is non-standard or very old"
             )
         elif self._is_authentication_error(error_message):
-            formatted_msg = f"Authentication failed for {self.config.hostname}: {error_message}"
+            formatted_msg = (
+                f"Authentication failed for {self.config.hostname}: {error_message}"
+            )
             formatted_msg += (
                 "\n\nThis appears to be an authentication failure. Please verify:"
                 "\n- Username and password are correct"
@@ -582,12 +588,12 @@ class ScrapliConnector(BaseDeviceConnector):
     def _is_authentication_error(self, error_message: str) -> bool:
         """
         Detect if an error message indicates authentication failure.
-        
+
         Scrapli doesn't have specific authentication exceptions like Netmiko,
         so we need to detect patterns in error messages that suggest auth failure.
         """
         error_lower = error_message.lower()
-        
+
         # Common authentication failure patterns
         auth_patterns = [
             "password prompt seen more than once",
@@ -612,13 +618,15 @@ class ScrapliConnector(BaseDeviceConnector):
             "ssh authentication failed",
             "publickey authentication failed",
             "password authentication failed",
-            "keyboard-interactive authentication failed"
+            "keyboard-interactive authentication failed",
         ]
-        
+
         # Check if any authentication pattern is found
         for pattern in auth_patterns:
             if pattern in error_lower:
-                logger.debug(f"Authentication error pattern detected: '{pattern}' in '{error_message}'")
+                logger.debug(
+                    f"Authentication error pattern detected: '{pattern}' in '{error_message}'"
+                )
                 return True
-                
+
         return False
