@@ -3,7 +3,18 @@ from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializ
 
 from rest_framework import serializers
 
-from ..models import Command, CommandLog
+from ..models import Command, CommandLog, CommandVariable
+
+
+class CommandVariableSerializer(NetBoxModelSerializer):
+    """Serializer for CommandVariable model following NetBox patterns"""
+
+    class Meta:
+        model = CommandVariable
+        fields = (
+            'id', 'name', 'display_name', 'variable_type', 'required',
+            'help_text', 'default_value'
+        )
 
 
 class CommandExecutionSerializer(serializers.Serializer):
@@ -97,6 +108,7 @@ class CommandSerializer(NetBoxModelSerializer):
         view_name="plugins-api:netbox_toolkit_plugin-api:command-detail"
     )
     platforms = PlatformSerializer(nested=True, many=True)
+    variables = CommandVariableSerializer(many=True, read_only=True)
 
     class Meta:
         model = Command
@@ -109,6 +121,7 @@ class CommandSerializer(NetBoxModelSerializer):
             "description",
             "platforms",
             "command_type",
+            "variables",
             "tags",
             "custom_fields",
             "created",
@@ -167,6 +180,12 @@ class BulkCommandExecutionSerializer(serializers.Serializer):
         max_length=255,
         style={"input_type": "password"},
         help_text="Password for device authentication",
+    )
+    variables = serializers.DictField(
+        child=serializers.CharField(max_length=500),
+        required=False,
+        default=dict,
+        help_text="Variable values for command substitution (key-value pairs)",
     )
     timeout = serializers.IntegerField(
         required=False,
