@@ -224,6 +224,67 @@ class CommandExecutionService:
 
         return error_result
 
+    def execute_command_with_token(
+        self,
+        command: "Command",
+        device: Any,
+        credential_token: str,
+        user,
+        max_retries: int = 1,
+    ) -> "CommandResult":
+        """
+        Execute a command using stored credentials via token.
+
+        Args:
+            command: Command to execute
+            device: Target device
+            credential_token: Credential token for stored credentials
+            user: User requesting the execution
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            CommandResult with execution details
+        """
+        from .credential_service import CredentialService
+
+        credential_service = CredentialService()
+
+        # Get credentials using token
+        success, credentials, credential_set, error = (
+            credential_service.get_credentials_for_device(
+                credential_token, user, device
+            )
+        )
+
+        if not success:
+            logger.error(
+                "Failed to retrieve credentials for token-based execution: %s", error
+            )
+            # Return error result
+            error_result = CommandResult(
+                output="",
+                success=False,
+                error_message=f"Credential retrieval failed: {error}",
+                execution_time=0.0,
+            )
+            return self._enhance_error_result(error_result, device, command)
+
+        logger.info(
+            "Executing command '%s' on device %s using credential set '%s'",
+            command.name,
+            device.name,
+            credential_set.name,
+        )
+
+        # Execute using the retrieved credentials
+        return self.execute_command_with_retry(
+            command=command,
+            device=device,
+            username=credentials["username"],
+            password=credentials["password"],
+            max_retries=max_retries,
+        )
+
     def _log_command_execution(
         self, command: Command, device: Device, result: CommandResult, username: str
     ) -> CommandLog:

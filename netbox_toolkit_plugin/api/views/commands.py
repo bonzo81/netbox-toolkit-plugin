@@ -58,26 +58,20 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
     @COMMAND_EXECUTE_SCHEMA
     @action(detail=True, methods=["post"], url_path="execute")
     def execute_command(self, request, pk=None):
-        """Execute a command on a device via API"""
+        """Execute a command on a device using credential token"""
         command = self.get_object()
 
         # Validate input using serializer - use NetBox pattern
-        execution_serializer = CommandExecutionSerializer(data=request.data)
+        execution_serializer = CommandExecutionSerializer(
+            data=request.data, context={"request": request}
+        )
         execution_serializer.is_valid(raise_exception=True)
 
         validated_data = execution_serializer.validated_data
-        device_id = validated_data["device_id"]
-        username = validated_data["username"]
-        password = validated_data["password"]
+        device = validated_data["device"]
+        credential_set = validated_data["credential_set"]
+        credential_token = validated_data["credential_token"]
         variables = validated_data.get("variables", {})
-
-        # Get device object
-        try:
-            device = Device.objects.get(id=device_id)
-        except Device.DoesNotExist as e:
-            raise serializers.ValidationError({
-                "device_id": f"Device with ID {device_id} not found"
-            }) from e
 
         # Process command variables if present
         if command.variables.exists():
@@ -152,10 +146,10 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        # Execute command using the service
+        # Execute command using the service with credential token
         command_service = CommandExecutionService()
-        result = command_service.execute_command_with_retry(
-            command, device, username, password, max_retries=1
+        result = command_service.execute_command_with_token(
+            command, device, credential_token, request.user, max_retries=1
         )
 
         # Determine overall success - failed if either execution failed or syntax error detected

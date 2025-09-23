@@ -1,9 +1,10 @@
 from dcim.api.serializers import DeviceSerializer, PlatformSerializer
 from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializer
+from users.api.serializers import UserSerializer
 
 from rest_framework import serializers
 
-from ..models import Command, CommandLog, CommandVariable
+from ..models import Command, CommandLog, CommandVariable, DeviceCredentialSet
 
 
 class CommandVariableSerializer(NetBoxModelSerializer):
@@ -23,21 +24,13 @@ class CommandVariableSerializer(NetBoxModelSerializer):
 
 
 class CommandExecutionSerializer(serializers.Serializer):
-    """Serializer for command execution input validation"""
+    """Serializer for command execution input validation using credential tokens"""
 
     device_id = serializers.IntegerField(
         help_text="ID of the device to execute the command on"
     )
-    username = serializers.CharField(
-        max_length=100,
-        help_text="Username for device authentication",
-        trim_whitespace=True,
-    )
-    password = serializers.CharField(
-        max_length=255,
-        style={"input_type": "password"},
-        help_text="Password for device authentication",
-        trim_whitespace=False,
+    credential_token = serializers.CharField(
+        max_length=128, help_text="Credential token for stored device credentials"
     )
     variables = serializers.DictField(
         child=serializers.CharField(max_length=500),
@@ -71,31 +64,51 @@ class CommandExecutionSerializer(serializers.Serializer):
         except Device.DoesNotExist as e:
             raise serializers.ValidationError("Device not found") from e
 
+    def validate_credential_token(self, value):
+        """Validate that the credential token exists and belongs to the requesting user"""
+        try:
+            # Get the current user from context
+            request = self.context.get("request")
+            if not request or not request.user:
+                raise serializers.ValidationError("Authentication required")
+
+            from netbox_toolkit_plugin.models import DeviceCredentialSet
+
+            credential_set = DeviceCredentialSet.objects.get(
+                access_token=value, owner=request.user
+            )
+            return value
+        except DeviceCredentialSet.DoesNotExist as e:
+            raise serializers.ValidationError(
+                "Invalid credential token or token does not belong to current user"
+            ) from e
+
     def validate(self, data):
         """Cross-field validation and object retrieval"""
         from dcim.models import Device
 
-        # Get the actual device object for use in views
+        from netbox_toolkit_plugin.models import DeviceCredentialSet
+
+        # Get the actual objects for use in views
         device = Device.objects.get(id=data["device_id"])
+        request = self.context.get("request")
+        credential_set = DeviceCredentialSet.objects.get(
+            access_token=data["credential_token"], owner=request.user
+        )
+
+        # Verify credential set supports device platform (if platform restrictions exist)
+        if (
+            credential_set.platforms.exists()
+            and device.platform not in credential_set.platforms.all()
+        ):
+            raise serializers.ValidationError(
+                f"Credential set '{credential_set.name}' does not support "
+                f"platform '{device.platform.name}'"
+            )
+
         data["device"] = device
-
+        data["credential_set"] = credential_set
         return data
-
-    def validate_username(self, value):
-        """Validate username format"""
-        if not value.strip():
-            raise serializers.ValidationError("Username cannot be empty")
-        if len(value.strip()) < 2:
-            raise serializers.ValidationError("Username must be at least 2 characters")
-        return value.strip()
-
-    def validate_password(self, value):
-        """Validate password"""
-        if not value:
-            raise serializers.ValidationError("Password cannot be empty")
-        if len(value) < 3:
-            raise serializers.ValidationError("Password must be at least 3 characters")
-        return value
 
 
 class NestedCommandSerializer(WritableNestedSerializer):
@@ -221,3 +234,36 @@ class BulkCommandExecutionSerializer(serializers.Serializer):
             return value
         except Device.DoesNotExist as e:
             raise serializers.ValidationError("Device not found") from e
+
+
+class DeviceCredentialSetSerializer(NetBoxModelSerializer):
+    """Serializer for DeviceCredentialSet model - credentials are never exposed via API"""
+
+    url = serializers.HyperlinkedIdentityField(
+        view_name="plugins-api:netbox_toolkit_plugin-api:devicecredentialset-detail"
+    )
+    user = UserSerializer(nested=True, read_only=True)
+    platforms = PlatformSerializer(nested=True, many=True, read_only=True)
+
+    class Meta:
+        model = DeviceCredentialSet
+        fields = (
+            "id",
+            "url",
+            "display",
+            "name",
+            "description",
+            "user",
+            "platforms",
+            "access_token",  # Read-only, for token identification
+            "tags",
+            "custom_fields",
+            "created",
+            "last_updated",
+        )
+        # Never expose encrypted credentials or encryption keys
+        extra_kwargs = {
+            "access_token": {"read_only": True},
+            "user": {"read_only": True},
+        }
+        brief_fields = ("id", "url", "display", "name", "user")
