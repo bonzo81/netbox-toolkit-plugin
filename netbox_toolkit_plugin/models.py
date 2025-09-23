@@ -152,3 +152,119 @@ class CommandVariable(models.Model):
         if hasattr(self, "command") and self.command:
             return f"{self.command.name} - {self.display_name}"
         return f"Variable: {self.display_name}"
+
+
+class DeviceCredentialSet(NetBoxModel):
+    """Stores encrypted device credentials for users with token-based access"""
+
+    # User ownership
+    owner = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="device_credentials",
+        help_text="User who owns this credential set",
+    )
+
+    # Credential identification
+    name = models.CharField(
+        max_length=100, help_text="User-friendly name for this credential set"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional description of when/where these credentials are used",
+    )
+
+    # Platform association (optional - for credential reuse across platforms)
+    platforms = models.ManyToManyField(
+        "dcim.Platform",
+        blank=True,
+        related_name="credential_sets",
+        help_text="Platforms this credential set applies to (leave empty for all platforms)",
+    )
+
+    # Encrypted storage
+    encrypted_username = models.TextField(
+        help_text="Encrypted username for device authentication"
+    )
+    encrypted_password = models.TextField(
+        help_text="Encrypted password for device authentication"
+    )
+    encryption_key_id = models.CharField(
+        max_length=64, help_text="Identifier for the encryption key used"
+    )
+
+    # Credential token
+    access_token = models.CharField(
+        max_length=128,
+        unique=True,
+        editable=False,
+        help_text="Secure token for credential access via API",
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(
+        auto_now_add=True, help_text="When this credential set was created"
+    )
+    last_used = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this credential set was last used for command execution",
+    )
+    is_active = models.BooleanField(
+        default=True, help_text="Whether this credential set is active and can be used"
+    )
+
+    class Meta:
+        unique_together = [("owner", "name")]
+        ordering = ["owner", "name"]
+        verbose_name = "Device Credential Set"
+        verbose_name_plural = "Device Credential Sets"
+
+    def __str__(self):
+        try:
+            # Avoid accessing relationships during deletion/complex operations
+            if hasattr(self, "_state") and self._state.adding:
+                return self.name
+
+            platform_count = self.platforms.count() if hasattr(self, "platforms") else 0
+            if platform_count > 0:
+                return f"{self.name} ({platform_count} platforms)"
+            return f"{self.name} (all platforms)"
+        except Exception:
+            # Fallback for any issues during string representation
+            return getattr(self, "name", "Device Credential Set")
+
+    def get_absolute_url(self):
+        """Return the URL for this object"""
+        from django.urls import reverse
+
+        return reverse(
+            "plugins:netbox_toolkit_plugin:devicecredentialset_detail",
+            kwargs={"pk": self.pk},
+        )
+
+    def update_last_used(self):
+        """Update the last_used timestamp"""
+        from django.utils import timezone
+
+        self.last_used = timezone.now()
+        self.save(update_fields=["last_used"])
+
+    @property
+    def username(self):
+        """
+        Get the decrypted username for display purposes.
+        Returns the decrypted username or 'Error' if decryption fails.
+        """
+        try:
+            from netbox_toolkit_plugin.services.encryption_service import (
+                CredentialEncryptionService,
+            )
+
+            encryption_service = CredentialEncryptionService()
+            credentials = encryption_service.decrypt_credentials(
+                self.encrypted_username, self.encrypted_password, self.encryption_key_id
+            )
+            return credentials["username"]
+        except Exception:
+            return "Error decrypting username"

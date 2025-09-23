@@ -30,7 +30,8 @@ dependencies = [
     "scrapli>=2023.1.30",
     "scrapli-netconf>=2023.1.30",
     "scrapli-community>=2023.1.30",
-    "netmiko>=4.0.0"
+    "netmiko>=4.0.0",
+    "cryptography>=41.0.0"
 ]
 
 [project.entry-points."netbox.plugin"]
