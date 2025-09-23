@@ -11,14 +11,23 @@ Execute network commands directly from NetBox with raw and parsed outputs.
 - **📄 Raw Output**: View complete, unfiltered command responses
 - **🔍 Parsed Output**: Automatic JSON parsing using textFSM templates
 - **📊 Command Logs**: Complete execution history with timestamps
-- **🐛 Debug Logging**: Optional detailed logging for troubleshooting
+- **🌐 REST API**: Comprehensive API with bulk operations, statistics, and automation capabilities
+- **🔧 Debug Logging**: Optional detailed logging for troubleshooting
 
 ## 📚 Essential Guides
 
 | Setup | Configuration | Usage |
 |---|---|---|
 | [📦 Installation](./user/installation.md) | [⚙️ Configuration](./user/configuration.md) | [📋 Command Creation](./user/command-creation.md) |
-| [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [📋 Command Creation](./user/command-creation.md) | [🐛 Debug Logging](./user/debug-logging.md) |
+| [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [� Permission Examples](./user/permission-examples.md) | [🐛 Debug Logging](./user/debug-logging.md) |
+
+## 🚀 Workflow Examples
+
+| Web Interface | API Integration | Advanced Scenarios |
+|---|---|---|
+| [🎯 Interactive Workflows](./user/workflow-examples.md#web-interface-workflows) | [🔧 API Workflows](./api/workflows.md) | [🏢 Enterprise Automation](./user/workflow-examples.md#api-exclusive-advanced-workflow) |
+| Device troubleshooting | Bulk operations | Compliance automation |
+| Command development | System integration | Network monitoring |
 
 
 ## ⚡ Toolkit Setup Steps
@@ -31,37 +40,37 @@ First activate your NetBox virtual environment and install the plugin:
 source /opt/netbox/venv/bin/activate
 ```
 
-### 1. **Install the Plugin**
+### 1. **Install the Plugin** - [Detailed Installation Guide](./user/installation.md)
 ```bash
 pip install netbox-toolkit-plugin
 ```
 
-[📖 Detailed Installation Guide](./user/installation.md)
 
-### 2. **Enable in NetBox**
+
+### 2. **Enable in NetBox** - [Configuration Details](./user/configuration.md)
 Add `'netbox_toolkit'` to `PLUGINS` in your NetBox configuration
 
-[⚙️ Configuration Details](./user/configuration.md)
+
 
 ### 3. **Run Database Migration**
 ```bash
 python manage.py migrate netbox_toolkit
 ```
 
-### 4. **Configure Plugin Settings**
+### 4. **Configure Plugin Settings** - [Configuration Options](./user/configuration.md)
 Add basic settings to `PLUGINS_CONFIG` in your NetBox configuration
 
-[⚙️ Configuration Options](./user/configuration.md)
 
-### 5. **Set Up Permissions**
-Create either 'show' or 'config'command execution permissions to assign to users or groups
 
-[🔐 Permissions Setup Guide](./user/permissions-setup-guide.md)
+### 5. **Set Up Permissions** - [Permissions Setup Guide](./user/permissions-setup-guide.md)
+Create either 'show' or 'config' command execution permissions to assign to users or groups
 
-### 6. **Create Commands**
+
+
+### 6. **Create Commands** - [Command Creation Guide](./user/command-creation.md)
 Define platform-specific commands through the NetBox admin interface
 
-[📋 Command Creation Guide](./user/command-creation.md)
+
 
 ### 7. **Start Using**
 Visit any device page → "Toolkit" tab → Execute commands

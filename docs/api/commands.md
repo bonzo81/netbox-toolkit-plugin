@@ -2,6 +2,17 @@
 
 The Commands API allows you to manage network commands with variables and execute them on devices. The API provides comprehensive support for command variables that can reference NetBox data like interfaces, VLANs, and IP addresses.
 
+## API-Exclusive Features
+
+The Commands API offers several powerful capabilities not available through the web interface:
+
+🚀 **Bulk Execution**: Execute multiple commands across multiple devices in a single API call
+🔍 **Variable Discovery**: Programmatically retrieve available NetBox data choices for any device
+✅ **Pre-execution Validation**: Validate command variables without actually executing commands
+📊 **Advanced Integration**: Perfect for automation workflows, CI/CD pipelines, and third-party integrations
+
+All web interface functionality is also fully supported via API for complete feature parity.
+
 ## Endpoints Overview
 
 | Method | Endpoint | Description |
@@ -284,6 +295,14 @@ When creating commands with variables, the variables are managed separately thro
 - **`config`**: Configuration commands that modify device state
 
 ## Bulk Command Execution
+
+**API-Exclusive Feature**: Execute multiple commands across multiple devices with variable support. This powerful capability enables automation scenarios not possible through the web interface.
+
+### Use Cases
+- **Network-wide Configuration**: Deploy configuration changes across multiple devices
+- **Mass Data Collection**: Gather information from entire device groups
+- **Automated Auditing**: Run compliance checks across your infrastructure
+- **Orchestrated Workflows**: Execute complex multi-device operations
 
 Execute multiple commands across multiple devices with variable support:
 

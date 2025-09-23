@@ -1,6 +1,14 @@
 # Command Logs API
 
-The Command Logs API provides access to command execution history, statistics, and export capabilities.
+The Command Logs API provides access to command execution history, statistics, and export capabilities. This API offers **enhanced analytics capabilities** not available in the web interface, making it ideal for monitoring, reporting, and operational insights.
+
+## API-Exclusive Features
+
+📊 **Advanced Statistics**: Comprehensive execution analytics including success rates, trending, and performance metrics
+📈 **Operational Insights**: Identify top commands, common errors, and usage patterns
+📅 **Flexible Export**: Advanced export options with date filtering and multiple formats
+
+All web interface functionality is also fully supported via API for complete feature parity.
 
 ## Endpoints Overview
 
@@ -51,6 +59,14 @@ The Command Logs API provides access to command execution history, statistics, a
 ```
 
 ## Statistics
+
+**API-Exclusive Feature**: Get comprehensive statistics about command executions for operational insights and monitoring.
+
+### Use Cases
+- **Performance Monitoring**: Track success rates and identify problematic commands
+- **Usage Analytics**: Understand which commands are used most frequently
+- **Error Analysis**: Identify common failure patterns and troubleshoot issues
+- **Capacity Planning**: Monitor execution volumes and trends over time
 
 Get comprehensive statistics about command executions:
 
