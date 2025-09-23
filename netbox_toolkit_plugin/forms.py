@@ -5,7 +5,7 @@ from dcim.models import Platform
 from netbox.forms import NetBoxModelForm
 from utilities.forms.fields import DynamicModelMultipleChoiceField
 
-from .models import Command, CommandLog, CommandVariable
+from .models import Command, CommandLog, CommandVariable, DeviceCredentialSet
 
 
 class CommandForm(NetBoxModelForm):
@@ -198,3 +198,134 @@ class CommandExecutionForm(forms.Form):
                             attrs={"class": "form-select", "data-tomselect": "true"}
                         ),
                     )
+
+
+class DeviceCredentialSetForm(NetBoxModelForm):
+    """Form for creating/editing device credential sets in GUI only"""
+
+    username = forms.CharField(
+        max_length=100,
+        help_text="Username for device authentication",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+        help_text="Password for device authentication",
+    )
+
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+        help_text="Confirm password",
+        label="Confirm Password",
+    )
+
+    platforms = DynamicModelMultipleChoiceField(
+        queryset=Platform.objects.all(),
+        required=False,
+        help_text="Platforms this credential set applies to (leave empty for all platforms)",
+    )
+
+    class Meta:
+        model = DeviceCredentialSet
+        fields = ("name", "description", "platforms", "is_active")
+        help_texts = {
+            "name": "User-friendly name for this credential set",
+            "description": "Optional description of when/where these credentials are used",
+            "is_active": "Whether this credential set is active and can be used",
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Store user for later use in save()
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+        # For existing instances, don't require password fields
+        if self.instance and self.instance.pk:
+            self.fields["password"].required = False
+            self.fields["confirm_password"].required = False
+            self.fields[
+                "password"
+            ].help_text += " (leave empty to keep existing password)"
+            self.fields[
+                "confirm_password"
+            ].help_text = "Confirm new password (if changing)"
+
+    def clean_name(self):
+        """Validate that the credential set name is unique for this user."""
+        name = self.cleaned_data.get("name")
+        if not name:
+            return name
+
+        # Check for existing credential set with the same name for this user
+        if self.user:
+            existing_qs = DeviceCredentialSet.objects.filter(owner=self.user, name=name)
+
+            # If editing, exclude the current instance
+            if self.instance.pk:
+                existing_qs = existing_qs.exclude(pk=self.instance.pk)
+
+            if existing_qs.exists():
+                raise forms.ValidationError(
+                    f"You already have a credential set named '{name}'. "
+                    "Please choose a different name."
+                )
+
+        return name
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
+
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        # Password validation for new instances or when password is provided
+        if not self.instance.pk or password:  # New instance or password provided
+            if not password:
+                raise forms.ValidationError(
+                    "Password is required for new credential sets"
+                )
+
+            if password != confirm_password:
+                raise forms.ValidationError("Passwords do not match")
+
+            # Basic password strength validation
+            if len(password) < 6:
+                raise forms.ValidationError(
+                    "Password must be at least 6 characters long"
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # Set owner for new instances
+        if not instance.pk and self.user:
+            instance.owner = self.user
+
+        if commit:
+            # Handle password encryption only if password is provided
+            password = self.cleaned_data.get("password")
+            if password:  # Only encrypt if password is provided
+                from .services.encryption_service import CredentialEncryptionService
+
+                encryption_service = CredentialEncryptionService()
+                encrypted_data = encryption_service.encrypt_credentials(
+                    self.cleaned_data["username"], password
+                )
+
+                instance.encrypted_username = encrypted_data["encrypted_username"]
+                instance.encrypted_password = encrypted_data["encrypted_password"]
+                instance.encryption_key_id = encrypted_data["key_id"]
+
+                # Generate new access token if this is a new instance or password changed
+                if not instance.pk or password:
+                    instance.access_token = encryption_service.generate_access_token()
+
+            instance.save()
+            self.save_m2m()  # Save many-to-many relationships (platforms)
+
+        return instance

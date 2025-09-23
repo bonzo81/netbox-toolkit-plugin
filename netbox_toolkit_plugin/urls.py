@@ -82,4 +82,46 @@ urlpatterns = [
         views.DeviceRecentHistoryView.as_view(),
         name="recent_history_update",
     ),
+    # Device Credential Set views
+    path(
+        "credentials/",
+        views.DeviceCredentialSetListView.as_view(),
+        name="devicecredentialset_list",
+    ),
+    path(
+        "credentials/add/",
+        views.DeviceCredentialSetCreateView.as_view(),
+        name="devicecredentialset_add",
+    ),
+    path(
+        "credentials/<int:pk>/",
+        views.DeviceCredentialSetDetailView.as_view(),
+        name="devicecredentialset_detail",
+    ),
+    path(
+        "credentials/<int:pk>/edit/",
+        views.DeviceCredentialSetEditView.as_view(),
+        name="devicecredentialset_edit",
+    ),
+    path(
+        "credentials/<int:pk>/delete/",
+        views.DeviceCredentialSetDeleteView.as_view(),
+        name="devicecredentialset_delete",
+    ),
+    path(
+        "credentials/<int:pk>/regenerate-token/",
+        views.RegenerateTokenView.as_view(),
+        name="devicecredentialset_regenerate_token",
+    ),
+    path(
+        "credentials/<int:pk>/token-modal/",
+        views.DeviceCredentialSetTokenModalView.as_view(),
+        name="devicecredentialset_token_modal",
+    ),
+    path(
+        "credentials/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="devicecredentialset_changelog",
+        kwargs={"model": models.DeviceCredentialSet},
+    ),
 ]

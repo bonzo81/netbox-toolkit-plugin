@@ -21,6 +21,16 @@ from .command_views import (
     CommandVariableFormView,
     CommandView,
 )
+from .credential_views import (
+    DeviceCredentialSetCreateView,
+    DeviceCredentialSetDeleteView,
+    DeviceCredentialSetDetailView,
+    DeviceCredentialSetEditView,
+    DeviceCredentialSetListView,
+    DeviceCredentialSetShowTokenView,
+    DeviceCredentialSetTokenModalView,
+    RegenerateTokenView,
+)
 from .device_views import (
     DeviceCommandOutputView,
     DeviceExecutionModalView,
@@ -38,10 +48,10 @@ __all__ = [
     "DeviceRecentHistoryView",
     # Command Views
     "CommandListView",
-    "CommandEditView",
-    "CommandVariableFormView",
     "CommandView",
+    "CommandEditView",
     "CommandDeleteView",
+    "CommandVariableFormView",
     "CommandChangeLogView",
     # Command Log Views
     "CommandLogListView",
@@ -49,4 +59,12 @@ __all__ = [
     "CommandLogEditView",
     "CommandLogDeleteView",
     "CommandLogExportCSVView",
+    # Device Credential Set Views
+    "DeviceCredentialSetListView",
+    "DeviceCredentialSetDetailView",
+    "DeviceCredentialSetCreateView",
+    "DeviceCredentialSetEditView",
+    "DeviceCredentialSetDeleteView",
+    "DeviceCredentialSetTokenModalView",
+    "RegenerateTokenView",
 ]

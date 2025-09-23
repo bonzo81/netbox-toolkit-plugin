@@ -3,7 +3,7 @@ from netbox.filtersets import NetBoxModelFilterSet
 
 import django_filters
 
-from .models import Command, CommandLog
+from .models import Command, CommandLog, DeviceCredentialSet
 
 
 class CommandFilterSet(NetBoxModelFilterSet):
@@ -67,3 +67,34 @@ class CommandLogFilterSet(NetBoxModelFilterSet):
     class Meta:
         model = CommandLog
         fields = ("command", "device", "username", "success")
+
+
+class DeviceCredentialSetFilterSet(NetBoxModelFilterSet):
+    """Filtering for device credential sets"""
+
+    name_icontains = django_filters.CharFilter(
+        field_name="name", lookup_expr="icontains", label="Name contains"
+    )
+
+    platforms = django_filters.ModelMultipleChoiceFilter(
+        queryset=Platform.objects.all(),
+        label="Platforms",
+    )
+
+    is_active = django_filters.BooleanFilter(label="Active")
+
+    created_after = django_filters.DateTimeFilter(
+        field_name="created_at", lookup_expr="gte", label="Created after"
+    )
+
+    created_before = django_filters.DateTimeFilter(
+        field_name="created_at", lookup_expr="lte", label="Created before"
+    )
+
+    last_used_after = django_filters.DateTimeFilter(
+        field_name="last_used", lookup_expr="gte", label="Last used after"
+    )
+
+    class Meta:
+        model = DeviceCredentialSet
+        fields = ("name", "platforms", "is_active")
