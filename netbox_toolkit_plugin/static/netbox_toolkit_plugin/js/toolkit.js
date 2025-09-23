@@ -13,7 +13,6 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
 
     // Prevent multiple initialization
     if (Toolkit.initialized) {
-        console.log('NetBox Toolkit already initialized, skipping');
         return;
     }
 
@@ -127,6 +126,8 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 this.handleCopyParsedData(event);
             } else if (target.classList.contains('copy-output-btn')) {
                 this.handleCopyRawOutput(event);
+            } else if (target.classList.contains('copy-token-btn')) {
+                this.handleCopyToken(event);
             }
         },
 
@@ -229,6 +230,23 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 console.error('Error processing parsed data:', err);
                 alert('Failed to process parsed data for copying: ' + err.message);
             }
+        },
+
+        /**
+         * Handle copying credential token from data attribute
+         */
+        handleCopyToken: function (event) {
+            const btn = event.target.closest('.copy-token-btn');
+            if (!btn) return;
+
+            const token = btn.dataset.token;
+            if (!token) {
+                console.error('No token data attribute found');
+                alert('No token available to copy');
+                return;
+            }
+
+            Toolkit.Utils.copyToClipboard(btn, token);
         }
     };
 
@@ -279,8 +297,6 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
             if (!variableFormsContainer || !totalFormsInput) {
                 return; // Not on command edit page
             }
-
-            console.log('Initializing Variable Formset Manager (HTMX mode)');
 
             // Handle delete buttons (using event delegation for dynamically added forms)
             variableFormsContainer.addEventListener('click', function (e) {
@@ -395,11 +411,13 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
         setupModalHandlers: function (container) {
             const modal = container.querySelector('.modal');
             const backdrop = container.querySelector('.modal-backdrop');
-            const cancelButton = container.querySelector('.btn-secondary[data-modal-close]');
+            const closeButtons = container.querySelectorAll('[data-modal-close]');
 
             if (modal && backdrop) {
                 // Backdrop click handler
-                backdrop.addEventListener('click', this.closeModal);
+                backdrop.addEventListener('click', function () {
+                    Toolkit.HTMXManager.closeModal();
+                });
 
                 // Escape key handler (one-time use)
                 document.addEventListener('keydown', function (e) {
@@ -409,10 +427,13 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 }, { once: true });
             }
 
-            // Cancel button handler
-            if (cancelButton) {
-                cancelButton.addEventListener('click', this.closeModal);
-            }
+            // All modal close button handlers (handles both btn-close and btn-secondary)
+            closeButtons.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    Toolkit.HTMXManager.closeModal();
+                });
+            });
         },
 
         /**
@@ -458,8 +479,6 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
      * Main initialization function
      */
     Toolkit.init = function () {
-        console.log('Initializing NetBox Toolkit JavaScript');
-
         // Initialize copy functionality (available on all pages)
         this.CopyManager.init();
 
@@ -479,7 +498,6 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
         }
 
         this.initialized = true;
-        console.log('NetBox Toolkit JavaScript initialized successfully');
     };
 
     // Auto-initialize when DOM is ready
