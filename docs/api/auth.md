@@ -1,30 +1,62 @@
 # Authentication & Permissions
 
-The NetBox Toolkit API integrates with NetBox's built-in authentication and permission system.
+The NetBox Toolkit API uses a **dual-token authentication system** for enhanced security and user isolation.
 
-## Authentication
+## Two-Token Authentication System
 
-### API Token Authentication
+### 1. NetBox API Token (Authentication)
+Standard NetBox token for user authentication:
+- **Purpose**: Identifies and authenticates the user to NetBox
+- **Location**: `Authorization: Token <your-netbox-api-token>` header
+- **Scope**: All NetBox API access
 
-All API requests require authentication using NetBox's token system:
+### 2. Credential Token (Device Access)
+Plugin-specific token for device credential access:
+- **Purpose**: References stored device credentials (username/password)
+- **Location**: `credential_token` field in request body
+- **Scope**: Device command execution only
+
+## Why Two Tokens?
+
+🔒 **Enhanced Security**: Device credentials never transmitted in API calls
+👤 **User Isolation**: Users can only access their own stored credential sets
+📝 **Audit Trail**: All actions properly logged to user accounts
+🔄 **Token Rotation**: Credential tokens can be regenerated independently
+🎯 **Granular Control**: Different credential sets for different device groups
+
+## Getting Started
+
+### Step 1: Get Your NetBox API Token
 
 ```bash
-curl -H "Authorization: Token YOUR_TOKEN_HERE" \
-     -H "Content-Type: application/json" \
-     https://netbox.example.com/api/plugins/toolkit/commands/
+# Via NetBox Web UI:
+# 1. Log into NetBox
+# 2. Go to User → Profile → API Tokens
+# 3. Create a new token or copy an existing one
 ```
 
-### Getting Your API Token
+### Step 2: Create Device Credential Sets
 
-1. **Via NetBox Web UI:**
-   - Log into NetBox
-   - Go to User → Profile → API Tokens
-   - Create a new token or copy an existing one
+```bash
+# Via NetBox Web UI:
+# 1. Navigate to Toolkit → Device Credential Sets
+# 2. Click "Add Device Credential Set"
+# 3. Enter name, username, password
+# 4. Select supported platforms (optional)
+# 5. Save and copy the generated credential token
+```
 
-2. **Via Django Admin:**
-   - Access Django admin interface
-   - Navigate to Auth Token → Tokens
-   - Create or view existing tokens
+### Step 3: Make API Calls
+
+```bash
+curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/17/execute/" \
+  -H "Authorization: Token <your-netbox-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": 1,
+    "credential_token": "<your-credential-token>"
+  }'
+```
 
 ## Permissions
 

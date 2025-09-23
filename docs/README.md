@@ -1,18 +1,25 @@
-# NetBox Toolkit Plugin
+# NetBox Toolkit ## 📚 Essential Guides
 
-Execute network commands directly from NetBox with raw and parsed outputs.
+| Setup | Configuration | Usage |
+|---|---|---|
+| [📦 Installation](./user/installation.md) | [⚙️ Configuration](./user/configuration.md) | [📋 Command Creation](./user/command-creation.md) |
+| [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [🔑 Device Credential Sets](./user/getting-started.md#device-credential-sets) | [📝 Permission Examples](./user/permission-examples.md) |
+| [🔌 API Authentication](./api/auth.md) | [⚡ Commands API](./api/commands.md) | [🐛 Debug Logging](./user/debug-logging.md) |
+
+Execute network commands securely from NetBox with encrypted credential storage, dual-token authentication, and comprehensive API automation.
 
 ## 🚀 What Does This Plugin Do?
 
 ### 📋 Feature Overview
-- **🔧 Command Creation**: Define platform-specific commands (show/config types)
-- **🔐 Command Permissions**: Granular access control using NetBox's permission system
-- **⚡ Command Execution**: Run commands directly from device pages via "Toolkit" tab
+- **🔧 Command Creation**: Define platform-specific commands (show/config types) with variables
+- **🔐 Secure Credential Storage**: Encrypted device credentials with credential tokens
+- **🔑 Dual-Token Security**: NetBox API tokens + credential tokens for enhanced security
+- **⚡ Command Execution**: Run commands from device pages via "Toolkit" tab or REST API
 - **📄 Raw Output**: View complete, unfiltered command responses
 - **🔍 Parsed Output**: Automatic JSON parsing using textFSM templates
 - **📊 Command Logs**: Complete execution history with timestamps
-- **🌐 REST API**: Comprehensive API with bulk operations, statistics, and automation capabilities
-- **🔧 Debug Logging**: Optional detailed logging for troubleshooting
+- **🚀 Bulk Operations**: Execute multiple commands across multiple devices via API
+- **� Debug Logging**: Optional detailed logging for troubleshooting
 
 ## 📚 Essential Guides
 
@@ -26,8 +33,9 @@ Execute network commands directly from NetBox with raw and parsed outputs.
 | Web Interface | API Integration | Advanced Scenarios |
 |---|---|---|
 | [🎯 Interactive Workflows](./user/workflow-examples.md#web-interface-workflows) | [🔧 API Workflows](./api/workflows.md) | [🏢 Enterprise Automation](./user/workflow-examples.md#api-exclusive-advanced-workflow) |
-| Device troubleshooting | Bulk operations | Compliance automation |
-| Command development | System integration | Network monitoring |
+| Device troubleshooting | Credential token setup | Compliance automation |
+| Command development | Bulk operations | Network monitoring |
+| Secure credential storage | System integration | Multi-user environments |
 
 
 ## ⚡ Toolkit Setup Steps
@@ -60,20 +68,18 @@ python manage.py migrate netbox_toolkit
 ### 4. **Configure Plugin Settings** - [Configuration Options](./user/configuration.md)
 Add basic settings to `PLUGINS_CONFIG` in your NetBox configuration
 
-
-
 ### 5. **Set Up Permissions** - [Permissions Setup Guide](./user/permissions-setup-guide.md)
 Create either 'show' or 'config' command execution permissions to assign to users or groups
 
+### 6. **Create Device Credential Sets** - [Getting Started Guide](./user/getting-started.md#device-credential-sets)
+Set up secure, encrypted credential storage with credential tokens for API access
 
+### 7. **Create Commands** - [Command Creation Guide](./user/command-creation.md)
+Define platform-specific commands with variables through the NetBox admin interface
 
-### 6. **Create Commands** - [Command Creation Guide](./user/command-creation.md)
-Define platform-specific commands through the NetBox admin interface
-
-
-
-### 7. **Start Using**
-Visit any device page → "Toolkit" tab → Execute commands
+### 8. **Start Using**
+- **Web Interface**: Visit any device page → "Toolkit" tab → Execute commands
+- **REST API**: Use dual-token authentication for secure automation - [API Guide](./api/auth.md)
 
 ## 🌐 Platform Support
 
@@ -120,7 +126,27 @@ Complete execution history tracking:
 - **Status** - Success/failure with error details
 - **Duration** - Execution time
 
-## 🐛 Debug Logging
+## � Security Features
+
+### Dual-Token Authentication System
+- **NetBox API Token**: Standard user authentication
+- **Credential Token**: References encrypted device credentials
+- **User Isolation**: Credential tokens bound to specific users
+- **No Password Transmission**: Credentials never sent in API calls
+
+### Encrypted Credential Storage
+- **Fernet Encryption**: Industry-standard symmetric encryption
+- **Unique Key Derivation**: Each credential set has unique encryption keys
+- **No Key Storage**: Keys derived deterministically from master secret
+- **Secure Token Generation**: URL-safe random credential tokens
+
+### Audit & Compliance
+- **Complete Audit Trail**: All executions logged with user attribution
+- **Permission Integration**: Leverages NetBox's ObjectPermission system
+- **Granular Access Control**: Separate permissions for show vs config commands
+- **Cross-User Protection**: Users cannot access each other's credentials
+
+## �🐛 Debug Logging
 Optional detailed logging for troubleshooting:
 
 - **Connection details** - SSH handshake and authentication

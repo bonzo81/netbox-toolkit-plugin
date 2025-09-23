@@ -13,6 +13,39 @@ The Commands API offers several powerful capabilities not available through the 
 
 All web interface functionality is also fully supported via API for complete feature parity.
 
+## Authentication & Credentials
+
+The Commands API uses a **two-token authentication system** for enhanced security:
+
+1. **NetBox API Token**: Standard NetBox authentication (sent in `Authorization` header)
+2. **Credential Token**: References stored device credentials (sent in request body)
+
+### Why Two Tokens?
+
+- **Security**: Device credentials are never transmitted in API calls
+- **User Isolation**: Users can only use their own stored credential sets
+- **Audit Trail**: All actions are properly logged to user accounts
+- **Flexibility**: Multiple credential sets can be managed per user
+
+### Setting Up Credentials
+
+1. Create a **Device Credential Set** in the NetBox web interface
+2. Store your device username/password (encrypted automatically)
+3. Copy the generated **credential token** for API use
+4. Use both your NetBox API token and credential token in API calls
+
+### Example API Call
+
+```bash
+curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/17/execute/" \
+  -H "Authorization: Token <your-netbox-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": 1,
+    "credential_token": "<your-credential-token>"
+  }'
+```
+
 ## Endpoints Overview
 
 | Method | Endpoint | Description |
@@ -153,8 +186,7 @@ POST /api/plugins/toolkit/commands/{id}/execute/
 ```json
 {
     "device_id": 123,
-    "username": "admin",
-    "password": "password123",
+    "credential_token": "HsAo6NEoNcWYaE0hi_B9PqC6NcV-IZgwbLgDw_rR1I_1awHhUQMhhWrMMPIZjVvBrIi8fXDAmQfx8BXJoF1LNg",
     "variables": {
         "interface_name": "GigabitEthernet0/1"
     },
@@ -168,17 +200,19 @@ POST /api/plugins/toolkit/commands/{id}/execute/
     "success": true,
     "output": "GigabitEthernet0/1 is up, line protocol is up...",
     "error_message": null,
-    "execution_time": "2025-06-13T10:30:45.123Z",
+    "execution_time": 0.9740488529205322,
     "command": {
         "id": 1,
         "name": "Show Interface Status",
-        "command_type": "show",
-        "original_text": "show interface <interface_name> status",
-        "executed_text": "show interface GigabitEthernet0/1 status"
+        "command_type": "show"
     },
     "device": {
         "id": 123,
         "name": "switch01"
+    },
+    "credential_set": {
+        "id": 8,
+        "name": "Network Admin Credentials"
     },
     "variables": {
         "interface_name": "GigabitEthernet0/1"
@@ -198,6 +232,7 @@ POST /api/plugins/toolkit/commands/{id}/execute/
         ]
     }
 }
+}
 ```
 
 ## Variable Workflow Example
@@ -207,14 +242,25 @@ Here's a complete workflow for working with variable commands via API:
 ```python
 import requests
 
+# Configuration
+BASE_URL = "https://netbox.example.com"
+API_TOKEN = "your-netbox-api-token"
+CREDENTIAL_TOKEN = "your-credential-token"  # From Device Credential Set
+
+headers = {
+    "Authorization": f"Token {API_TOKEN}",
+    "Content-Type": "application/json"
+}
+
 # 1. Get command information including variables
-command = requests.get("/api/plugins/toolkit/commands/1/").json()
+command = requests.get(f"{BASE_URL}/api/plugins/toolkit/commands/1/", headers=headers).json()
 print(f"Command: {command['name']}")
 print(f"Variables: {[v['name'] for v in command['variables']]}")
 
 # 2. Get available choices for the target device
 choices = requests.get(
-    "/api/plugins/toolkit/commands/1/variable-choices/?device_id=123"
+    f"{BASE_URL}/api/plugins/toolkit/commands/1/variable-choices/?device_id=123",
+    headers=headers
 ).json()
 
 # 3. Present choices to user and collect input
@@ -227,18 +273,19 @@ selected_interface = "GigabitEthernet0/1"  # User selection
 
 # 4. Validate before execution (optional but recommended)
 validation = requests.post(
-    "/api/plugins/toolkit/commands/1/validate-variables/",
+    f"{BASE_URL}/api/plugins/toolkit/commands/1/validate-variables/",
+    headers=headers,
     json={"variables": {"interface_name": selected_interface}}
 )
 print(f"Validation: {validation.json()}")
 
 # 5. Execute with validated variables
 result = requests.post(
-    "/api/plugins/toolkit/commands/1/execute/",
+    f"{BASE_URL}/api/plugins/toolkit/commands/1/execute/",
+    headers=headers,
     json={
         "device_id": 123,
-        "username": "admin",
-        "password": "password",
+        "credential_token": CREDENTIAL_TOKEN,
         "variables": {"interface_name": selected_interface}
     }
 )
@@ -317,8 +364,7 @@ POST /api/plugins/toolkit/commands/bulk-execute/
         {
             "command_id": 1,
             "device_id": 123,
-            "username": "admin",
-            "password": "password123",
+            "credential_token": "HsAo6NEoNcWYaE0hi_B9PqC6NcV-IZgwbLgDw_rR1I_1awHhUQMhhWrMMPIZjVvBrIi8fXDAmQfx8BXJoF1LNg",
             "variables": {
                 "interface_name": "GigabitEthernet0/1"
             }
@@ -326,8 +372,7 @@ POST /api/plugins/toolkit/commands/bulk-execute/
         {
             "command_id": 2,
             "device_id": 124,
-            "username": "admin",
-            "password": "password123",
+            "credential_token": "HsAo6NEoNcWYaE0hi_B9PqC6NcV-IZgwbLgDw_rR1I_1awHhUQMhhWrMMPIZjVvBrIi8fXDAmQfx8BXJoF1LNg",
             "variables": {
                 "vlan_id": "100"
             }
