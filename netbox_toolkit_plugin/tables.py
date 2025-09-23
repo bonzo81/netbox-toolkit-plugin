@@ -6,6 +6,7 @@ from .models import Command, CommandLog
 
 
 class CommandTable(NetBoxTable):
+    pk = tables.Column(linkify=True, verbose_name="ID")
     name = tables.Column(
         linkify=("plugins:netbox_toolkit_plugin:command_detail", [tables.A("pk")])
     )
@@ -22,16 +23,14 @@ class CommandTable(NetBoxTable):
 
     class Meta(NetBoxTable.Meta):
         model = Command
-        fields = ("pk", "id", "name", "platforms", "command_type", "description")
+        fields = ("pk", "name", "platforms", "command_type", "description")
         default_columns = ("pk", "name", "platforms", "command_type", "description")
+        exclude = ("id",)
 
 
 class CommandLogTable(NetBoxTable):
     pk = tables.Column(
-        linkify=(
-            "plugins:netbox_toolkit_plugin:commandlog_view",
-            [tables.A("pk")],
-        ),
+        linkify=("plugins:netbox_toolkit_plugin:commandlog_view", [tables.A("pk")]),
         verbose_name="ID",
     )
     command = tables.Column(
@@ -43,14 +42,10 @@ class CommandLogTable(NetBoxTable):
     device = tables.Column(linkify=True)
     success = tables.BooleanColumn(verbose_name="Status", yesno=("Success", "Failed"))
 
-    # Remove actions column entirely
-    actions = False
-
     class Meta(NetBoxTable.Meta):
         model = CommandLog
         fields = (
             "pk",
-            "id",
             "command",
             "device",
             "username",
@@ -66,3 +61,4 @@ class CommandLogTable(NetBoxTable):
             "execution_time",
             "success",
         )
+        exclude = ("id",)

@@ -1,6 +1,8 @@
 from django.urls import path
 
-from . import views
+from netbox.views.generic import ObjectChangeLogView
+
+from . import models, views
 
 app_name = "netbox_toolkit_plugin"
 
@@ -41,6 +43,12 @@ urlpatterns = [
         "logs/<int:pk>/delete/",
         views.CommandLogDeleteView.as_view(),
         name="commandlog_delete",
+    ),
+    path(
+        "logs/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="commandlog_changelog",
+        kwargs={"model": models.CommandLog},
     ),
     path(
         "logs/<int:pk>/export-csv/",
