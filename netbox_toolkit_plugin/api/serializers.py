@@ -12,8 +12,13 @@ class CommandVariableSerializer(NetBoxModelSerializer):
     class Meta:
         model = CommandVariable
         fields = (
-            'id', 'name', 'display_name', 'variable_type', 'required',
-            'help_text', 'default_value'
+            "id",
+            "name",
+            "display_name",
+            "variable_type",
+            "required",
+            "help_text",
+            "default_value",
         )
 
 

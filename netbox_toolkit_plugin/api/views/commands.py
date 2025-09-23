@@ -27,7 +27,11 @@ from ..schemas import (
     COMMAND_UPDATE_SCHEMA,
     COMMAND_VALIDATE_VARIABLES_SCHEMA,
 )
-from ..serializers import CommandExecutionSerializer, CommandSerializer, BulkCommandExecutionSerializer
+from ..serializers import (
+    BulkCommandExecutionSerializer,
+    CommandExecutionSerializer,
+    CommandSerializer,
+)
 
 
 @extend_schema_view(
@@ -71,15 +75,15 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
         try:
             device = Device.objects.get(id=device_id)
         except Device.DoesNotExist as e:
-            raise serializers.ValidationError(
-                {"device_id": f"Device with ID {device_id} not found"}
-            ) from e
+            raise serializers.ValidationError({
+                "device_id": f"Device with ID {device_id} not found"
+            }) from e
 
         # Process command variables if present
         if command.variables.exists():
             from ...models import Command as CommandModel
-            from ...utils.variable_parser import CommandVariableParser
             from ...utils.netbox_data_validator import NetBoxDataValidator
+            from ...utils.variable_parser import CommandVariableParser
 
             # First validate NetBox data variables against the device
             for variable in command.variables.all():
@@ -89,7 +93,9 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                         device, variable.variable_type, variable.name, value
                     )
                     if not is_valid:
-                        raise serializers.ValidationError({"variables": {variable.name: error_msg}})
+                        raise serializers.ValidationError({
+                            "variables": {variable.name: error_msg}
+                        })
 
             processed_command_text, is_valid, errors = (
                 CommandVariableParser.prepare_command_for_execution(command, variables)
@@ -206,121 +212,123 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
     def validate_variables(self, request, pk=None):
         """Validate variable values without execution - follows NetBox action pattern"""
         command = self.get_object()
-        variables = request.data.get('variables', {})
+        variables = request.data.get("variables", {})
 
         from ...utils.variable_parser import CommandVariableParser
+
         _, is_valid, errors = CommandVariableParser.prepare_command_for_execution(
             command, variables
         )
 
         if not is_valid:
-            raise serializers.ValidationError({'variables': errors})
+            raise serializers.ValidationError({"variables": errors})
 
-        return Response({'detail': 'Variables are valid'})
+        return Response({"detail": "Variables are valid"})
 
     @action(detail=True, methods=["get"], url_path="variable-choices")
     def variable_choices(self, request, pk=None):
         """Get available choices for NetBox data variables for a specific device"""
         command = self.get_object()
-        device_id = request.query_params.get('device_id')
-        
+        device_id = request.query_params.get("device_id")
+
         if not device_id:
-            raise serializers.ValidationError({'device_id': 'Device ID is required'})
-        
+            raise serializers.ValidationError({"device_id": "Device ID is required"})
+
         try:
             device = Device.objects.get(id=device_id)
         except Device.DoesNotExist as e:
-            raise serializers.ValidationError(
-                {'device_id': f'Device with ID {device_id} not found'}
-            ) from e
-        
+            raise serializers.ValidationError({
+                "device_id": f"Device with ID {device_id} not found"
+            }) from e
+
         variable_choices = {}
-        
+
         for variable in command.variables.all():
             if variable.variable_type == "text":
                 # Text variables don't have predefined choices
                 variable_choices[variable.name] = {
-                    'type': 'text',
-                    'choices': None,
-                    'help_text': variable.help_text,
-                    'default_value': variable.default_value
+                    "type": "text",
+                    "choices": None,
+                    "help_text": variable.help_text,
+                    "default_value": variable.default_value,
                 }
             elif variable.variable_type == "netbox_interface":
                 # Get available interfaces for the device
-                interfaces = device.interfaces.all().order_by('name')
+                interfaces = device.interfaces.all().order_by("name")
                 choices = [
                     {
-                        'value': interface.name,
-                        'display': f"{interface.name} ({interface.type})",
-                        'id': interface.id,
-                        'enabled': interface.enabled
+                        "value": interface.name,
+                        "display": f"{interface.name} ({interface.type})",
+                        "id": interface.id,
+                        "enabled": interface.enabled,
                     }
                     for interface in interfaces
                 ]
                 variable_choices[variable.name] = {
-                    'type': 'netbox_interface',
-                    'choices': choices,
-                    'help_text': variable.help_text,
-                    'default_value': variable.default_value
+                    "type": "netbox_interface",
+                    "choices": choices,
+                    "help_text": variable.help_text,
+                    "default_value": variable.default_value,
                 }
             elif variable.variable_type == "netbox_vlan":
                 # Get available VLANs for the device (if device has VLANs)
-                if hasattr(device, 'vlans'):
-                    vlans = device.vlans.all().order_by('vid')
+                if hasattr(device, "vlans"):
+                    vlans = device.vlans.all().order_by("vid")
                     choices = [
                         {
-                            'value': str(vlan.vid),
-                            'display': f"VLAN {vlan.vid} ({vlan.name})",
-                            'id': vlan.id,
-                            'name': vlan.name
+                            "value": str(vlan.vid),
+                            "display": f"VLAN {vlan.vid} ({vlan.name})",
+                            "id": vlan.id,
+                            "name": vlan.name,
                         }
                         for vlan in vlans
                     ]
                 else:
                     # Fallback to site VLANs if device doesn't have direct VLANs
                     from ipam.models import VLAN
-                    vlans = VLAN.objects.filter(site=device.site).order_by('vid')
+
+                    vlans = VLAN.objects.filter(site=device.site).order_by("vid")
                     choices = [
                         {
-                            'value': str(vlan.vid),
-                            'display': f"VLAN {vlan.vid} ({vlan.name})",
-                            'id': vlan.id,
-                            'name': vlan.name
+                            "value": str(vlan.vid),
+                            "display": f"VLAN {vlan.vid} ({vlan.name})",
+                            "id": vlan.id,
+                            "name": vlan.name,
                         }
                         for vlan in vlans
                     ]
-                
+
                 variable_choices[variable.name] = {
-                    'type': 'netbox_vlan',
-                    'choices': choices,
-                    'help_text': variable.help_text,
-                    'default_value': variable.default_value
+                    "type": "netbox_vlan",
+                    "choices": choices,
+                    "help_text": variable.help_text,
+                    "default_value": variable.default_value,
                 }
             elif variable.variable_type == "netbox_ip":
                 # Get IP addresses associated with the device
-                ip_addresses = device.ip_addresses.all().order_by('address')
+                ip_addresses = device.ip_addresses.all().order_by("address")
                 choices = [
                     {
-                        'value': str(ip.address.ip),
-                        'display': f"{ip.address} ({ip.status})",
-                        'id': ip.id,
-                        'status': ip.status
+                        "value": str(ip.address.ip),
+                        "display": f"{ip.address} ({ip.status})",
+                        "id": ip.id,
+                        "status": ip.status,
                     }
                     for ip in ip_addresses
                 ]
                 variable_choices[variable.name] = {
-                    'type': 'netbox_ip',
-                    'choices': choices,
-                    'help_text': variable.help_text,
-                    'default_value': variable.default_value
+                    "type": "netbox_ip",
+                    "choices": choices,
+                    "help_text": variable.help_text,
+                    "default_value": variable.default_value,
                 }
-        
+
         return Response({
-            'device_id': device_id,
-            'device_name': device.name,
-            'command_id': command.id,
-            'command_name': command.name,
-            'variables': variable_choices
+            "device_id": device_id,
+            "device_name": device.name,
+            "command_id": command.id,
+            "command_name": command.name,
+            "variables": variable_choices,
         })
 
     @COMMAND_BULK_EXECUTE_SCHEMA
@@ -338,7 +346,9 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
             for i, execution_data in enumerate(executions):
                 try:
                     # Validate each execution using serializer
-                    execution_serializer = BulkCommandExecutionSerializer(data=execution_data)
+                    execution_serializer = BulkCommandExecutionSerializer(
+                        data=execution_data
+                    )
                     if not execution_serializer.is_valid():
                         results.append({
                             "execution_id": i + 1,
@@ -373,7 +383,9 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                         from ...utils.variable_parser import CommandVariableParser
 
                         processed_command_text, is_valid, errors = (
-                            CommandVariableParser.prepare_command_for_execution(command, variables)
+                            CommandVariableParser.prepare_command_for_execution(
+                                command, variables
+                            )
                         )
 
                         if not is_valid:

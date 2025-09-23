@@ -87,10 +87,10 @@ COMMAND_VALIDATE_VARIABLES_SCHEMA = extend_schema(
                 "description": "Variable values to validate (key-value pairs)",
                 "example": {
                     "interface_name": "GigabitEthernet0/1",
-                    "access_list_name": "ACL_100"
-                }
+                    "access_list_name": "ACL_100",
+                },
             }
-        }
+        },
     },
     responses={
         200: OpenApiResponse(
@@ -103,7 +103,7 @@ COMMAND_VALIDATE_VARIABLES_SCHEMA = extend_schema(
                 {
                     "variables": [
                         "Missing required variable: interface_name",
-                        "Invalid value for variable: access_list_name"
+                        "Invalid value for variable: access_list_name",
                     ]
                 }
             ],
