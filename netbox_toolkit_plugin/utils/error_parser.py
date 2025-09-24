@@ -340,7 +340,9 @@ class VendorErrorParser:
             return True
         if pattern_vendor in juniper_platforms and device_platform in juniper_platforms:
             return True
-        return bool(pattern_vendor in arista_platforms and device_platform in arista_platforms)
+        return bool(
+            pattern_vendor in arista_platforms and device_platform in arista_platforms
+        )
 
     def _enhance_error_message(
         self, original_message: str, pattern: ErrorPattern
