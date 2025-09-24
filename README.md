@@ -3,7 +3,7 @@
 > ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️
 > This plugin is in very early development and not recommended for production use. There will be bugs and possible incomplete functionality. Use at your own risk! If you do, give some feedback in [Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
 
-A comprehensive NetBox plugin for secure network device command execution with encrypted credential storage, dual-token authentication, and powerful API automation capabilities.ox Command Toolkit Plugin
+A comprehensive NetBox plugin for secure network device command execution with encrypted credential storage, dual-token authentication, and powerful API automation capabilities. (Toolkit Plugin)
 
 > ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️
 > This plugin is in very early development and not recommended for production use. There will be bugs and possible incomplete functionality. Use at your own risk! If you do, give some feedback in [Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
@@ -63,7 +63,7 @@ A NetBox plugin that allows you to run commands on network devices directly from
 - [⚡ Commands API](./docs/api/commands.md) - Command execution and bulk operations
 
 #### 🔧 Troubleshooting
-- [🐛 Debug Logging](./docs/user/debug-logging.md) - Enable detailed logging for debugging
+- [� Logging Guide](./docs/user/logging.md) - Enable logging for troubleshooting
 
 ## Demo
 
