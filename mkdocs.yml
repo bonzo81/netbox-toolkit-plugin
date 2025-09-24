@@ -91,7 +91,7 @@ nav:
           - Permissions Setup: user/permissions-setup-guide.md
           - Permission Examples: user/permission-examples.md
       - Troubleshooting:
-          - Debug Logging: user/debug-logging.md
+          - Logging Guide: user/logging.md
   - API Documentation:
       - Overview: api/index.md
       - API Reference: api/overview.md

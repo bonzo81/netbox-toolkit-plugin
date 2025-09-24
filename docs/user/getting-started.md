@@ -28,16 +28,20 @@ Before executing commands on devices, you need to define the commands:
 1. Navigate to Plugins > Toolkit > Commands
 2. Click "Add" to create a new command
 3. Fill in the command details:
-   - **Name**: A descriptive name (e.g., "Show Version")
-   - **Command**: The actual command to execute (e.g., `show version`)
+   - **Name**: A descriptive name (e.g., "Show Interface Status")
+   - **Command**: The actual command to execute
+     - Simple: `show version`
+     - With variables: `show interface <interface_name> status`
    - **Description**: Optional explanation of what the command does
    - **Platform**: The device platform this command is designed for (e.g., `cisco_ios`, `cisco_nxos`, `arista_eos`)
    - **Command Type**: Categorize the command (Show, Configuration, Diagnostic, etc.)
-   - **Requires Enable**: Toggle if the command requires privileged mode
-   - **Requires Config Mode**: Toggle if the command requires configuration mode
    - **Tags**: Optional tags for better organization
 
-4. Click "Create" to save the command
+4. **Add Variables (if needed)**: If your command includes `<variable_name>` syntax, define each variable with appropriate types and validation
+
+5. Click "Create" to save the command
+
+> 📚 **Need more details?** See the [Command Creation Guide](./command-creation.md) for detailed information about variable syntax, types, and troubleshooting.
 
 ### 3. Execute Commands on Devices
 
@@ -46,8 +50,9 @@ To execute commands on a device:
 1. Navigate to the device's detail page in NetBox
 2. Click on the "Toolkit" tab
 3. Select a command from the dropdown
-4. Enter your device credentials
-5. Click "Execute" to run the command
+4. **Fill in variables** (if the command has any): The form will show dropdowns/fields for each variable
+5. Enter your device credentials
+6. Click "Execute" to run the command
 6. View the command output on the page
 
 ### 4. View Command Logs

@@ -67,7 +67,7 @@ sudo systemctl restart netbox netbox-rq
 
 - [Create commands](./command-creation.md)
 - [Set up permissions](./permissions-setup-guide.md)
-- [Debug logging](./debug-logging.md) (Optional)
+- [Logging guide](./logging.md) (Optional - for troubleshooting)
 
 ## Upgrading
 

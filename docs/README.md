@@ -4,7 +4,7 @@
 |---|---|---|
 | [📦 Installation](./user/installation.md) | [⚙️ Configuration](./user/configuration.md) | [📋 Command Creation](./user/command-creation.md) |
 | [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [🔑 Device Credential Sets](./user/getting-started.md#device-credential-sets) | [📝 Permission Examples](./user/permission-examples.md) |
-| [🔌 API Authentication](./api/auth.md) | [⚡ Commands API](./api/commands.md) | [🐛 Debug Logging](./user/debug-logging.md) |
+| [🔌 API Authentication](./api/auth.md) | [⚡ Commands API](./api/commands.md) | [� Logging Guide](./user/logging.md) |
 
 Execute network commands securely from NetBox with encrypted credential storage, dual-token authentication, and comprehensive API automation.
 
@@ -26,7 +26,7 @@ Execute network commands securely from NetBox with encrypted credential storage,
 | Setup | Configuration | Usage |
 |---|---|---|
 | [📦 Installation](./user/installation.md) | [⚙️ Configuration](./user/configuration.md) | [📋 Command Creation](./user/command-creation.md) |
-| [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [� Permission Examples](./user/permission-examples.md) | [🐛 Debug Logging](./user/debug-logging.md) |
+| [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [� Permission Examples](./user/permission-examples.md) | [� Logging Guide](./user/logging.md) |
 
 ## 🚀 Workflow Examples
 
