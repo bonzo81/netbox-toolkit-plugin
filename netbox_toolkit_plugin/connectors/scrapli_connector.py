@@ -393,6 +393,11 @@ class ScrapliConnector(BaseDeviceConnector):
             f"Executing {command_type} command on {self.config.hostname}: {command}"
         )
 
+        # Log the exact command being sent to the device for troubleshooting
+        logger.info(
+            f"DEVICE_COMMAND: Sending {command_type} command to {self.config.hostname}: {command!r}"
+        )
+
         # Validate connection first
         if not self._validate_and_recover_connection():
             logger.error(

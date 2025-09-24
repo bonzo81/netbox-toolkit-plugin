@@ -331,6 +331,12 @@ class NetmikoConnector(BaseDeviceConnector):
         logger.debug(
             f"Executing {command_type} command on {self.config.hostname}: {command}"
         )
+
+        # Log the exact command being sent to the device for troubleshooting
+        logger.info(
+            f"DEVICE_COMMAND: Sending {command_type} command to {self.config.hostname}: {command!r}"
+        )
+
         start_time = time.time()
 
         try:
