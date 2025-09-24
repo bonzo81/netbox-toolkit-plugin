@@ -1,12 +1,16 @@
+import logging
+
 from netbox.tables import NetBoxTable
 
 import django_tables2 as tables
 
 from .models import Command, CommandLog, DeviceCredentialSet
 
+# Set up logging for debugging table configuration issues
+logger = logging.getLogger(__name__)
+
 
 class CommandTable(NetBoxTable):
-    pk = tables.Column(linkify=True, verbose_name="ID")
     name = tables.Column(
         linkify=("plugins:netbox_toolkit_plugin:command_detail", [tables.A("pk")])
     )
@@ -25,14 +29,21 @@ class CommandTable(NetBoxTable):
         model = Command
         fields = ("pk", "name", "platforms", "command_type", "description")
         default_columns = ("pk", "name", "platforms", "command_type", "description")
-        exclude = ("id",)
+        # Remove exclude = ("id",) to allow NetBox's automatic ID column to work with table configuration
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logger.info(
+            f"CommandTable initialized. Columns: {[col.name for col in self.columns]}"
+        )
+        logger.info(f"CommandTable Meta fields: {self.Meta.fields}")
+        logger.info(
+            f"CommandTable Meta exclude: {getattr(self.Meta, 'exclude', 'None')}"
+        )
+        logger.info(f"CommandTable Meta default_columns: {self.Meta.default_columns}")
 
 
 class CommandLogTable(NetBoxTable):
-    pk = tables.Column(
-        linkify=("plugins:netbox_toolkit_plugin:commandlog_view", [tables.A("pk")]),
-        verbose_name="ID",
-    )
     command = tables.Column(
         linkify=(
             "plugins:netbox_toolkit_plugin:command_detail",
@@ -61,13 +72,25 @@ class CommandLogTable(NetBoxTable):
             "execution_time",
             "success",
         )
-        exclude = ("id",)
+        # Remove exclude = ("id",) to allow NetBox's automatic ID column to work with table configuration
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logger.info(
+            f"CommandLogTable initialized. Columns: {[col.name for col in self.columns]}"
+        )
+        logger.info(f"CommandLogTable Meta fields: {self.Meta.fields}")
+        logger.info(
+            f"CommandLogTable Meta exclude: {getattr(self.Meta, 'exclude', 'None')}"
+        )
+        logger.info(
+            f"CommandLogTable Meta default_columns: {self.Meta.default_columns}"
+        )
 
 
 class DeviceCredentialSetTable(NetBoxTable):
     """Table for displaying device credential sets"""
 
-    pk = tables.Column(linkify=True, verbose_name="ID")
     name = tables.Column(
         linkify=(
             "plugins:netbox_toolkit_plugin:devicecredentialset_detail",
@@ -126,4 +149,17 @@ class DeviceCredentialSetTable(NetBoxTable):
             "created_at",
             "last_used",
         )
-        exclude = ("id",)
+        # Remove exclude = ("id",) to allow NetBox's automatic ID column to work with table configuration
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logger.info(
+            f"DeviceCredentialSetTable initialized. Columns: {[col.name for col in self.columns]}"
+        )
+        logger.info(f"DeviceCredentialSetTable Meta fields: {self.Meta.fields}")
+        logger.info(
+            f"DeviceCredentialSetTable Meta exclude: {getattr(self.Meta, 'exclude', 'None')}"
+        )
+        logger.info(
+            f"DeviceCredentialSetTable Meta default_columns: {self.Meta.default_columns}"
+        )

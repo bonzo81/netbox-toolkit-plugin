@@ -1,6 +1,7 @@
 """Device-related views for the NetBox Toolkit Plugin."""
 
 from django.contrib import messages
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -10,7 +11,7 @@ from netbox.views.generic import ObjectView
 from utilities.views import ViewTab, register_model_view
 
 from ..forms import CommandExecutionForm
-from ..models import Command
+from ..models import Command, DeviceCredentialSet
 from ..services.command_service import CommandExecutionService
 from ..services.device_service import DeviceService
 from ..services.rate_limiting_service import RateLimitingService
@@ -249,6 +250,23 @@ class DeviceExecutionModalView(ObjectView):
                 device, request.user
             )
 
+            # Get user's credential sets, filtered by device platform
+            # Include credential sets that either:
+            # 1. Have no platform associations (universal credentials)
+            # 2. Include the device's platform
+            if device.platform:
+                user_credential_sets = (
+                    DeviceCredentialSet.objects.filter(owner=request.user)
+                    .filter(Q(platforms__isnull=True) | Q(platforms=device.platform))
+                    .distinct()
+                    .order_by("name")
+                )
+            else:
+                # If device has no platform, only show universal credentials
+                user_credential_sets = DeviceCredentialSet.objects.filter(
+                    owner=request.user, platforms__isnull=True
+                ).order_by("name")
+
             return render(
                 request,
                 self.template_name,
@@ -258,6 +276,7 @@ class DeviceExecutionModalView(ObjectView):
                     "variable_fields": variable_fields,
                     "has_variables": len(variable_fields) > 0,
                     "rate_limit_status": rate_limit_status,
+                    "credential_sets": user_credential_sets,
                 },
             )
 
@@ -324,12 +343,17 @@ class DeviceCommandOutputView(View):
 
         # Get command from form data
         command_id = request.POST.get("command_id")
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        credential_set_id = request.POST.get("credential_set_id")
 
         if not command_id:
             return HttpResponse(
                 '<div class="alert alert-danger">Command ID is required</div>',
+                status=400,
+            )
+
+        if not credential_set_id:
+            return HttpResponse(
+                '<div class="alert alert-danger">Credential set is required</div>',
                 status=400,
             )
 
@@ -367,12 +391,24 @@ class DeviceCommandOutputView(View):
             )
             temp_command.platforms.set(command.platforms.all())
 
-            # Execute the command
-            result = self.command_service.execute_command_with_retry(
+            # Get credential set and its access token
+            try:
+                credential_set = DeviceCredentialSet.objects.get(
+                    id=credential_set_id, owner=request.user
+                )
+                credential_token = credential_set.access_token
+            except DeviceCredentialSet.DoesNotExist:
+                return HttpResponse(
+                    '<div class="alert alert-danger">Invalid credential set or access denied</div>',
+                    status=400,
+                )
+
+            # Execute the command using the credential token
+            result = self.command_service.execute_command_with_token(
                 command=temp_command,
                 device=device,
-                username=username,
-                password=password,
+                credential_token=credential_token,
+                user=request.user,
                 max_retries=1,
             )
 
