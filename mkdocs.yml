@@ -33,10 +33,11 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.instant
+#    - navigation.instant
     - navigation.tracking
-    - navigation.sections
-    - navigation.expand
+#    - navigation.sections
+#    - navigation.expand
+    - navigation.prune      # Collapses inactive sections
     - navigation.indexes
     - navigation.top
     - navigation.tabs
@@ -47,7 +48,7 @@ theme:
     - content.action.edit
     - content.code.copy
     - content.code.annotate
-    - toc.integrate
+#    - toc.integrate         # DISABLED: This was causing the left sidebar to expand with page TOC
   icon:
     edit: material/pencil
 
@@ -88,10 +89,14 @@ markdown_extensions:
 
 # Page tree
 nav:
-  - Home: README.md
+  - Start Here:
+      - README.md
+      - Platform Support: platform-support.md
+      - GUI vs API Comparison: user/gui-vs-api.md
   - User Documentation:
       - Setup Guides:
           - Plugin Installation: user/plugin-installation.md
+          - Plugin Upgrade: user/plugin-upgrade.md
           - Plugin Configuration: user/plugin-configuration.md
           - Permissions Creation: user/permissions-creation.md
           - Command Creation: user/command-creation.md
@@ -103,7 +108,7 @@ nav:
           - Commands API: api/commands.md
           - Command Logs API: api/command-logs.md
           - Authentication & Permissions: api/auth.md
-          - Feature Comparison: api/feature-comparison.md
+          - API Endpoint Reference: api/endpoint-reference.md
           - Error Handling: api/errors.md
   - Examples:
           - Permission Examples: user/permission-examples.md
