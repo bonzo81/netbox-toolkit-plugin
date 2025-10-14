@@ -37,10 +37,12 @@ class CommandEditView(ObjectEditView):
 
     def get_success_url(self):
         """Override to use correct plugin namespace"""
-        # Try hardcoded URL first to see if the issue is with reverse()
         if self.object and self.object.pk:
-            return f"/plugins/toolkit/commands/{self.object.pk}/"
-        return "/plugins/toolkit/commands/"
+            return reverse(
+                "plugins:netbox_toolkit_plugin:command_detail",
+                kwargs={"pk": self.object.pk},
+            )
+        return reverse("plugins:netbox_toolkit_plugin:command_list")
 
     def get_return_url(self, request, instance):
         """Override to use correct plugin namespace for cancel/return links"""
@@ -48,8 +50,8 @@ class CommandEditView(ObjectEditView):
         return_url = request.GET.get("return_url")
         if return_url:
             return return_url
-        # Return hardcoded URL
-        return "/plugins/toolkit/commands/"
+        # Return proper reverse URL
+        return reverse("plugins:netbox_toolkit_plugin:command_list")
 
     def get_extra_context(self, request, instance):
         """Override to provide additional context with correct URLs"""

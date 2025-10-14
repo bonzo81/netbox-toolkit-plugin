@@ -344,6 +344,11 @@ class DeviceCommandOutputView(View):
         # Get command from form data
         command_id = request.POST.get("command_id")
         credential_set_id = request.POST.get("credential_set_id")
+        auth_method = request.POST.get(
+            "auth_method", "stored"
+        )  # Default to stored for backward compatibility
+        username = request.POST.get("username")
+        password = request.POST.get("password")
 
         if not command_id:
             return HttpResponse(
@@ -351,9 +356,22 @@ class DeviceCommandOutputView(View):
                 status=400,
             )
 
-        if not credential_set_id:
+        # Validate authentication based on method
+        if auth_method == "stored":
+            if not credential_set_id:
+                return HttpResponse(
+                    '<div class="alert alert-danger">Credential set is required when using stored credentials</div>',
+                    status=400,
+                )
+        elif auth_method == "onthefly":
+            if not username or not password:
+                return HttpResponse(
+                    '<div class="alert alert-danger">Username and password are required when entering credentials</div>',
+                    status=400,
+                )
+        else:
             return HttpResponse(
-                '<div class="alert alert-danger">Credential set is required</div>',
+                '<div class="alert alert-danger">Invalid authentication method</div>',
                 status=400,
             )
 
@@ -391,26 +409,25 @@ class DeviceCommandOutputView(View):
             )
             temp_command.platforms.set(command.platforms.all())
 
-            # Get credential set and its access token
-            try:
-                credential_set = DeviceCredentialSet.objects.get(
-                    id=credential_set_id, owner=request.user
+            # Execute the command based on authentication method
+            if auth_method == "stored":
+                # Use existing credential set method
+                result = self.command_service.execute_command_with_credential_set(
+                    command=temp_command,
+                    device=device,
+                    credential_set_id=int(credential_set_id),
+                    user=request.user,
+                    max_retries=1,
                 )
-                credential_token = credential_set.access_token
-            except DeviceCredentialSet.DoesNotExist:
-                return HttpResponse(
-                    '<div class="alert alert-danger">Invalid credential set or access denied</div>',
-                    status=400,
+            elif auth_method == "onthefly":
+                # Use direct username/password method
+                result = self.command_service.execute_command_with_retry(
+                    command=temp_command,
+                    device=device,
+                    username=username,
+                    password=password,
+                    max_retries=1,
                 )
-
-            # Execute the command using the credential token
-            result = self.command_service.execute_command_with_token(
-                command=temp_command,
-                device=device,
-                credential_token=credential_token,
-                user=request.user,
-                max_retries=1,
-            )
 
             # Render just the command output section
             return render(
@@ -424,6 +441,8 @@ class DeviceCommandOutputView(View):
                     "parsed_data": getattr(result, "parsed_output", None),
                     "parsing_method": getattr(result, "parsing_method", None),
                     "has_syntax_error": getattr(result, "has_syntax_error", False),
+                    "syntax_error_type": getattr(result, "syntax_error_type", None),
+                    "syntax_error_vendor": getattr(result, "syntax_error_vendor", None),
                     "command_log_id": getattr(result, "command_log_id", None),
                 },
             )

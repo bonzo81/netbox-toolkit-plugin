@@ -1,16 +1,18 @@
-"""
-Views for managing device credential sets.
-These views provide GUI-based CRUD operations for secure credential storage.
-"""
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
-from django.views.generic import (
-    DetailView,
-)
+from django.views.generic import DetailView
 
-from netbox.views import generic
+from netbox.views.generic import (
+    BulkDeleteView,
+    BulkEditView,
+    BulkImportView,
+    ObjectChangeLogView,
+    ObjectDeleteView,
+    ObjectEditView,
+    ObjectListView,
+    ObjectView,
+)
 
 from ..filtersets import DeviceCredentialSetFilterSet
 from ..forms import DeviceCredentialSetForm
@@ -18,19 +20,27 @@ from ..models import DeviceCredentialSet
 from ..tables import DeviceCredentialSetTable
 
 
-class DeviceCredentialSetListView(generic.ObjectListView):
+class DeviceCredentialSetListView(ObjectListView):
     """List view for device credential sets - users see only their own."""
 
     queryset = DeviceCredentialSet.objects.all()
-    filterset_class = DeviceCredentialSetFilterSet
-    table = DeviceCredentialSetTable
+    filterset = None  # Will update this after import
+    table = None  # Will update this after import
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from ..filtersets import DeviceCredentialSetFilterSet
+        from ..tables import DeviceCredentialSetTable
+
+        self.filterset = DeviceCredentialSetFilterSet
+        self.table = DeviceCredentialSetTable
 
     def get_queryset(self, request):
         # Users can only see their own credential sets
         return super().get_queryset(request).filter(owner=request.user)
 
 
-class DeviceCredentialSetDetailView(generic.ObjectView):
+class DeviceCredentialSetDetailView(ObjectView):
     """Detail view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.all()
@@ -49,7 +59,7 @@ class DeviceCredentialSetDetailView(generic.ObjectView):
         }
 
 
-class DeviceCredentialSetCreateView(generic.ObjectEditView):
+class DeviceCredentialSetCreateView(ObjectEditView):
     """Create view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.all()
@@ -67,45 +77,155 @@ class DeviceCredentialSetCreateView(generic.ObjectEditView):
             # Now save the form
             obj = form.save()
 
-            # Add success message
-            messages.success(
-                request,
-                f"Credential set '{obj.name}' created successfully. "
-                f"You can view the credential token from the credentials list.",
-            )
+            # Handle success messages - always redirect to credentials page for token access
+            if hasattr(form, "_new_credential_token"):
+                messages.success(
+                    request,
+                    f"Credential set '{obj.name}' created successfully. "
+                    "Your credential token is available on the credentials page.",
+                )
+            else:
+                messages.success(
+                    request,
+                    f"Credential set '{obj.name}' created successfully.",
+                )
 
             # Redirect to list page
             return redirect("plugins:netbox_toolkit_plugin:devicecredentialset_list")
         else:
-            # For invalid forms, render the form with errors
-            context = self.get_context_data()
-            context["form"] = form
-            return self.render_to_response(context)
+            # For invalid forms, render with errors using simple pattern like edit view
+            from django.shortcuts import render
+
+            return render(
+                request,
+                "netbox_toolkit_plugin/devicecredentialset_edit.html",  # Use same template as edit
+                {
+                    "object": None,
+                    "form": form,
+                },
+            )
 
 
-class DeviceCredentialSetEditView(generic.ObjectEditView):
+class DeviceCredentialSetEditView(ObjectEditView):
     """Edit view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.all()
     form = DeviceCredentialSetForm
+    template_name = "netbox_toolkit_plugin/devicecredentialset_edit.html"
 
     def get_queryset(self, request):
         # Users can only edit their own credential sets
-        return super().get_queryset(request).filter(owner=request.user)
+        qs = super().get_queryset(request).filter(owner=request.user)
+        print(
+            f"DEBUG: Edit view - user {request.user} can edit {qs.count()} credential sets"
+        )
+        for cred in qs:
+            print(
+                f"DEBUG: Available credential set: ID={cred.pk}, name='{cred.name}', owner={cred.owner}"
+            )
+        return qs
+
+    def get(self, request, *args, **kwargs):
+        print("DEBUG: DeviceCredentialSetEditView.get() called")
+        # If we have a form with errors from a failed POST, use it instead of creating a new form
+        if hasattr(self, "form_with_errors"):
+            print(f"DEBUG: using form with errors = {self.form_with_errors.errors}")
+            # Store the form with errors in the instance so get_form() returns it
+            self._form_with_errors = self.form_with_errors
+            # Clean up
+            delattr(self, "form_with_errors")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Get the object being edited - FIXED: Get the actual instance from the database
+        pk = self.kwargs.get("pk")
+
+        try:
+            # Direct query with ownership filtering to ensure we get the actual object
+            self.object = DeviceCredentialSet.objects.get(pk=pk, owner=request.user)
+        except DeviceCredentialSet.DoesNotExist:
+            messages.error(
+                request,
+                "Credential set not found or you don't have permission to edit it.",
+            )
+            return redirect("plugins:netbox_toolkit_plugin:devicecredentialset_list")
+
+        # Create form with proper user context and instance
+        form = self.form(
+            data=request.POST,
+            files=request.FILES,
+            instance=self.object,
+            user=request.user,
+        )
+
+        if form.is_valid():
+            # Save the form
+            self.object = form.save()
+
+            # Handle success messages - always redirect to credentials page for token access
+            if hasattr(form, "_new_credential_token"):
+                messages.success(
+                    self.request,
+                    f"Credential set '{form.instance.name}' updated successfully. "
+                    "Your credential token is available on the credentials page.",
+                )
+            else:
+                messages.success(
+                    self.request,
+                    f"Credential set '{form.instance.name}' updated successfully.",
+                )
+            # Redirect to the credential list page
+            return redirect("plugins:netbox_toolkit_plugin:devicecredentialset_list")
+        else:
+            # For invalid forms, render with errors using simple pattern like CommandEditView
+            from django.shortcuts import render
+
+            return render(
+                request,
+                "netbox_toolkit_plugin/devicecredentialset_edit.html",  # Custom template for credential edit
+                {
+                    "object": self.object,
+                    "form": form,
+                },
+            )
+
+    def get_success_url(self):
+        """Return URL to redirect to after successful edit."""
+        return "plugins:netbox_toolkit_plugin:devicecredentialset_list"
 
     def get_form(self, form_class=None):
+        print("DEBUG: DeviceCredentialSetEditView.get_form() called")
+        # If we have a form with errors from a failed POST, use it
+        if hasattr(self, "_form_with_errors"):
+            print(
+                f"DEBUG: returning form with errors = {self._form_with_errors.errors}"
+            )
+            form = self._form_with_errors
+            # Clean up
+            delattr(self, "_form_with_errors")
+            return form
+
+        print(f"DEBUG: self.request.user = {self.request.user}")
         form_class = form_class or self.form
         kwargs = self.get_form_kwargs()
+        print(f"DEBUG: kwargs before adding user = {kwargs}")
         kwargs["user"] = self.request.user
-        return form_class(**kwargs)
+        print(f"DEBUG: kwargs after adding user = {kwargs}")
+        form = form_class(**kwargs)
+        print(f"DEBUG: form.user after creation = {form.user}")
+        return form
 
     def form_valid(self, form):
-        # Check if password was changed and show new token if so
-        if form.cleaned_data.get("password"):
+        # Save the form first
+        super().form_valid(form)
+
+        if hasattr(form, "_new_credential_token"):
             messages.success(
                 self.request,
                 f"Credential set '{form.instance.name}' updated successfully. "
-                f"New credential token: {form.instance.access_token[:20]}... (save this token securely)",
+                f"Your new credential token is: <code>{form._new_credential_token}</code><br>"
+                f"<strong>⚠️ Important:</strong> Copy this token now - it won't be shown again!",
+                extra_tags="safe",  # Allow HTML in message
             )
         else:
             messages.success(
@@ -115,7 +235,7 @@ class DeviceCredentialSetEditView(generic.ObjectEditView):
         return super().form_valid(form)
 
 
-class DeviceCredentialSetDeleteView(generic.ObjectDeleteView):
+class DeviceCredentialSetDeleteView(ObjectDeleteView):
     """Delete view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.select_related("owner").prefetch_related(
@@ -128,7 +248,7 @@ class DeviceCredentialSetDeleteView(generic.ObjectDeleteView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class DeviceCredentialSetBulkImportView(generic.BulkImportView):
+class DeviceCredentialSetBulkImportView(BulkImportView):
     """Bulk import view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.all()
@@ -139,7 +259,7 @@ class DeviceCredentialSetBulkImportView(generic.BulkImportView):
         return super().get_queryset(request).filter(owner=request.user)
 
 
-class DeviceCredentialSetBulkEditView(generic.BulkEditView):
+class DeviceCredentialSetBulkEditView(BulkEditView):
     """Bulk edit view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.all()
@@ -152,7 +272,7 @@ class DeviceCredentialSetBulkEditView(generic.BulkEditView):
         return super().get_queryset(request).filter(owner=request.user)
 
 
-class DeviceCredentialSetBulkDeleteView(generic.BulkDeleteView):
+class DeviceCredentialSetBulkDeleteView(BulkDeleteView):
     """Bulk delete view for device credential sets."""
 
     queryset = DeviceCredentialSet.objects.all()
@@ -188,72 +308,39 @@ class RegenerateTokenView(LoginRequiredMixin, DetailView):
             return redirect(request.path)
 
         # Import here to avoid circular imports
-        from ..services.encryption_service import CredentialEncryptionService
+        from ..services.credential_service import CredentialService
 
-        encryption_service = CredentialEncryptionService()
+        credential_service = CredentialService()
 
-        # Generate new token
-        credential_set.access_token = encryption_service.generate_access_token()
-        credential_set.save(update_fields=["access_token"])
-
-        # Add success message
-        messages.success(
-            request,
-            f"Credential token for '{credential_set.name}' has been regenerated. "
-            f"You can view it from the credentials list.",
+        # Regenerate token using the proper service method
+        success, new_token, error = credential_service.regenerate_token(
+            credential_set.id, request.user
         )
+
+        if success:
+            # Add success message with secure token display
+            from django.utils.safestring import mark_safe
+
+            message = mark_safe(
+                f"Credential token for '{credential_set.name}' has been regenerated.<br><br>"
+                f"<strong>Your new credential token:</strong><br>"
+                f"<div class='alert alert-info mt-2 mb-2'>"
+                f"<code style='font-size: 0.9em; word-break: break-all;'>{new_token}</code>"
+                f"</div>"
+                f"<div class='alert alert-warning mt-2'>"
+                f"<i class='mdi mdi-alert'></i> <strong>Important:</strong> Copy this token now - it won't be shown again!"
+                f"</div>"
+            )
+            messages.success(request, message)
+        else:
+            # Add sanitized error message
+            messages.error(
+                request,
+                f"Failed to regenerate token for '{credential_set.name}'. Please try again.",
+            )
 
         # Redirect to list page
         return redirect("plugins:netbox_toolkit_plugin:devicecredentialset_list")
-
-
-class DeviceCredentialSetShowTokenView(generic.ObjectView):
-    """View for displaying the credential token one time after creation/regeneration."""
-
-    queryset = DeviceCredentialSet.objects.all()
-    template_name = "netbox_toolkit_plugin/devicecredentialset_show_token.html"
-
-    def get_queryset(self, request):
-        return DeviceCredentialSet.objects.filter(owner=request.user)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Get token data from session
-        token_data = self.request.session.get("credential_token", None)
-
-        # Debug information
-        print(f"DEBUG TOKEN DISPLAY: token_data = {token_data}")
-        print(f"DEBUG TOKEN DISPLAY: object.pk = {self.object.pk}")
-
-        # Verify the token data matches the current object for security
-        if token_data and token_data.get("credential_id") == self.object.pk:
-            context["token_data"] = token_data
-            context["show_token"] = True
-            # Mark for removal after template renders
-            context["clear_token_session"] = True
-            print("DEBUG TOKEN DISPLAY: Token will be shown")
-        else:
-            context["show_token"] = False
-            print(
-                f"DEBUG TOKEN DISPLAY: Token will NOT be shown. Reason: token_data={token_data}, credential_id_match={token_data.get('credential_id') if token_data else None} == {self.object.pk}"
-            )
-            messages.warning(
-                self.request,
-                "Token display session expired. For security, tokens are only shown once.",
-            )
-
-        return context
-
-    def render_to_response(self, context, **response_kwargs):
-        """Override to clear token session after rendering."""
-        response = super().render_to_response(context, **response_kwargs)
-
-        # Clear the token from session after successful render
-        if context.get("clear_token_session"):
-            self.request.session.pop("credential_token", None)
-
-        return response
 
 
 class DeviceCredentialSetTokenModalView(LoginRequiredMixin, DetailView):
@@ -266,3 +353,20 @@ class DeviceCredentialSetTokenModalView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         # Users can only view their own credential sets
         return DeviceCredentialSet.objects.filter(owner=self.request.user)
+
+
+class DeviceCredentialSetChangeLogView(ObjectChangeLogView):
+    """
+    Changelog view for device credential sets with ownership filtering.
+    Users can only view the changelog for their own credential sets.
+    """
+
+    def get_queryset(self, request):
+        """
+        Filter the base queryset to only include credential sets owned by the current user.
+        This ensures users cannot view changelog entries for other users' credentials.
+        """
+        # Get the base queryset (will be filtered by the primary key from URL)
+        base_queryset = super().get_queryset(request)
+        # Add ownership filtering to restrict access to only user's own credentials
+        return base_queryset.filter(owner=request.user)
