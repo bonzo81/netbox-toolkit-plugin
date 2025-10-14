@@ -153,13 +153,13 @@ class DeviceCredentialSetTable(NetBoxTable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logger.info(
+        logger.debug(
             f"DeviceCredentialSetTable initialized. Columns: {[col.name for col in self.columns]}"
         )
-        logger.info(f"DeviceCredentialSetTable Meta fields: {self.Meta.fields}")
-        logger.info(
+        logger.debug(f"DeviceCredentialSetTable Meta fields: {self.Meta.fields}")
+        logger.debug(
             f"DeviceCredentialSetTable Meta exclude: {getattr(self.Meta, 'exclude', 'None')}"
         )
-        logger.info(
+        logger.debug(
             f"DeviceCredentialSetTable Meta default_columns: {self.Meta.default_columns}"
         )
