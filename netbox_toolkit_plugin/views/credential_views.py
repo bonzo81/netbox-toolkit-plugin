@@ -116,13 +116,6 @@ class DeviceCredentialSetEditView(ObjectEditView):
     def get_queryset(self, request):
         # Users can only edit their own credential sets
         qs = super().get_queryset(request).filter(owner=request.user)
-        print(
-            f"DEBUG: Edit view - user {request.user} can edit {qs.count()} credential sets"
-        )
-        for cred in qs:
-            print(
-                f"DEBUG: Available credential set: ID={cred.pk}, name='{cred.name}', owner={cred.owner}"
-            )
         return qs
 
     def get(self, request, *args, **kwargs):
