@@ -37,6 +37,14 @@ All API endpoints are prefixed with:
 
 Each API resource has its own dedicated documentation page:
 
+### [API Endpoint Reference](endpoint-reference.md) ⭐
+- **Purpose**: Complete endpoint reference with all fields and examples
+- **Key Features**:
+  - All endpoints listed with available fields and types
+  - Request/response examples for every endpoint
+  - Error response documentation
+  - Quick reference for API integration
+
 ### [Commands API](commands.md)
 - **Purpose**: Manage network commands and execute them on devices
 - **Endpoints**: `/commands/`
@@ -64,17 +72,17 @@ Each API resource has its own dedicated documentation page:
 - **Purpose**: Error codes and troubleshooting
 - **Key Features**: Error structure, common errors, resolution strategies
 
-### [Feature Comparison](feature-comparison.md)
-- **Purpose**: Comprehensive comparison between API and Web Interface
+### [GUI vs API Comparison](../user/gui-vs-api.md)
+- **Purpose**: Comprehensive comparison between web interface and API
 - **Key Features**: Feature matrix, use case guidance, migration strategies
 
 ### [API Workflows](workflows.md)
 - **Purpose**: Focused API workflow examples and integration patterns
 - **Key Features**: Bulk operations, automation examples, integration code samples
 
-### [Commands API](../api/commands.md)
-- **Purpose**: Execute commands via REST API with full automation support
-- **Key Features**: Real-world scenarios, step-by-step guides, best practices
+### [Automation Examples](automation-examples.md)
+- **Purpose**: Real-world automation scenarios
+- **Key Features**: Network monitoring, configuration management, compliance auditing
 
 ## Common Patterns
 
