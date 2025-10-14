@@ -56,7 +56,8 @@ class CommandForm(NetBoxModelForm):
         # Validate the formset
         formset_is_valid = self.variable_formset.is_valid()
 
-        return form_is_valid and formset_is_valid
+        result = form_is_valid and formset_is_valid
+        return result
 
     def clean_command(self):
         """Validate command and auto-detect missing variables."""
@@ -349,17 +350,39 @@ class DeviceCredentialSetForm(NetBoxModelForm):
 
             # Set initial values for existing instances to show current values
             try:
-                # Set the username field to show the current decrypted username
                 current_username = (
                     self.instance.username
                 )  # This calls the property that decrypts
-                self.fields["username"].initial = current_username
 
-                # Set password field to show masked value
-                self.fields["password"].initial = "••••••••"  # Masked password
+                # Check if decryption failed
+                if "Decryption failed" in current_username:
+                    # Show helper message for decryption failure
+                    self.fields["username"].help_text = (
+                        "⚠️ Cannot load existing credentials - security config may have changed. "
+                        "Enter your device username/password again to update this credential set."
+                    )
+                    self.fields[
+                        "password"
+                    ].help_text = (
+                        "Enter your device password to update this credential set."
+                    )
+                else:
+                    # Normal case - populate existing username
+                    self.fields["username"].initial = current_username
+                    # Set password field to show masked value
+                    self.fields["password"].initial = "••••••••"  # Masked password
+
             except Exception:
-                # If decryption fails, leave fields empty
-                pass
+                # If decryption fails completely, show helper message
+                self.fields["username"].help_text = (
+                    "⚠️ Cannot load existing credentials. Enter your device "
+                    "username/password to update this credential set."
+                )
+                self.fields[
+                    "password"
+                ].help_text = (
+                    "Enter your device password to update this credential set."
+                )
 
     def clean_name(self):
         """Validate that the credential set name is unique for this user."""
@@ -372,7 +395,7 @@ class DeviceCredentialSetForm(NetBoxModelForm):
             existing_qs = DeviceCredentialSet.objects.filter(owner=self.user, name=name)
 
             # If editing, exclude the current instance
-            if self.instance.pk:
+            if self.instance and self.instance.pk:
                 existing_qs = existing_qs.exclude(pk=self.instance.pk)
 
             if existing_qs.exists():
@@ -385,32 +408,128 @@ class DeviceCredentialSetForm(NetBoxModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if not cleaned_data:
-            return cleaned_data
 
-        password = cleaned_data.get("password")
-        confirm_password = cleaned_data.get("confirm_password")
+        # For forms with extra fields not in Meta.fields, we need to manually validate them
+        # Get the raw POST data for the extra fields
+        if hasattr(self, "data"):
+            username = self.data.get("username", "").strip()
+            password = self.data.get("password", "").strip()
+            confirm_password = self.data.get("confirm_password", "").strip()
 
-        # Password validation for new instances or when password is provided
-        if not self.instance.pk or password:  # New instance or password provided
+            # Add these to cleaned_data manually
+            if cleaned_data is None:
+                cleaned_data = {}
+
+            # Add all form fields to cleaned_data when super().clean() fails
+            cleaned_data["name"] = self.data.get("name", "").strip()
+            cleaned_data["description"] = self.data.get("description", "").strip()
+            cleaned_data["is_active"] = self.data.get("is_active") == "on"
+
+            # Handle platforms (multi-select field)
+            platforms = self.data.getlist("platforms")
+            cleaned_data["platforms"] = platforms
+
+            # Add credential fields
+            cleaned_data["username"] = username
+            cleaned_data["password"] = password
+            cleaned_data["confirm_password"] = confirm_password
+        else:
+            # Fallback to original method
+            if not cleaned_data:
+                return cleaned_data
+
+            password = cleaned_data.get("password", "").strip()
+            confirm_password = cleaned_data.get("confirm_password", "").strip()
+
+        password = cleaned_data.get("password", "").strip()
+        confirm_password = cleaned_data.get(
+            "confirm_password", ""
+        ).strip()  # Check if this is a new instance
+        is_new_instance = not self.instance.pk
+
+        # Check if password change is being attempted (either field has content that's not the masked placeholder)
+        password_change_attempted = (password and password != "••••••••") or (
+            confirm_password and confirm_password != "••••••••"
+        )
+
+        # For new instances, password is always required
+        if is_new_instance:
             if not password:
                 raise forms.ValidationError(
                     "Password is required for new credential sets"
                 )
 
             if password != confirm_password:
+                self.add_error("confirm_password", "Passwords do not match")
                 raise forms.ValidationError("Passwords do not match")
 
-            # Basic password strength validation
-            if len(password) < 6:
+        # For existing instances, validate only if password change is attempted
+        elif password_change_attempted:
+            # If either field has content, both must have content and must match
+            if not password:
                 raise forms.ValidationError(
-                    "Password must be at least 6 characters long"
+                    "Password is required when confirming a password"
                 )
+
+            if not confirm_password:
+                raise forms.ValidationError(
+                    "Password confirmation is required when setting a password"
+                )
+
+            if password != confirm_password:
+                self.add_error("confirm_password", "Passwords do not match")
+                raise forms.ValidationError("Passwords do not match")
 
         return cleaned_data
 
     def save(self, commit=True):
+        # Ensure user is set - fallback to request user if not provided during form initialization
+        if not self.user:
+            # Try to get user from Django request context (fallback mechanism)
+            if (
+                hasattr(self, "request")
+                and self.request
+                and hasattr(self.request, "user")
+            ):
+                self.user = self.request.user
+            else:
+                # Last resort - try to get from thread local or other context
+                from django.contrib.auth.models import AnonymousUser
+
+                try:
+                    # This is a fallback for cases where the form isn't properly initialized
+                    # In NetBox, we should always have access to the request
+                    import inspect
+
+                    frame = inspect.currentframe()
+                    while frame:
+                        if "request" in frame.f_locals:
+                            request = frame.f_locals["request"]
+                            if hasattr(request, "user"):
+                                self.user = request.user
+                                break
+                        frame = frame.f_back
+                except Exception:
+                    pass
+
+                # If we still don't have a user, this is a critical error
+                if not self.user or isinstance(self.user, AnonymousUser):
+                    raise ValueError(
+                        "User authentication required for credential management"
+                    )
+
         instance = super().save(commit=False)
+
+        # Validate required fields are present before proceeding
+        if not hasattr(instance, "name") or not instance.name:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Instance missing required 'name' field. Instance: {instance}"
+            )
+            logger.error(f"Form cleaned_data: {self.cleaned_data}")
+            raise ValueError("Instance is missing required 'name' field")
 
         # Set owner for new instances
         if not instance.pk and self.user:
@@ -421,8 +540,19 @@ class DeviceCredentialSetForm(NetBoxModelForm):
             password = self.cleaned_data.get("password")
             username = self.cleaned_data.get("username")
 
-            # Determine if we need to update credentials
-            update_credentials = False
+            # Check for potential constraint violations before proceeding
+            if hasattr(instance, "name") and instance.name and self.user:
+                existing_count = (
+                    DeviceCredentialSet.objects.filter(
+                        owner=self.user, name=instance.name
+                    )
+                    .exclude(pk=getattr(instance, "pk", None))
+                    .count()
+                )
+                if existing_count > 0:
+                    raise ValueError(
+                        f"A credential set with name '{instance.name}' already exists"
+                    )
 
             if password or username:
                 from .services.encryption_service import CredentialEncryptionService
@@ -453,6 +583,12 @@ class DeviceCredentialSetForm(NetBoxModelForm):
                 if not final_password and existing_credentials:
                     final_password = existing_credentials["password"]
 
+                # Validate we have required data before proceeding with encryption
+                if not final_username or not final_password:
+                    raise ValueError(
+                        "Cannot encrypt credentials: missing username or password"
+                    )
+
                 # Only proceed if we have both username and password
                 if final_username and final_password:
                     encrypted_data = encryption_service.encrypt_credentials(
@@ -465,16 +601,42 @@ class DeviceCredentialSetForm(NetBoxModelForm):
 
                     # Generate new access token if this is a new instance or password changed
                     if not instance.pk or password:
-                        instance.access_token = (
-                            encryption_service.generate_access_token()
-                        )
+                        # For new instances, we need to save first to get an ID
+                        if not instance.pk:
+                            try:
+                                instance.save()  # Save to get primary key
+                            except Exception:
+                                raise
 
-                    update_credentials = True
+                        # Generate token with proper context
+                        try:
+                            raw_token, token_hash = (
+                                encryption_service.generate_access_token(
+                                    instance.pk, self.user.pk
+                                )
+                            )
+                            # Store both the hash for verification and encrypted raw token for display
+                            instance.access_token = token_hash
+                            instance.encrypted_token = encryption_service.encrypt_token(
+                                raw_token
+                            )
+                        except Exception:
+                            raise
+                        # Check for token uniqueness before setting
+                        if (
+                            DeviceCredentialSet.objects.filter(access_token=token_hash)
+                            .exclude(pk=instance.pk)
+                            .exists()
+                        ):
+                            raise ValueError(
+                                "Generated access token conflicts with existing token - this should not happen"
+                            )
 
-            # Debug logging to help track what's happening
-            print(
-                f"DEBUG: username={username}, password={password}, update_credentials={update_credentials}"
-            )
+                        instance.access_token = token_hash  # Store hash in database
+
+                        # Store raw token temporarily for secure display
+                        # Using a form attribute instead of session for security
+                        self._new_credential_token = raw_token
 
             instance.save()
             self.save_m2m()  # Save many-to-many relationships (platforms)

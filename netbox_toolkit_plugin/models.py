@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from netbox.models import NetBoxModel
 
@@ -193,12 +194,19 @@ class DeviceCredentialSet(NetBoxModel):
         max_length=64, help_text="Identifier for the encryption key used"
     )
 
-    # Credential token
+    # Credential token (hash only - for verification)
     access_token = models.CharField(
         max_length=128,
         unique=True,
         editable=False,
-        help_text="Secure token for credential access via API",
+        help_text="Secure token hash for credential access via API",
+    )
+
+    # Encrypted raw token for display purposes
+    encrypted_token = models.TextField(
+        blank=True,
+        editable=False,
+        help_text="Encrypted raw token for display in UI",
     )
 
     # Metadata
@@ -219,6 +227,44 @@ class DeviceCredentialSet(NetBoxModel):
         ordering = ["owner", "name"]
         verbose_name = "Device Credential Set"
         verbose_name_plural = "Device Credential Sets"
+
+    def to_objectchange(self, action, **kwargs):
+        """
+        Override NetBox's ObjectChange creation to prevent sensitive credential data from appearing in changelog.
+        Creates a sanitized ObjectChange that doesn't expose encrypted fields.
+        """
+        # Import required modules
+        from django.contrib.contenttypes.models import ContentType
+
+        # Get content type for this model
+        content_type = ContentType.objects.get_for_model(self)
+
+        # Create ObjectChange with correct field names and sanitized data
+        from core.models import ObjectChange
+
+        objectchange = ObjectChange(
+            time=timezone.now(),
+            user_id=kwargs.get("user_id"),
+            user_name=kwargs.get("user_name", ""),
+            request_id=kwargs.get("request_id"),
+            action=action,
+            changed_object_type=content_type,
+            changed_object_id=self.pk,
+            object_repr=str(self),
+            # Only include non-sensitive metadata, exclude all encrypted fields
+            prechange_data=None,  # No pre-change data for security
+            postchange_data={
+                "id": self.pk,
+                "name": self.name,
+                "owner": self.owner_id,
+                "description": self.description,
+                "created_at": self.created_at.isoformat() if self.created_at else None,
+                "last_used": self.last_used.isoformat() if self.last_used else None,
+                "is_active": self.is_active,
+            },
+        )
+
+        return objectchange
 
     def __str__(self):
         try:
@@ -245,7 +291,6 @@ class DeviceCredentialSet(NetBoxModel):
 
     def update_last_used(self):
         """Update the last_used timestamp"""
-        from django.utils import timezone
 
         self.last_used = timezone.now()
         self.save(update_fields=["last_used"])
@@ -254,7 +299,7 @@ class DeviceCredentialSet(NetBoxModel):
     def username(self):
         """
         Get the decrypted username for display purposes.
-        Returns the decrypted username or 'Error' if decryption fails.
+        Returns the decrypted username or error message if decryption fails.
         """
         try:
             from netbox_toolkit_plugin.services.encryption_service import (
@@ -267,4 +312,24 @@ class DeviceCredentialSet(NetBoxModel):
             )
             return credentials["username"]
         except Exception:
-            return "Error decrypting username"
+            return "⚠️ Decryption failed - recreate credential set"
+
+    @property
+    def raw_token(self):
+        """
+        Get the decrypted raw token for display purposes.
+        Returns the decrypted raw token or None if not available.
+        """
+        if not self.encrypted_token:
+            return None
+
+        try:
+            from netbox_toolkit_plugin.services.encryption_service import (
+                CredentialEncryptionService,
+            )
+
+            encryption_service = CredentialEncryptionService()
+            # Use the token-specific encryption method
+            return encryption_service.decrypt_token(self.encrypted_token)
+        except Exception:
+            return None
