@@ -45,7 +45,7 @@ class CommandExecutionService:
         last_error = None
 
         logger.info(
-            "Executing command '%s' on device %s (max_retries=%d)",
+            "Executing command '%s' on device %s (max_retries=%s)",
             command.name,
             device.name,
             max_retries,
@@ -262,12 +262,13 @@ class CommandExecutionService:
             )
             # Return error result
             error_result = CommandResult(
+                command=command.command,
                 output="",
                 success=False,
                 error_message=f"Credential retrieval failed: {error}",
                 execution_time=0.0,
             )
-            return self._enhance_error_result(error_result, device, command)
+            return self._enhance_error_result(error_result, Exception(error), device)
 
         logger.info(
             "Executing command '%s' on device %s using credential set '%s'",
@@ -277,6 +278,82 @@ class CommandExecutionService:
         )
 
         # Execute using the retrieved credentials
+        return self.execute_command_with_retry(
+            command=command,
+            device=device,
+            username=credentials["username"],
+            password=credentials["password"],
+            max_retries=max_retries,
+        )
+
+    def execute_command_with_credential_set(
+        self,
+        command: "Command",
+        device: Any,
+        credential_set_id: int,
+        user,
+        max_retries: int = 1,
+    ) -> "CommandResult":
+        """
+        Execute a command using a credential set ID directly.
+
+        Args:
+            command: Command to execute
+            device: Target device
+            credential_set_id: ID of the credential set to use
+            user: User requesting the execution
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            CommandResult with execution details
+        """
+        from ..models import DeviceCredentialSet
+
+        logger.info(
+            "Executing command '%s' on device %s using credential set ID %s",
+            command.name,
+            device.name,
+            credential_set_id,
+        )
+
+        try:
+            # Get the credential set
+            credential_set = DeviceCredentialSet.objects.get(
+                id=credential_set_id, owner=user
+            )
+        except DeviceCredentialSet.DoesNotExist:
+            error_result = CommandResult(
+                command=command.command,
+                output="",
+                success=False,
+                error_message="Credential set not found or access denied",
+                execution_time=0.0,
+            )
+            return self._enhance_error_result(
+                error_result, Exception("Credential set not found"), device
+            )
+
+        # Decrypt credentials directly
+        from .encryption_service import CredentialEncryptionService
+
+        encryption_service = CredentialEncryptionService()
+        try:
+            credentials = encryption_service.decrypt_credentials(
+                credential_set.encrypted_username,
+                credential_set.encrypted_password,
+                credential_set.encryption_key_id,
+            )
+        except Exception as e:
+            error_result = CommandResult(
+                command=command.command,
+                output="",
+                success=False,
+                error_message=f"Failed to decrypt credentials: {str(e)}",
+                execution_time=0.0,
+            )
+            return self._enhance_error_result(error_result, e, device)
+
+        # Execute using the decrypted credentials
         return self.execute_command_with_retry(
             command=command,
             device=device,
