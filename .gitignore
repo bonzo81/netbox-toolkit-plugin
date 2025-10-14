@@ -204,3 +204,7 @@ device_configs/
 .devcontainer/extra-plugins.py
 .devcontainer/extra-configuration.py
 .devcontainer/extra-requirements.txt
+.roo/mcp.json
+.roo/rules/01-general.md
+.roo/rules/02-coding-styles.md
+.roo/rules/03-web-ui.md
