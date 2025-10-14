@@ -27,6 +27,11 @@ menu = PluginMenu(
                     link_text="Command Logs",
                     permissions=["netbox_toolkit_plugin.view_commandlog"],
                 ),
+                PluginMenuItem(
+                    link="plugins:netbox_toolkit_plugin:toolkit_stats",
+                    link_text="Statistics",
+                    permissions=["netbox_toolkit_plugin.view_commandlog"],
+                ),
             ),
         ),
         (

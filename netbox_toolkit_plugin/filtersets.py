@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from dcim.models import Device, Platform
 from netbox.filtersets import NetBoxModelFilterSet
 
@@ -36,6 +38,18 @@ class CommandFilterSet(NetBoxModelFilterSet):
         model = Command
         fields = ("name", "platforms", "command_type", "description")
 
+    def search(self, queryset, name, value):
+        """
+        Search across name, command, and description fields
+        """
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(command__icontains=value)
+            | Q(description__icontains=value)
+        )
+
 
 class CommandLogFilterSet(NetBoxModelFilterSet):
     """Enhanced filtering for command logs"""
@@ -68,12 +82,28 @@ class CommandLogFilterSet(NetBoxModelFilterSet):
         model = CommandLog
         fields = ("command", "device", "username", "success")
 
+    def search(self, queryset, name, value):
+        """
+        Search across command name, device name, username
+        """
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(command__name__icontains=value)
+            | Q(device__name__icontains=value)
+            | Q(username__icontains=value)
+        )
+
 
 class DeviceCredentialSetFilterSet(NetBoxModelFilterSet):
     """Filtering for device credential sets"""
 
     name_icontains = django_filters.CharFilter(
         field_name="name", lookup_expr="icontains", label="Name contains"
+    )
+
+    platform_slug = django_filters.CharFilter(
+        field_name="platforms__slug", lookup_expr="icontains", label="Platform slug"
     )
 
     platforms = django_filters.ModelMultipleChoiceFilter(
@@ -98,3 +128,16 @@ class DeviceCredentialSetFilterSet(NetBoxModelFilterSet):
     class Meta:
         model = DeviceCredentialSet
         fields = ("name", "platforms", "is_active")
+
+    def search(self, queryset, name, value):
+        """
+        Search across name, description, owner username, and platform slug fields
+        """
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(description__icontains=value)
+            | Q(owner__username__icontains=value)
+            | Q(platforms__slug__icontains=value)
+        )
