@@ -59,21 +59,22 @@ class ScrapliConnector(BaseDeviceConnector):
 
     @classmethod
     def normalize_platform_name(cls, platform_name: str) -> str:
-        """Normalize platform name for consistent mapping."""
+        """Normalize platform name for consistent mapping.
+
+        This method now delegates to the centralized normalization in ToolkitSettings
+        to ensure consistency across all components.
+        """
+        from ..settings import ToolkitSettings
+
         if not platform_name:
             return "generic"
 
-        normalized = platform_name.lower().strip()
+        # Use centralized platform normalization
+        normalized = ToolkitSettings.normalize_platform(platform_name)
 
-        # Handle common variations
-        if normalized in ["cisco ios", "ios", "cisco_ios"]:
-            return "cisco_ios"
-        elif normalized in ["cisco nxos", "nxos", "nexus"]:
-            return "cisco_nxos"
-        elif normalized in ["cisco iosxr", "iosxr", "ios-xr"]:
-            return "cisco_iosxr"
-        elif normalized in ["cisco xe", "ios-xe"]:
-            return "cisco_xe"
+        # Scrapli-specific fallback for unknown platforms
+        if normalized not in cls.DRIVER_MAP:
+            return "generic"
 
         return normalized
 
@@ -455,6 +456,20 @@ class ScrapliConnector(BaseDeviceConnector):
                 enhanced_output += parsed_error.guidance
 
                 result.output = enhanced_output
+            else:
+                # Check for empty output that might indicate a user error (e.g., invalid access list name)
+                if not response.result or not response.result.strip():
+                    # For certain command types, empty output might indicate invalid parameters
+                    if command.lower().startswith(("show access-list", "show acl")):
+                        # Set a custom syntax error for empty ACL results
+                        result.has_syntax_error = True
+                        result.syntax_error_type = "empty_result"
+                        result.syntax_error_vendor = self.config.platform or "generic"
+                        result.syntax_error_guidance = (
+                            "The command executed successfully but returned no output."
+                        )
+                        # Enhance the output with user-friendly message
+                        result.output = f"No output returned for command: {command}\n\nThis typically means:\n• The access list name is incorrect or doesn't exist\n• The access list exists but is empty\n• Check the access list name spelling\n• Verify the access list exists on this device"
 
             # Attempt to parse command output using TextFSM (only for successful commands without syntax errors)
             if result.success and not result.has_syntax_error:

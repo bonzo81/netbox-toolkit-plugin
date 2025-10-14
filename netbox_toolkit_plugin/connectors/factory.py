@@ -212,8 +212,8 @@ class ConnectorFactory:
             "Connection details - hostname: %s, platform: %s", hostname, platform
         )
 
-        # Normalize platform using config
-        normalized_platform = ToolkitSettings.normalize_platform(platform)
+        # Normalize platform using centralized normalization (single source of truth)
+        normalized_platform = ToolkitSettings.normalize_platform(platform or "")
         logger.debug("Normalized platform: %s -> %s", platform, normalized_platform)
 
         # Get timeouts based on device type
