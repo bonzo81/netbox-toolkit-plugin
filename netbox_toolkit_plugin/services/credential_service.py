@@ -18,24 +18,43 @@ class CredentialService:
         self, access_token: str, user: User
     ) -> tuple[bool, DeviceCredentialSet | None, str | None]:
         """
-        Validate a credential token belongs to the specified user
+        Validate a credential token belongs to the specified user using Argon2id.
 
         Returns:
             (is_valid, credential_set, error_message)
         """
+        # Basic format validation first
+        if not self.encryption_service.validate_token_format(access_token):
+            return False, None, "Invalid token format"
+
         try:
-            credential_set = DeviceCredentialSet.objects.get(
-                access_token=access_token, owner=user
-            )
-            return True, credential_set, None
-        except DeviceCredentialSet.DoesNotExist:
+            # Get all credential sets for this user
+            user_credential_sets = DeviceCredentialSet.objects.filter(owner=user)
+
+            # Check each credential set's stored hash against the provided token
+            for credential_set in user_credential_sets:
+                if self.encryption_service.validate_access_token(
+                    access_token,
+                    credential_set.access_token,
+                    credential_set.id,
+                    user.pk,
+                ):
+                    return True, credential_set, None
+
+            # If no credential set matched, token is invalid
             return (
                 False,
                 None,
                 "Invalid credential token or token does not belong to current user",
             )
+
         except Exception as e:
-            return False, None, f"Error validating credential token: {str(e)}"
+            from ..utils.error_sanitizer import ErrorSanitizer
+
+            sanitized_error = ErrorSanitizer.sanitize_api_error(
+                e, "validate credential token"
+            )
+            return False, None, sanitized_error
 
     def get_credentials_by_token(
         self, access_token: str, user: User
@@ -61,7 +80,12 @@ class CredentialService:
             )
             return True, decrypted_credentials, None
         except Exception as e:
-            return False, None, f"Error decrypting credentials: {str(e)}"
+            from ..utils.error_sanitizer import ErrorSanitizer
+
+            sanitized_error = ErrorSanitizer.sanitize_api_error(
+                e, "decrypt credentials"
+            )
+            return False, None, sanitized_error
 
     def validate_token_for_device(
         self, access_token: str, user: User, device
@@ -115,8 +139,13 @@ class CredentialService:
                 credential_set.encryption_key_id,
             )
             return True, decrypted_credentials, credential_set, None
-        except Exception as e:
-            return False, None, None, f"Error decrypting credentials: {str(e)}"
+        except Exception:
+            error_message = (
+                "Unable to decrypt stored credentials. This typically occurs when "
+                "the security configuration has changed. Please recreate this "
+                "credential set with the same device username/password."
+            )
+            return False, None, None, error_message
 
     def regenerate_token(
         self, credential_set_id: int, user: User
@@ -132,11 +161,19 @@ class CredentialService:
                 id=credential_set_id, owner=user
             )
 
-            new_token = self.encryption_service.generate_access_token()
-            credential_set.access_token = new_token
-            credential_set.save(update_fields=["access_token"])
+            # Generate new token and hash
+            new_token, token_hash = self.encryption_service.generate_access_token(
+                credential_set.id, user.pk
+            )
 
-            return True, new_token, None
+            # Store both the hash and encrypted raw token
+            credential_set.access_token = token_hash  # Store the hash for verification
+            credential_set.encrypted_token = self.encryption_service.encrypt_token(
+                new_token
+            )  # Store encrypted raw token for display
+            credential_set.save(update_fields=["access_token", "encrypted_token"])
+
+            return True, new_token, None  # Return the raw token to user
         except DeviceCredentialSet.DoesNotExist:
             return (
                 False,
@@ -144,7 +181,10 @@ class CredentialService:
                 "Credential set not found or does not belong to current user",
             )
         except Exception as e:
-            return False, None, f"Error regenerating token: {str(e)}"
+            from ..utils.error_sanitizer import ErrorSanitizer
+
+            sanitized_error = ErrorSanitizer.sanitize_api_error(e, "regenerate token")
+            return False, None, sanitized_error
 
     def test_credentials_connectivity(
         self, access_token: str, user: User, device, timeout: int = 10

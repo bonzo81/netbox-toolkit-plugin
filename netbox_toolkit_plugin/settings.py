@@ -40,6 +40,19 @@ class ToolkitSettings:
         },
     }
 
+    # Security configuration for credential encryption
+    DEFAULT_SECURITY_CONFIG = {
+        "pepper": None,  # Must be set via environment variable or config
+        "argon2": {
+            "time_cost": 3,  # 3 iterations (good balance of security/performance)
+            "memory_cost": 65536,  # 64 MB memory usage
+            "parallelism": 1,  # 1 thread (adjust based on CPU cores)
+            "hash_len": 32,  # 32 byte hash output
+            "salt_len": 16,  # 16 byte salt length
+        },
+        "master_key_derivation": "argon2id",  # Use Argon2id instead of PBKDF2
+    }
+
     # SSH transport options
     SSH_TRANSPORT_OPTIONS = {
         "disabled_algorithms": {
@@ -117,14 +130,35 @@ class ToolkitSettings:
         "authentication attempts exceeded",
     ]
 
-    # Platform mappings for better recognition
+    # Comprehensive platform mappings for better recognition
+    # This is the single source of truth for platform name normalization
     PLATFORM_ALIASES = {
+        # Cisco IOS variations
         "ios": "cisco_ios",
+        "cisco_ios": "cisco_ios",
         "iosxe": "cisco_ios",
+        "ios-xe": "cisco_ios",
+        "cisco_xe": "cisco_ios",
+        "cisco_iosxe": "cisco_ios",
+        # Cisco NXOS variations
         "nxos": "cisco_nxos",
+        "cisco_nxos": "cisco_nxos",
+        "nexus": "cisco_nxos",
+        # Cisco IOSXR variations
         "iosxr": "cisco_iosxr",
-        "junos": "juniper_junos",
+        "ios-xr": "cisco_iosxr",
+        "cisco_iosxr": "cisco_iosxr",
+        # Cisco ASA variations
+        "asa": "cisco_asa",
+        "cisco_asa": "cisco_asa",
+        # Other vendor platforms
         "eos": "arista_eos",
+        "arista_eos": "arista_eos",
+        "junos": "juniper_junos",
+        "juniper_junos": "juniper_junos",
+        # Generic platforms
+        "generic": "generic",
+        "autodetect": "autodetect",
     }
 
     @classmethod
@@ -156,12 +190,45 @@ class ToolkitSettings:
 
     @classmethod
     def normalize_platform(cls, platform: str) -> str:
-        """Normalize platform name using aliases."""
+        """Normalize platform name using comprehensive aliases.
+
+        This is the single source of truth for platform name normalization
+        across the entire plugin. All platform handling should use this method.
+
+        Args:
+            platform: Raw platform name (case-insensitive)
+
+        Returns:
+            Normalized platform name suitable for connectors and parsers
+        """
         if not platform:
             return ""
 
-        platform_lower = platform.lower()
-        return cls.PLATFORM_ALIASES.get(platform_lower, platform_lower)
+        # Normalize to lowercase and strip whitespace
+        platform_lower = platform.lower().strip()
+
+        # First check direct aliases
+        if platform_lower in cls.PLATFORM_ALIASES:
+            return cls.PLATFORM_ALIASES[platform_lower]
+
+        # Handle compound platform names (e.g., "cisco ios", "cisco nxos")
+        if " " in platform_lower:
+            # Split on space and check if first part is "cisco"
+            parts = platform_lower.split()
+            if len(parts) >= 2 and parts[0] == "cisco":
+                # Reconstruct as underscore format (e.g., "cisco ios" -> "cisco_ios")
+                reconstructed = "_".join(parts)
+                if reconstructed in cls.PLATFORM_ALIASES:
+                    return cls.PLATFORM_ALIASES[reconstructed]
+
+        # Handle hyphenated variations (e.g., "ios-xe" -> check "ios_xe")
+        if "-" in platform_lower:
+            underscore_version = platform_lower.replace("-", "_")
+            if underscore_version in cls.PLATFORM_ALIASES:
+                return cls.PLATFORM_ALIASES[underscore_version]
+
+        # If no mapping found, return original (for unknown platforms)
+        return platform_lower
 
     @classmethod
     def get_ssh_options(cls) -> dict[str, Any]:
@@ -188,3 +255,85 @@ class ToolkitSettings:
             "netbox_toolkit_plugin", {}
         )
         return {**cls.NETMIKO_CONFIG, **user_config.get("netmiko", {})}
+
+    @classmethod
+    def get_security_config(cls) -> dict[str, Any]:
+        """Get security configuration for credential encryption."""
+        import os
+
+        user_config = getattr(settings, "PLUGINS_CONFIG", {}).get(
+            "netbox_toolkit_plugin", {}
+        )
+
+        # Merge default config with user overrides
+        security_config = {**cls.DEFAULT_SECURITY_CONFIG}
+        if "security" in user_config:
+            # Deep merge argon2 config
+            if "argon2" in user_config["security"]:
+                security_config["argon2"].update(user_config["security"]["argon2"])
+
+            # Update other security settings
+            for key, value in user_config["security"].items():
+                if key != "argon2":
+                    security_config[key] = value
+
+        # Handle pepper with flexible configuration priority
+        pepper = None
+
+        # Priority 1: Environment variable (most secure)
+        if os.getenv("NETBOX_TOOLKIT_PEPPER"):
+            pepper = os.getenv("NETBOX_TOOLKIT_PEPPER")
+
+        # Priority 2: Direct configuration in PLUGINS_CONFIG
+        elif security_config.get("pepper"):
+            pepper = security_config["pepper"]
+
+        # Priority 3: Require explicit configuration (no auto-generation)
+        else:
+            raise ValueError(
+                "Security pepper not configured. You must set either:\n"
+                "1. NETBOX_TOOLKIT_PEPPER environment variable (recommended), or\n"
+                "2. 'security.pepper' in PLUGINS_CONFIG\n\n"
+                'Generate a secure pepper with: python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+
+        if not pepper or len(pepper) < 32:
+            raise ValueError(
+                "Security pepper must be at least 32 characters long for adequate security"
+            )
+
+        security_config["pepper"] = pepper
+        return security_config
+
+    @classmethod
+    def validate_security_config(cls) -> bool:
+        """Validate security configuration and return True if valid."""
+        try:
+            config = cls.get_security_config()
+
+            # Validate Argon2 parameters
+            argon2_config = config["argon2"]
+
+            if argon2_config["time_cost"] < 1:
+                raise ValueError("Argon2 time_cost must be at least 1")
+
+            if argon2_config["memory_cost"] < 1024:
+                raise ValueError("Argon2 memory_cost must be at least 1024 (1KB)")
+
+            if argon2_config["parallelism"] < 1:
+                raise ValueError("Argon2 parallelism must be at least 1")
+
+            if argon2_config["hash_len"] < 16:
+                raise ValueError("Argon2 hash_len must be at least 16 bytes")
+
+            if argon2_config["salt_len"] < 8:
+                raise ValueError("Argon2 salt_len must be at least 8 bytes")
+
+            return True
+
+        except Exception as e:
+            from .utils.logging import get_toolkit_logger
+
+            logger = get_toolkit_logger(__name__)
+            logger.error(f"Security configuration validation failed: {e}")
+            return False

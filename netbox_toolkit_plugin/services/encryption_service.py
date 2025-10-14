@@ -1,9 +1,9 @@
 """
-Encryption service for secure device credential storage.
+Enhanced encryption service for secure device credential storage.
 
 This service provides secure encryption and decryption of device credentials
-using industry-standard cryptography. It derives unique encryption keys
-for each credential set and generates secure credential tokens.
+using industry-standard cryptography with Argon2id for key derivation and
+token hashing. It includes pepper-based security enhancements.
 """
 
 import base64
@@ -14,26 +14,56 @@ from django.conf import settings
 
 from cryptography.fernet import Fernet
 
+try:
+    import argon2
+
+    HAS_ARGON2 = True
+except ImportError:
+    HAS_ARGON2 = False
+
 
 class CredentialEncryptionService:
     """
-    Handles secure encryption/decryption of device credentials.
+    Enhanced secure encryption/decryption service for device credentials.
 
-    Uses Fernet (symmetric encryption) with keys derived from Django's SECRET_KEY
-    and unique key IDs for each credential set. This ensures:
-    - Each credential set has a unique encryption key
-    - Keys are deterministically derived from the master secret
-    - No keys are stored in the database
-    - Strong cryptographic protection of stored credentials
+    Features:
+    - Fernet (AES-128 CBC + HMAC-SHA256) for credential encryption/decryption
+    - Argon2id for master key derivation and token hashing with pepper
+    - Unique encryption keys per credential set
+    - Secure token validation with resistance to timing attacks
+    - No keys stored in database - all derived deterministically
     """
 
     def __init__(self):
-        """Initialize the encryption service with master key derivation."""
+        """Initialize the encryption service with enhanced security configuration."""
+        if not HAS_ARGON2:
+            raise ImportError(
+                "argon2-cffi is required for enhanced security features. "
+                "Install with: pip install argon2-cffi"
+            )
+
+        # Load security configuration
+        from ..settings import ToolkitSettings
+
+        self._security_config = ToolkitSettings.get_security_config()
+        self._pepper = self._security_config["pepper"].encode("utf-8")
+        self._argon2_config = self._security_config["argon2"]
+
+        # Initialize Argon2 hasher with configured parameters
+        self._password_hasher = argon2.PasswordHasher(
+            time_cost=self._argon2_config["time_cost"],
+            memory_cost=self._argon2_config["memory_cost"],
+            parallelism=self._argon2_config["parallelism"],
+            hash_len=self._argon2_config["hash_len"],
+            salt_len=self._argon2_config["salt_len"],
+        )
+
+        # Derive master key using enhanced method
         self._master_key = self._derive_master_key()
 
     def encrypt_credentials(self, username: str, password: str) -> dict[str, str]:
         """
-        Encrypt credentials and return encrypted data with key ID.
+        Encrypt credentials using Fernet with Argon2id-derived keys.
 
         Args:
             username: Plain text username
@@ -109,38 +139,141 @@ class CredentialEncryptionService:
         except Exception as e:
             raise ValueError(f"Failed to decrypt credentials: {str(e)}") from e
 
-    def generate_access_token(self) -> str:
+    def encrypt_token(self, raw_token: str) -> str:
         """
-        Generate a secure credential token for API access.
+        Encrypt a raw token using Fernet with master key.
+
+        Args:
+            raw_token: The raw token string to encrypt
 
         Returns:
-            URL-safe random token string
+            Base64 encoded encrypted token
         """
-        return secrets.token_urlsafe(64)
+        # Use master key for token encryption
+        fernet = Fernet(self._master_key)
+
+        # Encrypt the raw token
+        encrypted_token = fernet.encrypt(raw_token.encode("utf-8"))
+
+        return base64.b64encode(encrypted_token).decode("utf-8")
+
+    def decrypt_token(self, encrypted_token: str) -> str:
+        """
+        Decrypt an encrypted token.
+
+        Args:
+            encrypted_token: Base64 encoded encrypted token
+
+        Returns:
+            Decrypted raw token string
+        """
+        try:
+            # Use master key for token decryption
+            fernet = Fernet(self._master_key)
+
+            # Decode and decrypt the token
+            encrypted_token_bytes = base64.b64decode(encrypted_token.encode("utf-8"))
+            decrypted_token = fernet.decrypt(encrypted_token_bytes)
+
+            return decrypted_token.decode("utf-8")
+
+        except Exception as e:
+            raise ValueError(f"Failed to decrypt token: {str(e)}") from e
+
+    def generate_access_token(
+        self, credential_set_id: int, user_id: int
+    ) -> tuple[str, str]:
+        """
+        Generate a secure credential token with Argon2id hash for storage.
+
+        Args:
+            credential_set_id: ID of the credential set
+            user_id: ID of the user who owns the credentials
+
+        Returns:
+            Tuple of (raw_token, token_hash) where:
+            - raw_token: Token to return to user for API calls
+            - token_hash: Argon2id hash to store in database
+        """
+        # Generate random token for user
+        raw_token = secrets.token_urlsafe(64)
+
+        # Create token hash with pepper and context for storage
+        token_hash = self._hash_token_for_storage(raw_token, credential_set_id, user_id)
+
+        return raw_token, token_hash
+
+    def validate_access_token(
+        self, raw_token: str, stored_hash: str, credential_set_id: int, user_id: int
+    ) -> bool:
+        """
+        Validate an access token against its stored Argon2id hash.
+
+        Args:
+            raw_token: Token provided by user
+            stored_hash: Argon2id hash stored in database
+            credential_set_id: ID of the credential set
+            user_id: ID of the user
+
+        Returns:
+            True if token is valid, False otherwise
+        """
+        try:
+            # Recreate the token context used during hashing
+            token_with_context = self._create_token_context(
+                raw_token, credential_set_id, user_id
+            )
+
+            # Verify using Argon2id - this is timing-attack resistant
+            self._password_hasher.verify(stored_hash, token_with_context)
+            return True
+
+        except argon2.exceptions.VerifyMismatchError:
+            return False
+        except Exception:
+            # Log but don't expose internal errors
+            return False
 
     def _derive_master_key(self) -> bytes:
         """
-        Derive master encryption key from Django's SECRET_KEY.
+        Derive master encryption key using Argon2id with pepper.
 
         Returns:
             32-byte key suitable for Fernet encryption
         """
-        # Use Django's SECRET_KEY as the base for key derivation
+        # Use Django's SECRET_KEY as the primary secret
         secret_key = settings.SECRET_KEY.encode("utf-8")
 
-        # Add a service-specific salt to prevent key reuse
-        salt = b"netbox_toolkit_credentials_v1"
+        # Service-specific salt to prevent key reuse
+        salt = b"netbox_toolkit_credentials_v2"
 
-        # Derive a 32-byte key using SHA-256
-        derived_key = hashlib.pbkdf2_hmac(
-            "sha256",
-            secret_key,
-            salt,
-            100000,  # 100k iterations for security
-        )
+        # Check if we should use Argon2id or fall back to PBKDF2
+        if self._security_config.get("master_key_derivation") == "argon2id":
+            # Use Argon2id for master key derivation with pepper
+            key_material = secret_key + self._pepper + salt
+
+            # Use lower parameters for master key derivation (performance)
+            derived_key_raw = argon2.low_level.hash_secret_raw(
+                secret=key_material,
+                salt=salt[:16],  # Argon2 needs exactly 16 bytes for salt
+                time_cost=2,  # Lower than token hashing
+                memory_cost=8192,  # 8MB for master key
+                parallelism=1,
+                hash_len=32,
+                type=argon2.low_level.Type.ID,
+            )
+        else:
+            # Fallback to PBKDF2 for compatibility
+            key_material = secret_key + self._pepper
+            derived_key_raw = hashlib.pbkdf2_hmac(
+                "sha256",
+                key_material,
+                salt,
+                100000,  # 100k iterations
+            )
 
         # Encode for Fernet (base64url)
-        return base64.urlsafe_b64encode(derived_key)
+        return base64.urlsafe_b64encode(derived_key_raw)
 
     def _derive_credential_key(self, key_id: str) -> bytes:
         """
@@ -166,7 +299,7 @@ class CredentialEncryptionService:
         Validate that a token has the expected format.
 
         Args:
-            token: Token to validate
+            token: Raw token to validate (not the hash)
 
         Returns:
             True if token format is valid
@@ -178,8 +311,45 @@ class CredentialEncryptionService:
         if len(token) < 40 or len(token) > 128:
             return False
 
-        # Check character set (URL-safe base64)
-        allowed_chars = set(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+        # Check that it contains only URL-safe base64 characters
+        import string
+
+        valid_chars = string.ascii_letters + string.digits + "-_"
+        return all(c in valid_chars for c in token)
+
+    def _create_token_context(
+        self, raw_token: str, credential_set_id: int, user_id: int
+    ) -> str:
+        """
+        Create token context string for hashing with pepper and metadata.
+
+        Args:
+            raw_token: The raw token string
+            credential_set_id: ID of the credential set
+            user_id: ID of the user
+
+        Returns:
+            Context string for hashing
+        """
+        # Include pepper and context to prevent token reuse across different contexts
+        context_data = f"{raw_token}:{credential_set_id}:{user_id}"
+        return context_data + ":" + self._pepper.decode("utf-8")
+
+    def _hash_token_for_storage(
+        self, raw_token: str, credential_set_id: int, user_id: int
+    ) -> str:
+        """
+        Hash a token with context for secure storage.
+
+        Args:
+            raw_token: The raw token to hash
+            credential_set_id: ID of the credential set
+            user_id: ID of the user
+
+        Returns:
+            Argon2id hash suitable for database storage
+        """
+        token_with_context = self._create_token_context(
+            raw_token, credential_set_id, user_id
         )
-        return all(c in allowed_chars for c in token)
+        return self._password_hasher.hash(token_with_context)
