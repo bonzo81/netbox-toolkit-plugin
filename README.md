@@ -1,14 +1,11 @@
 # NetBox Toolkit Plugin
 
-> ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️
-> This plugin is in very early development and not recommended for production use. There will be bugs and possible incomplete functionality. Use at your own risk! If you do, give some feedback in [Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
-
-A comprehensive NetBox plugin for secure network device command execution with encrypted credential storage, dual-token authentication, and powerful API automation capabilities. (Toolkit Plugin)
+A comprehensive NetBox plugin for secure network device command execution with encrypted credential storage, dual-token authentication, and powerful automation capabilities.
 
 > ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️
 > This plugin is in very early development and not recommended for production use. There will be bugs and possible incomplete functionality. Use at your own risk! If you do, give some feedback in [Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
 
-A NetBox plugin that allows you to run commands on network devices directly from the device page.
+Execute network commands on devices directly from NetBox device pages with secure credential management and comprehensive logging.
 
 
 ### 📋 Feature Overview
@@ -38,7 +35,7 @@ A NetBox plugin that allows you to run commands on network devices directly from
 - **Audit Trail**: All operations logged with proper user attribution
 
 ### Created with:
-- VSCode
+- VSCode + Dev Containers
 - Copilot
 - RooCode
 
@@ -47,15 +44,15 @@ A NetBox plugin that allows you to run commands on network devices directly from
 ## 📚 Essential Guides
 
 #### 🚀 Getting Started
-- [📦 Installation](./docs/user/installation.md) - Install the plugin in your NetBox environment
-- [⚙️ Configuration](./docs/user/configuration.md) - Configure plugin settings and options
-- [🔐 Credential Setup](./docs/user/getting-started.md#device-credential-sets) - Create secure credential storage
-
-#### 📋 Command & Credential Management
+- [📦 Plugin Installation](./docs/user/plugin-installation.md) - Install the plugin in your NetBox environment
+- [⚙️ Plugin Configuration](./docs/user/plugin-configuration.md) - Configure plugin settings and options
+- [🔐 Permissions Creation](./docs/user/permissions-creation.md) - Set up user access and permissions
 - [📋 Command Creation](./docs/user/command-creation.md) - Create platform-specific commands with variables
-- [� Device Credential Sets](./docs/user/getting-started.md#device-credential-sets) - Secure credential storage and tokens
-- [�🔐 Permissions Setup](./docs/user/permissions-setup-guide.md) - Configure granular access control
+- [🔑 Device Credentials](./docs/user/device-credentials.md) - Secure credential storage and token management
+
+#### 📋 Advanced Configuration
 - [📝 Permission Examples](./docs/user/permission-examples.md) - Example permission configurations
+- [🔐 Legacy Permissions](./docs/user/permissions-creation.md) - Legacy permission setup guide
 
 #### 🔌 API Integration
 - [📖 API Overview](./docs/api/overview.md) - REST API capabilities and features
@@ -89,7 +86,7 @@ curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/17/execute
 
 ## Contributing
 
-**🚀 Want to Contribute?** Start with the [Contributor Guide](./docs/development/contributing.md) for a fast overview of the codebase.
+**🚀 Want to Contribute?** Get started quickly with the **[Dev Container setup](./docs/development/setup.md#quick-start-with-dev-container-recommended)** or use the [Contributor Guide](./docs/development/index.md) for a complete overview of the codebase.
 
 
 ## Future ideas:

@@ -39,10 +39,17 @@ theme:
     - navigation.expand
     - navigation.indexes
     - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
     - search.highlight
     - search.share
+    - content.action.edit
     - content.code.copy
     - content.code.annotate
+    - toc.integrate
+  icon:
+    edit: material/pencil
 
 # Plugins
 plugins:
@@ -83,29 +90,41 @@ markdown_extensions:
 nav:
   - Home: README.md
   - User Documentation:
-      - Getting Started:
-          - Installation: user/installation.md
-          - Plugin Configuration: user/configuration.md
-      - Command Management:
+      - Setup Guides:
+          - Plugin Installation: user/plugin-installation.md
+          - Plugin Configuration: user/plugin-configuration.md
+          - Permissions Creation: user/permissions-creation.md
           - Command Creation: user/command-creation.md
-          - Permissions Setup: user/permissions-setup-guide.md
-          - Permission Examples: user/permission-examples.md
-      - Troubleshooting:
+          - Device Credentials: user/device-credentials.md
           - Logging Guide: user/logging.md
   - API Documentation:
-      - Overview: api/index.md
-      - API Reference: api/overview.md
-      - Commands API: api/commands.md
-      - Command Logs API: api/command-logs.md
-      - Authentication & Permissions: api/auth.md
-      - Error Handling: api/errors.md
+      - Overview:
+          - api/index.md
+          - Commands API: api/commands.md
+          - Command Logs API: api/command-logs.md
+          - Authentication & Permissions: api/auth.md
+          - Feature Comparison: api/feature-comparison.md
+          - Error Handling: api/errors.md
+  - Examples:
+          - Permission Examples: user/permission-examples.md
+          - API Examples: api/workflows.md
+          - API Automation Examples: api/automation-examples.md
+
   - Development:
-      - Start Here: development/contributing.md
-      - Setup: development/setup.md
-      - Code Guide: development/code-guide.md
-      - Architecture: development/architecture.md
-      - Module Structure: development/module-structure.md
-  - Changelog: changelog.md
+      - Start Here:
+          - development/index.md
+          - Setup: development/setup.md
+      - Contributing:
+          - Contribution Types: development/contribution-types.md
+          - Development Workflow: development/development-workflow.md
+          - Technical Stack: development/technical-stack.md
+          - Getting Help: development/getting-help.md
+      - Reference:
+          - Code Guide: development/code-guide.md
+          - Architecture: development/architecture.md
+          - Module Structure: development/module-structure.md
+  - Changelog:
+      - Changelog: changelog.md
 
 # Extra
 extra:
@@ -114,10 +133,6 @@ extra:
       link: https://github.com/bonzo81/netbox-toolkit-plugin
   version:
     provider: mike
-
-# Custom CSS
-extra_css:
-  - stylesheets/extra.css
 
 # Watch extra files
 watch:
