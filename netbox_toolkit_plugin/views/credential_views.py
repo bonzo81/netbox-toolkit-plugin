@@ -126,10 +126,6 @@ class DeviceCredentialSetEditView(ObjectEditView):
         return qs
 
     def get(self, request, *args, **kwargs):
-        print("DEBUG: DeviceCredentialSetEditView.get() called")
-        # If we have a form with errors from a failed POST, use it instead of creating a new form
-        if hasattr(self, "form_with_errors"):
-            print(f"DEBUG: using form with errors = {self.form_with_errors.errors}")
             # Store the form with errors in the instance so get_form() returns it
             self._form_with_errors = self.form_with_errors
             # Clean up
