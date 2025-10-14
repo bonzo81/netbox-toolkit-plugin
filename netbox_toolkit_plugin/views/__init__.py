@@ -12,6 +12,7 @@ from .command_log_views import (
     CommandLogExportCSVView,
     CommandLogListView,
     CommandLogView,
+    ToolkitStatisticsView,
 )
 from .command_views import (
     CommandChangeLogView,
@@ -22,12 +23,12 @@ from .command_views import (
     CommandView,
 )
 from .credential_views import (
+    DeviceCredentialSetChangeLogView,
     DeviceCredentialSetCreateView,
     DeviceCredentialSetDeleteView,
     DeviceCredentialSetDetailView,
     DeviceCredentialSetEditView,
     DeviceCredentialSetListView,
-    DeviceCredentialSetShowTokenView,
     DeviceCredentialSetTokenModalView,
     RegenerateTokenView,
 )
@@ -59,12 +60,14 @@ __all__ = [
     "CommandLogEditView",
     "CommandLogDeleteView",
     "CommandLogExportCSVView",
+    "ToolkitStatisticsView",
     # Device Credential Set Views
     "DeviceCredentialSetListView",
     "DeviceCredentialSetDetailView",
     "DeviceCredentialSetCreateView",
     "DeviceCredentialSetEditView",
     "DeviceCredentialSetDeleteView",
+    "DeviceCredentialSetChangeLogView",
     "DeviceCredentialSetTokenModalView",
     "RegenerateTokenView",
 ]

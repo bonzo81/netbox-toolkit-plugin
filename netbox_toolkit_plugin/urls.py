@@ -120,8 +120,10 @@ urlpatterns = [
     ),
     path(
         "credentials/<int:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
+        views.DeviceCredentialSetChangeLogView.as_view(),
         name="devicecredentialset_changelog",
         kwargs={"model": models.DeviceCredentialSet},
     ),
+    # Statistics dashboard
+    path("stats/", views.ToolkitStatisticsView.as_view(), name="toolkit_stats"),
 ]
