@@ -18,15 +18,13 @@ curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/bulk-execu
       {
         "command_id": 5,
         "device_id": 101,
-        "username": "admin",
-        "password": "password",
+        "credential_token": "YOUR_CREDENTIAL_TOKEN",
         "variables": {"vlan_id": "100", "description": "Guest Network"}
       },
       {
         "command_id": 5,
         "device_id": 102,
-        "username": "admin",
-        "password": "password",
+        "credential_token": "YOUR_CREDENTIAL_TOKEN",
         "variables": {"vlan_id": "100", "description": "Guest Network"}
       }
     ]
@@ -62,8 +60,7 @@ curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/1/execute/
   -H "Content-Type: application/json" \
   -d '{
     "device_id": 123,
-    "username": "admin",
-    "password": "password",
+    "credential_token": "YOUR_CREDENTIAL_TOKEN",
     "variables": {"interface_name": "GigabitEthernet0/1"}
   }'
 ```
@@ -83,12 +80,11 @@ class NetBoxToolkitAPI:
             "Content-Type": "application/json"
         }
 
-    def execute_command(self, command_id, device_id, credentials, variables=None):
+    def execute_command(self, command_id, device_id, credential_token, variables=None):
         """Execute single command with optional variables"""
         payload = {
             "device_id": device_id,
-            "username": credentials["username"],
-            "password": credentials["password"],
+            "credential_token": credential_token,
             "variables": variables or {}
         }
 
@@ -123,7 +119,7 @@ api = NetBoxToolkitAPI("https://netbox.example.com", "your-token")
 result = api.execute_command(
     command_id=1,
     device_id=123,
-    credentials={"username": "admin", "password": "password"},
+    credential_token="YOUR_CREDENTIAL_TOKEN",
     variables={"interface_name": "GigabitEthernet0/1"}
 )
 
@@ -132,15 +128,13 @@ bulk_result = api.bulk_execute([
     {
         "command_id": 1,
         "device_id": 123,
-        "username": "admin",
-        "password": "password",
+        "credential_token": "YOUR_CREDENTIAL_TOKEN",
         "variables": {"interface_name": "GigabitEthernet0/1"}
     },
     {
         "command_id": 2,
         "device_id": 124,
-        "username": "admin",
-        "password": "password",
+        "credential_token": "YOUR_CREDENTIAL_TOKEN",
         "variables": {"vlan_id": "100"}
     }
 ])
@@ -171,8 +165,7 @@ print(f"Success rate: {stats['success_rate']}%")
         body_format: json
         body:
           device_id: "{{ device_id }}"
-          username: "{{ device_username }}"
-          password: "{{ device_password }}"
+          credential_token: "{{ credential_token }}"
           variables:
             interface_name: "{{ interface_name }}"
       register: command_result
