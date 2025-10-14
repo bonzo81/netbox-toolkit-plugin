@@ -1,216 +1,118 @@
-# Command Creation Guide
+# Command Creation
 
-Learn how to create and organize commands for different network platforms.
+This guide explains how to create and manage network commands in the NetBox Toolkit Plugin.
 
 ## Overview
 
-Before executing commands on devices, you need to define reusable commands via the plugin menu. This guide walks you through the command creation process.
+Commands are the core building blocks of the NetBox Toolkit Plugin. Each command defines:
 
-Make sure to understand the different command types and their usage before proceeding.
+- The network command to execute (e.g., `show version`, `show interfaces status`)
+- The network platform it works with (Cisco IOS, Juniper JunOS, etc.)
+- Command type (Show commands for read-only operations, Config commands for changes)
+- Variables for dynamic command execution
 
-## Command Types
+## Creating Your First Command
 
-### Show Commands
-Read-only operations that retrieve information:
+### Step 1: Access Command Management
+1. Log in to your NetBox instance
+2. Click on **Command Toolkit > Commands** in the navigation bar
+3. Click **"Add"** to create a new command
 
-- Status and monitoring commands
-- Configuration display commands
+### Step 2: Basic Command Information
+Fill in the essential command details:
 
-**Examples**: `show version`, `show interfaces`, `show ip route`
+- **Name**: A descriptive name that clearly indicates what the command does
+    - Good: `"Show Interface Status"`, `"Check Device Version"`
+    - Avoid: `"Command 1"`, `"Test"`
 
-### Configuration Commands
-Commands that modify device configuration:
+- **Command**: The actual network command to execute
+    - Simple commands: `show version`, `show running-config`
+    - Commands with variables: `show interface <interface_name> status`
 
-- Interface configuration
-- Routing protocol configuration
-- System configuration changes
+- **Platform**: The network device platform this command works with
+    - Common options: `cisco_ios`, `cisco_nxos`, `juniper_junos`, `arista_eos`
 
-**Examples**: `interface GigabitEthernet1/1`, `router ospf 1`, `hostname new-name`
+- **Command Type**: Choose the appropriate type:
+    - **Show Command**: Read-only operations (monitoring, troubleshooting)
+    - **Configuration Command**: Write operations (configuration changes)
 
-> ⚠️ **Warning**: Configuration commands can impact network operations. Use appropriate permissions and testing procedures.
+### Step 3: Add Command Variables (Optional)
+ It is possible to add varaibles to a command. Variable can be free text or can be linked to NetBox objects. Currently only interfaces, IP addresses and VLANs are supported as NetBox object types.
 
-### Benefits of using command types:
+In the **Command** box, use snake_case - `<variable_name>` - syntax to define each variable.
 
-- **Permissions Control** - Users can be restricted to executing only show commands
-- **Output Parsing** - Show commands are parsed for structured output, config commands are not
+For example:
+```show interface <interface_name> status```
 
-## Creating Commands
+Or multiple variables in one command:
+```ping <destination_ip> source <source_interface>```
 
-### 1. Plugin Command Toolkit Menu
+1. Click **"Add Variable"** to create a new variable
+2. Configure each variable:
+    - **Name**: Variable identifier in snake_case (e.g., `interface_name`)
+    - **Display Name**: User-friendly name (e.g., `Interface Name`)
+    - **Variable Type**: Field type (Free Text or NetBox Object - Interface, IP Address, VLAN)
+    - **Required**: Whether the variable must be filled
+    - **Help Text**: Help text for users
+    - **Default Value**: Optional default value
 
-1. Navigate to **Plugins > Command Toolkit > Commands**
-2. Click **"Add"** to create a new command
+### Step 4: Save the Command
+Click **"Create"** to save your new command.
 
-### 2. Fill Command Details
+## Command Examples by Platform
 
-Complete the following fields:
-
-- **Name**: A descriptive name (e.g., "Show Interface Status")
-- **Command**: The actual command to execute with optional variables
-  - Basic command: `show version`
-  - With variables: `show interface <interface_name> status`
-  - Multiple variables: `show access-list <acl_name> line <line_number>`
-  > Use full command syntax for optimal TextFSM template parsing
-- **Description**: Optional explanation of what the command does
-- **Platform**: The device platform this command is designed for (e.g., `cisco_ios`, `cisco_nxos`, `arista_eos`)
-- **Command Type**: Choose from:
-    - `Show Command` - Read-only operations
-    - `Configuration Command` - Write operations
-- **Tags**: Optional tags for better organization
-
-### 3. Define Command Variables (Optional)
-
-If your command includes variables (text within angle brackets `<>`), you'll need to define them:
-
-#### Variable Syntax Requirements
-
-Variables must follow these formatting rules:
-
-- **Correct Format**: `<variable_name>` - enclosed in angle brackets
-- **Valid Names**: Must start with a letter or underscore, followed by letters, numbers, or underscores
-- **Examples of Valid Variables**:
-  - `<interface_name>` ✅
-  - `<vlan_id>` ✅
-  - `<access_list_name>` ✅
-  - `<_private_var>` ✅
-
-- **Examples of Invalid Variables**:
-  - `<123invalid>` ❌ (starts with number)
-  - `<var-name>` ❌ (contains hyphen)
-  - `<var name>` ❌ (contains space)
-  - `<var.name>` ❌ (contains period)
-
-#### Variable Types
-
-For each variable in your command, specify:
-
-- **Name**: The exact variable name from your command (without angle brackets)
-- **Display Name**: User-friendly name shown in forms
-- **Type**: Choose the appropriate variable type:
-  - **Free Text** - Any text input (e.g., hostnames, descriptions)
-  - **Device Interface** - Dropdown of available interfaces from NetBox
-  - **VLAN** - VLAN selection from NetBox data
-  - **IP Address** - IP addresses assigned to the device
-- **Required**: Whether the variable must be provided
-- **Help Text**: Optional guidance for users
-- **Default Value**: Optional pre-filled value
-
-#### Example Variable Configuration
-
-For command: `show interface <interface_name> status`
-
-| Field | Value |
-|-------|-------|
-| Name | `interface_name` |
-| Display Name | `Interface Name` |
-| Type | `Device Interface` |
-| Required | ✅ Yes |
-| Help Text | `Select the interface to check` |
-
-### 4. Save the Command
-
-Click **"Create"** to save the command. The system will automatically:
-- Validate variable syntax in your command
-- Ensure all variables have corresponding definitions
-- Remove any orphaned variable definitions
-
-
-
-## Variable Validation & Troubleshooting
-
-### Common Variable Errors
-
-The system validates variable syntax when saving commands. Here are common issues and solutions:
-
-#### Invalid Variable Names
-**Error**: "Invalid variable name '<var-name>'. Variable names must start with a letter or underscore..."
-
-**Solutions**:
-- Replace hyphens with underscores: `<var-name>` → `<var_name>`
-- Replace spaces with underscores: `<var name>` → `<var_name>`
-- Don't start with numbers: `<123var>` → `<var_123>`
-
-#### Missing Variable Definitions
-**Error**: "Command references undefined variables: variable_name"
-
-**Solution**: Add a variable definition in the Variables section for each `<variable_name>` in your command.
-
-#### Orphaned Variables
-**Behavior**: Variables are automatically removed if they're no longer referenced in the command text.
-
-### Variable Execution Flow
-
-1. **Command Creation**: Define command with `<variable_name>` syntax
-2. **Variable Configuration**: Set up variable types and validation rules
-3. **Command Execution**: Users provide values through dynamic forms
-4. **Variable Substitution**: System replaces `<variable_name>` with actual values
-5. **Command Execution**: Processed command runs on target device
-
-### Complete Variable Examples
-
-#### Example 1: Interface Status Check
+### Cisco IOS/IOS-XE
 ```
-Command: show interface <interface_name> status
-Variables:
-- Name: interface_name
-- Type: Device Interface
-- Display: Interface Name
+show version
+show running-config
+show interfaces status
+show ip interface brief
+show inventory
+show environment all
+show processes cpu sorted
+show ip route
 ```
 
-#### Example 2: Multi-Variable VLAN Configuration
+### Cisco NX-OS
 ```
-Command: interface <interface_name>
-         switchport access vlan <vlan_id>
-         description <description>
-Variables:
-- interface_name (Device Interface)
-- vlan_id (VLAN)
-- description (Free Text)
-```
-
-#### Example 3: Access Control Lists
-```
-Command: show access-list <acl_name> line <line_number>
-Variables:
-- acl_name (Free Text)
-- line_number (Free Text)
+show version
+show running-config
+show interface status
+show ip interface brief
+show inventory
+show environment
+show processes cpu sort
+show ip route
 ```
 
-## Best Practices
+### Juniper Junos
+```
+show version
+show configuration
+show interfaces terse
+show chassis hardware
+show chassis environment
+show system processes extensive
+show route
+```
 
-### Command Naming
-- Use descriptive, consistent names (e.g., "Show Interface Status", "Configure VLAN", "Show Routing Table")
-- Include platform in name if creating platform-specific variants
-- Group related commands with consistent prefixes
-
-### Variable Design
-- **Use descriptive variable names**: `<interface_name>` instead of `<int>`
-- **Choose appropriate types**: Use NetBox data types for validation when possible
-- **Provide helpful text**: Guide users with clear help text and examples
-- **Set sensible defaults**: Pre-fill common values where appropriate
+### Arista EOS
+```
+show version
+show running-config
+show interfaces status
+show ip interface brief
+show inventory
+show environment all
+show processes top
+show ip route
+```
 
 ### Command Organization
-- **Group by function**: Interface commands, routing commands, system commands
-- **Use tags effectively**: Tag commands by category (monitoring, troubleshooting, configuration)
-- **Platform-specific commands**: Create separate commands for each platform rather than generic ones
+- **Naming Conventions**: Use consistent naming patterns (e.g., "Show - Interface Status", "Config - VLAN Setup")
+- **Tags**: Apply tags to group related commands for easier filtering
+- **Descriptions**: Provide clear descriptions of command purpose and expected output
 
-### TextFSM Integration
-- Use complete command syntax (e.g., `show ip interface brief` instead of `sh ip int br`)
-- Full commands provide better TextFSM template matching
-- Structured output parsing works best with standard command formats
-
-### Security Considerations
-- **Show commands**: Generally safe for all users
-- **Configuration commands**: Restrict to senior engineers and administrators
-- **Variable validation**: NetBox data types provide built-in validation (interfaces must exist on device)
-- **Sensitive commands**: Be cautious with commands that might reveal credentials or security information
-
-
-## Next Steps
-
-After creating commands:
-
-1. **Set up permissions** - Configure who can execute which commands [📖 Permissions Setup Guide](./permissions-setup-guide.md)
-
-2. **Monitor usage** - Review command logs for performance and security
-3. **Enable logging** for troubleshooting (optional) [� Logging Guide](./logging.md)
+### Platform-Specific Commands
+- Always specify the correct platform when creating commands
+- Consider platform-specific syntax differences

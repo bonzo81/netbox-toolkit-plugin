@@ -7,6 +7,7 @@ This page provides complete step-by-step examples for setting up permissions for
 
 Below are the groups that we will be use for the permissions example. Each of these groups will be assigned specific permissions.
 
+
 1. **Junior Network Engineers**
 2. **Senior Network Engineers**
 3. **Network Administrators**

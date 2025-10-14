@@ -16,7 +16,8 @@ pip install netbox-toolkit-plugin
 ```
 
 ### 2. **Enable in NetBox**
-Add `'netbox_toolkit_plugin'` to `PLUGINS` in your NetBox configuration
+Add the plugin to your NetBox configuration:
+
 ```python
 # In your NetBox configuration.py
 PLUGINS = [
@@ -35,7 +36,7 @@ PLUGINS_CONFIG = {
     },
 }
 ```
-**See [Plugin Configuration](./configuration.md) for more details.**
+**See [Plugin Configuration](./plugin-configuration.md) for more details.**
 
 ### 3. **Run Database Migrations**
 
@@ -43,7 +44,7 @@ Apply the database migrations to create the necessary tables:
 
 ```bash
 cd /opt/netbox/netbox
-python3 manage.py migrate netbox_toolkit
+python3 manage.py migrate netbox_toolkit_plugin
 ```
 
 ### 4. **Collect Static Files**
@@ -63,11 +64,12 @@ Restart the NetBox services to apply the changes:
 sudo systemctl restart netbox netbox-rq
 ```
 
-##Next Steps:
+## Next Steps
 
-- [Create commands](./command-creation.md)
-- [Set up permissions](./permissions-setup-guide.md)
-- [Logging guide](./logging.md) (Optional - for troubleshooting)
+After successful installation:
+
+1. **Set Up Permissoins**: [Permissions Setup Guide](permissions-creation.md)
+2. **Create Commands**: [Command Creation](command-creation.md)
 
 ## Upgrading
 
@@ -81,7 +83,7 @@ To upgrade to a newer version of the plugin:
 2. Apply any new migrations:
    ```bash
    cd /opt/netbox/netbox
-   python3 manage.py migrate netbox_toolkit
+   python3 manage.py migrate netbox_toolkit_plugin
    ```
 
 3. Collect static files:

@@ -1,21 +1,23 @@
 # Commands API
 
-The Commands API allows you to manage network commands with variables and execute them on devices. The API provides comprehensive support for command variables that can reference NetBox data like interfaces, VLANs, and IP addresses.
+## Overview
 
-## API-Exclusive Features
+The Commands API enables automated execution of network commands on devices with full support for variables, bulk operations, and integration workflows. This API provides capabilities beyond the web interface for automation and system integration.
 
-The Commands API offers several powerful capabilities not available through the web interface:
+## Key Capabilities
 
-🚀 **Bulk Execution**: Execute multiple commands across multiple devices in a single API call
-🔍 **Variable Discovery**: Programmatically retrieve available NetBox data choices for any device
-✅ **Pre-execution Validation**: Validate command variables without actually executing commands
-📊 **Advanced Integration**: Perfect for automation workflows, CI/CD pipelines, and third-party integrations
+**API-Exclusive Features:**
 
-All web interface functionality is also fully supported via API for complete feature parity.
+- 🚀 **Bulk Execution**: Execute multiple commands across multiple devices in a single API call
+- 🔍 **Variable Discovery**: Programmatically retrieve available NetBox data choices for any device
+- ✅ **Enhanced Validation**: Comprehensive variable validation integrated with command execution
+- 📊 **Advanced Integration**: Perfect for automation workflows, CI/CD pipelines, and third-party integrations
+
+**Full Feature Parity**: All web interface functionality is supported via API for complete automation capability.
 
 ## Authentication & Credentials
 
-The Commands API uses a **two-token authentication system** for enhanced security:
+The Commands API uses **NetBox authentication with credential tokens** for enhanced security:
 
 1. **NetBox API Token**: Standard NetBox authentication (sent in `Authorization` header)
 2. **Credential Token**: References stored device credentials (sent in request body)
@@ -28,6 +30,7 @@ The Commands API uses a **two-token authentication system** for enhanced securit
 - **Flexibility**: Multiple credential sets can be managed per user
 
 ### Setting Up Credentials
+
 
 1. Create a **Device Credential Set** in the NetBox web interface
 2. Store your device username/password (encrypted automatically)
@@ -57,7 +60,6 @@ curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/17/execute
 | PATCH | `/commands/{id}/` | Partially update a command |
 | DELETE | `/commands/{id}/` | Delete a command |
 | POST | `/commands/{id}/execute/` | Execute a command |
-| POST | `/commands/{id}/validate-variables/` | Validate command variables |
 | GET | `/commands/{id}/variable-choices/` | Get variable choices for a device |
 | POST | `/commands/bulk-execute/` | Execute multiple commands |
 
@@ -141,40 +143,58 @@ GET /api/plugins/toolkit/commands/1/variable-choices/?device_id=123
 }
 ```
 
-### 2. Validation: Check Variables Before Execution
 
-Validate variable values without executing the command:
+## Understanding Variable Validation Types
 
-```bash
-POST /api/plugins/toolkit/commands/{id}/validate-variables/
+The API provides **comprehensive variable validation** integrated with command execution:
+
+### Enhanced Validation (`/execute/`)
+
+**What it validates:**
+- ✅ Variable definitions exist for command
+- ✅ Required variables have values
+- ✅ Variable substitution syntax is correct
+- ✅ Interface/VLAN/IP existence on target device
+- ✅ User permissions for device/command
+- ✅ Credential validity
+
+**Use case:** Complete validation and command execution in one step
+
+### Discovery (`/variable-choices/`)
+
+**What it provides:**
+- ✅ Available interfaces for a device
+- ✅ Available VLANs for a device/site
+- ✅ Available IP addresses for a device
+- ✅ Variable metadata and help text
+
+**Use case:** Building dynamic forms or validating against real data
+
+## Variable Workflow
+
+Here's how the endpoints work together for variable commands:
+
+```mermaid
+graph TD
+    A[Start with Command] --> B[/variable-choices/?device_id=X]
+    B --> C[Get available interfaces/VLANs/IPs]
+    C --> D[Present choices to user]
+    D --> E[User selects values]
+    E --> F[/execute/]
+    F --> G{Validation and execution successful?}
+    G -->|Yes| H[Command executed successfully]
+    G -->|No| I[Show validation/execution errors]
+    I --> B
 ```
 
-**Request:**
-```json
-{
-    "variables": {
-        "interface_name": "GigabitEthernet0/1"
-    }
-}
-```
+### Recommended Workflow
 
-**Success Response:**
-```json
-{
-    "detail": "Variables are valid"
-}
-```
+1. **Discovery Phase**: Use `/variable-choices/` to get valid options for a device
+2. **Selection Phase**: Present options to user and collect their selections
+3. **Execution Phase**: Use `/execute/` for comprehensive validation and command execution
+4. **Error Handling**: The `/execute/` endpoint provides detailed error messages for both validation and execution issues
 
-**Error Response:**
-```json
-{
-    "variables": {
-        "interface_name": "Interface 'GigabitEthernet0/99' not found on device 'switch01'. Available interfaces: GigabitEthernet0/1, GigabitEthernet0/2, ..."
-    }
-}
-```
-
-### 3. Execution: Run Command with Variables
+### 4. Execution: Run Command with Variables
 
 Execute a command with validated variables:
 
@@ -271,15 +291,7 @@ for choice in interface_choices:
 
 selected_interface = "GigabitEthernet0/1"  # User selection
 
-# 4. Validate before execution (optional but recommended)
-validation = requests.post(
-    f"{BASE_URL}/api/plugins/toolkit/commands/1/validate-variables/",
-    headers=headers,
-    json={"variables": {"interface_name": selected_interface}}
-)
-print(f"Validation: {validation.json()}")
-
-# 5. Execute with validated variables
+# 4. Execute with enhanced validation (includes all validation checks)
 result = requests.post(
     f"{BASE_URL}/api/plugins/toolkit/commands/1/execute/",
     headers=headers,
@@ -289,7 +301,11 @@ result = requests.post(
         "variables": {"interface_name": selected_interface}
     }
 )
-print(f"Execution result: {result.json()}")
+
+if result.json()["success"]:
+    print(f"Execution successful: {result.json()['output']}")
+else:
+    print(f"Execution failed: {result.json()['error_message']}")
 ```
 
 ## Creating Commands
@@ -425,7 +441,7 @@ POST /api/plugins/toolkit/commands/bulk-execute/
 
 ### Variable Validation Errors
 
-When variable validation fails, the API returns detailed error information:
+#### `/execute/` and `/variable-choices/` Errors (Device-Specific)
 
 ```json
 {
@@ -435,20 +451,46 @@ When variable validation fails, the API returns detailed error information:
 }
 ```
 
-### Common Errors
+```json
+{
+    "variables": {
+        "vlan_id": "VLAN 999 not found for device 'switch01' or its site"
+    }
+}
+```
 
+### Common Errors by Type
+
+#### Device Context Errors (`/execute/`, `/variable-choices/`)
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `Device with ID X not found` | Invalid device_id | Verify device exists |
-| `Interface 'X' not found on device` | Interface doesn't exist | Use variable-choices endpoint to get valid options |
-| `VLAN X not found for device` | VLAN not available | Check device site VLANs |
-| `IP address 'X' is not associated with device` | IP not assigned to device | Verify IP assignment |
-| `Missing required variable: X` | Required variable not provided | Include all required variables |
+| `Device with ID X not found` | Invalid device_id | Verify device exists in NetBox |
+| `Interface 'X' not found on device` | Interface doesn't exist | Use `/variable-choices/` endpoint to get valid options |
+| `VLAN X not found for device` | VLAN not available | Check device site VLANs or use `/variable-choices/` |
+| `IP address 'X' is not associated with device` | IP not assigned to device | Verify IP assignment in NetBox |
 
-### Best Practices
+## Best Practices
 
-1. **Always check variable choices** before execution for NetBox data variables
-2. **Validate variables** before execution to catch errors early
-3. **Handle validation errors** gracefully in your applications
+### Variable Management
+1. **Use `/variable-choices/` endpoint** to get valid options for NetBox data variables before execution
+2. **Perform comprehensive validation** using `/execute/` endpoint which includes all validation checks
+3. **Handle validation errors gracefully** - the `/execute/` endpoint provides detailed error messages
 4. **Use meaningful variable names** that match the command context
-5. **Set appropriate help text** for variables to guide users
+
+### Error Handling
+1. **Check HTTP status codes** for different error types
+2. **Implement retry logic** for rate limiting (429 responses)
+3. **Log detailed error information** for debugging
+4. **Validate input** before sending API requests
+
+### Performance
+1. **Use bulk execution** for multiple devices when possible
+2. **Batch requests** to avoid API limits
+3. **Cache variable choices** when executing similar commands
+4. **Monitor rate limits** and implement backoff strategies
+
+## Related Documentation
+- **Setup**: [Authentication Guide](auth.md)
+- **Examples**: [API Automation Examples](automation-examples.md)
+- **Authentication**: [Authentication & Permissions](auth.md)
+- **Troubleshooting**: [Error Handling](errors.md)

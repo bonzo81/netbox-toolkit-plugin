@@ -1,6 +1,6 @@
 # API Workflow Examples
 
-This document provides focused examples of API workflows that leverage the unique capabilities not available through the web interface. For complete workflow documentation including GUI examples, see the [comprehensive workflow guide](../user/workflow-examples.md).
+This document provides focused examples of API workflows that leverage the unique capabilities not available through the web interface. For complete API documentation, see the [Commands API](../api/commands.md).
 
 ## Quick API Workflow Examples
 
@@ -56,11 +56,16 @@ curl -H "Authorization: Token YOUR_TOKEN" \
 curl -H "Authorization: Token YOUR_TOKEN" \
   "https://netbox.example.com/api/plugins/toolkit/commands/1/variable-choices/?device_id=123"
 
-# Validate variables before execution
-curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/1/validate-variables/" \
+# Execute with enhanced validation
+curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/1/execute/" \
   -H "Authorization: Token YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"variables": {"interface_name": "GigabitEthernet0/1"}}'
+  -d '{
+    "device_id": 123,
+    "username": "admin",
+    "password": "password",
+    "variables": {"interface_name": "GigabitEthernet0/1"}
+  }'
 ```
 
 ## Integration Patterns
@@ -307,11 +312,9 @@ def network_performance_monitoring():
 def robust_command_execution(command_id, device_id, credentials, variables=None):
     """Execute command with proper error handling"""
     try:
-        # Validate variables first
+        # Execute with enhanced validation (validation happens automatically)
         if variables:
-            validation = api.validate_variables(command_id, variables)
-            if not validation["valid"]:
-                raise ValueError(f"Variable validation failed: {validation['errors']}")
+            # Validation is now integrated into the execute endpoint
 
         # Execute command
         result = api.execute_command(command_id, device_id, credentials, variables)
@@ -395,4 +398,4 @@ def optimized_bulk_execution(commands, devices, credentials):
     return results
 ```
 
-For more comprehensive workflow examples including GUI workflows and detailed implementation guides, see the [complete workflow documentation](../user/workflow-examples.md).
+For more comprehensive API examples and automation guides, see the [API Automation Examples](../api/automation-examples.md).

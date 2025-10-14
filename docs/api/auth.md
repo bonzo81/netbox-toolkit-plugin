@@ -1,27 +1,34 @@
 # Authentication & Permissions
 
-The NetBox Toolkit API uses a **dual-token authentication system** for enhanced security and user isolation.
+The NetBox Toolkit API uses **NetBox's standard authentication** combined with **credential tokens** for enhanced security and user isolation.
 
-## Two-Token Authentication System
+## Authentication with Credential Tokens
 
 ### 1. NetBox API Token (Authentication)
 Standard NetBox token for user authentication:
+
 - **Purpose**: Identifies and authenticates the user to NetBox
 - **Location**: `Authorization: Token <your-netbox-api-token>` header
 - **Scope**: All NetBox API access
 
 ### 2. Credential Token (Device Access)
 Plugin-specific token for device credential access:
-- **Purpose**: References stored device credentials (username/password)
+
+- **Purpose**: References encrypted device credentials (username/password)
 - **Location**: `credential_token` field in request body
 - **Scope**: Device command execution only
+- **Security**: Bound to specific users, cannot access other users' credentials
 
-## Why Two Tokens?
+## Why Credential Tokens?
 
 🔒 **Enhanced Security**: Device credentials never transmitted in API calls
+
 👤 **User Isolation**: Users can only access their own stored credential sets
+
 📝 **Audit Trail**: All actions properly logged to user accounts
+
 🔄 **Token Rotation**: Credential tokens can be regenerated independently
+
 🎯 **Granular Control**: Different credential sets for different device groups
 
 ## Getting Started
@@ -37,14 +44,23 @@ Plugin-specific token for device credential access:
 
 ### Step 2: Create Device Credential Sets
 
-```bash
-# Via NetBox Web UI:
-# 1. Navigate to Toolkit → Device Credential Sets
-# 2. Click "Add Device Credential Set"
-# 3. Enter name, username, password
-# 4. Select supported platforms (optional)
-# 5. Save and copy the generated credential token
-```
+**Via NetBox Web Interface:**
+
+1. Navigate to **Plugins → Toolkit → Device Credential Sets**
+2. Click **"Add Device Credential Set"**
+3. Enter details:
+      - **Name**: Descriptive name (e.g., "Production Network Credentials")
+      - **Description**: Optional usage description
+      - **Username**: Device login username
+      - **Password**: Device login password
+      - **Platforms**: Optional - restrict to specific network platforms
+4. Click **"Create"** and copy the generated credential token
+5. Store the credential token securely for API use
+
+**Security Features:**
+- Passwords are encrypted using Fernet encryption with unique keys
+- Credential tokens are URL-safe and bound to your user account
+- Other users cannot access your credential sets
 
 ### Step 3: Make API Calls
 
@@ -274,11 +290,29 @@ PLUGINS_CONFIG = {
 }
 ```
 
-## Best Practices
+## Security Best Practices
 
+### Credential Management
+1. **Rotate Credentials**: Regularly rotate device passwords and regenerate credential tokens
+2. **Use Service Accounts**: Create dedicated accounts for automation systems
+3. **Secure Storage**: Store credential tokens in secure secret management systems
+4. **Least Privilege**: Only grant necessary device access permissions
+
+### Permission Management
 1. **Use Groups**: Assign permissions to groups rather than individual users
 2. **Principle of Least Privilege**: Only grant necessary permissions
 3. **Use Constraints**: Restrict permissions to specific platforms or command types
 4. **Rate Limit Bypass**: Only grant to trusted automation systems
 5. **Regular Audits**: Review and audit permissions regularly
-6. **Test Permissions**: Verify permissions work as expected before deploying
+
+### API Security
+1. **HTTPS Only**: Always use HTTPS for API communications
+2. **Token Rotation**: Regularly rotate NetBox API tokens
+3. **Monitor Usage**: Review command logs for suspicious activity
+4. **Error Handling**: Don't expose sensitive information in error messages
+
+## Related Documentation
+- **Setup**: [Installation Guide](../user/plugin-installation.md)
+- **Usage**: [Commands API](commands.md)
+- **Examples**: [API Automation Examples](automation-examples.md)
+- **Troubleshooting**: [Error Handling](errors.md)

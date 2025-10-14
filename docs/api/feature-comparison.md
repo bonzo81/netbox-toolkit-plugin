@@ -50,7 +50,7 @@ This document provides a comprehensive comparison between the NetBox Toolkit Plu
 **API Capabilities:**
 - ✅ All web interface features
 - 🚀 **Bulk execution** across multiple devices simultaneously
-- 🚀 **Pre-execution variable validation** (`/validate-variables/`)
+- 🚀 **Enhanced variable validation** (integrated with `/execute/`)
 - 🚀 **Variable choices API** (`/variable-choices/`) for programmatic discovery
 - 🚀 **Structured response format** perfect for automation
 
@@ -105,8 +105,8 @@ GET /api/plugins/toolkit/command-logs/export/?format=csv&start_date=2025-01-01
 ```bash
 # Discover available variable choices for any device
 GET /api/plugins/toolkit/commands/1/variable-choices/?device_id=123
-# Validate variables before execution
-POST /api/plugins/toolkit/commands/1/validate-variables/
+# Execute with enhanced validation
+POST /api/plugins/toolkit/commands/1/execute/
 ```
 
 ## Migration & Integration Guide

@@ -4,9 +4,49 @@ This guide will help you set up a development environment for working on the Net
 
 
 
-💡 **Tip**: Start with the [Contributing Guide](./contributing.md) for the complete development workflow and overview.
+💡 **Tip**: Start with the [Contributing Guide](index.md) for the complete development workflow and overview.
+
+After setting up your environment, follow the **[Development Workflow](development-workflow.md)** for the complete step-by-step contribution process.
 
 ## Setting Up a Development Environment
+
+### 🚀 Quick Start with Dev Container (Recommended)
+
+The fastest way to get started is using the pre-configured development container, which includes NetBox, PostgreSQL, Redis, and all development tools.
+
+**Prerequisites**: Docker and VS Code with the "Dev Containers" extension.
+
+1. **Open in Dev Container**:
+   ```bash
+   # Option 1: Open in VS Code
+   # - Open the project in VS Code
+   # - When prompted, click "Reopen in Container"
+   # - Or use Ctrl+Shift+P → "Dev Containers: Reopen in Container"
+   ```
+
+2. **Wait for Setup**: The container automatically:
+   - Installs the plugin in development mode
+   - Sets up PostgreSQL and Redis
+   - Creates a superuser account (`admin`/`admin`)
+   - Starts NetBox on http://localhost:8000
+
+3. **Start Developing**: NetBox is now running and ready for development!
+
+**💡 Dev Container Benefits:**
+
+- ✅ Complete environment in minutes
+- ✅ All dependencies pre-installed
+- ✅ Consistent across different machines
+- ✅ Includes development tools (Ruff, Python extensions)
+- ✅ Works with GitHub Codespaces
+
+**📖 Learn more**: See `.devcontainer/README.md` in the project root for advanced configuration options.
+
+---
+
+### 🛠️ Traditional Development Setup
+
+If you prefer manual setup or need more control over your environment, follow these steps:
 
 ### 1. Fork the Repository
 
@@ -31,6 +71,7 @@ $ git checkout develop
 ```
 
 ⚠️ **Develop Branch Considerations:**
+
 - Contains latest development features and fixes
 - **Not for Production**: Unstable and may contain breaking changes
 - **Database Migrations**: Development migrations may change, requiring resets
@@ -69,75 +110,15 @@ cd /opt/netbox/netbox
 python manage.py collectstatic --no-input
 ```
 
-## Development Workflow
+## 🚀 Next Steps
 
-### 8. Create a branch for local development:
+Now that your development environment is set up, you're ready to start contributing!
 
+**Continue with the [Development Workflow](development-workflow.md) to learn how to:**
 
-**For Develop Branch Development:**
-```bash
-$ git checkout develop
-$ git pull upstream develop
-$ git checkout -b feature/your-feature-name
-```
+- Create feature branches
+- Make and test changes
+- Submit pull requests
+- Follow contribution best practices
 
-### 9. Make Your Changes
-
-```bash
-# Make your changes locally
-# Edit files...
-
-# If you changed package structure, reinstall
-$ pip install -e .
-
-# Apply any new migrations
-$ cd /opt/netbox/netbox
-$ python manage.py migrate netbox_toolkit_plugin
-```
-
-### 10. Test Your Changes
-
-```bash
-# Run NetBox development server
-$ cd /opt/netbox/netbox
-$ python manage.py runserver 0.0.0.0:8000
-
-# Test your changes in the browser
-# Check logs for any issues
-```
-
-### 11. Commit your changes and push your branch to GitHub:
-
-```
-$ git add .
-$ git commit -m "Your detailed description of your changes."
-$ git push origin name-of-your-bugfix-or-feature
-```
-
-### 12. Submit a pull request through the GitHub website
-
-After pushing to your fork:
-
-1. **Navigate to your fork** on GitHub (e.g., `https://github.com/yourusername/netbox-toolkit-plugin`)
-2. **GitHub will often show a banner** suggesting to create a pull request for your recently pushed branch
-3. **Click "Compare & pull request"** or go to the "Pull requests" tab and click "New pull request"
-4. **Ensure the base repository is set correctly:**
-   - Base repository: `bonzo81/netbox-toolkit-plugin`
-   - Base branch: `develop` (for new features) or `main` (for hotfixes)
-   - Head repository: `yourusername/netbox-toolkit-plugin` 
-   - Compare branch: `feature/your-feature-name`
-5. **Fill out the pull request template** with details about your changes
-6. **Submit the pull request**
-
-**Important Notes:**
-- Pull requests are **NOT created automatically** - you must create them manually
-- Your changes go to **your fork first**, then you request they be pulled into the main repository
-- For new features, target the **`develop` branch**
-- For bug fixes on released versions, target the **`main` branch**
-
-
-## Deploying
-
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in changelog.md) and that all tests pass.
-Then in the github project go to `Releases` and create a new release with a new tag.  This will automatically upload the release to pypi:
+The workflow guide provides the complete step-by-step process for contributing to the NetBox Toolkit Plugin.

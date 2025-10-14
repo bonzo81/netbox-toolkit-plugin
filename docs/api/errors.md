@@ -281,6 +281,7 @@ HTTP/1.1 400 Bad Request
 
 ## Error Handling Best Practices
 
+
 ### 1. Check Status Codes
 Always check HTTP status codes to determine the type of error:
 
@@ -382,7 +383,7 @@ def execute_command(command_id, device_id, username, password):
 If you encounter persistent errors:
 
 1. Check the [NetBox logs](../user/logging.md) for detailed error information
-2. Verify your [permissions setup](../user/permissions-setup-guide.md)
-3. Review the [configuration guide](../user/configuration.md)
-3. Check for common issues in the [Troubleshooting](../user/troubleshooting.md) section
+2. Verify your [permissions setup](../user/permissions-creation.md)
+3. Review the [configuration guide](../user/plugin-configuration.md)
+3. Check for common issues in the [Permission Examples](../user/permission-examples.md) section
 4. Check the [GitHub issues](https://github.com/yourusername/netbox-toolkit-plugin/issues) for known problems

@@ -72,8 +72,8 @@ Each API resource has its own dedicated documentation page:
 - **Purpose**: Focused API workflow examples and integration patterns
 - **Key Features**: Bulk operations, automation examples, integration code samples
 
-### [Complete Workflow Guide](../user/workflow-examples.md)
-- **Purpose**: Comprehensive workflow examples for both GUI and API usage
+### [Commands API](../api/commands.md)
+- **Purpose**: Execute commands via REST API with full automation support
 - **Key Features**: Real-world scenarios, step-by-step guides, best practices
 
 ## Common Patterns
