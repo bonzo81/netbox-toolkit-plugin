@@ -18,11 +18,7 @@ Displays the full credential token with security warnings and copy functionality
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Credential Set:</label>
-                    <div class="fw-bold">{{ credential_set.name }}</div>
-                    {% if credential_set.description %}
-                        <small class="text-muted">{{ credential_set.description }}</small>
-                    {% endif %}
+                    <label class="form-label">Credential Set: {{ credential_set.name }}</label>
                 </div>
 
                 <div class="mb-3">
@@ -31,11 +27,11 @@ Displays the full credential token with security warnings and copy functionality
                         <input type="text"
                                class="form-control font-monospace"
                                id="fullToken"
-                               value="{{ credential_set.access_token }}"
+                               value="{% if credential_set.raw_token %}{{ credential_set.raw_token }}{% else %}{{ credential_set.access_token }}{% endif %}"
                                readonly>
                         <button class="btn btn-outline-secondary copy-token-btn"
                                 type="button"
-                                data-token="{{ credential_set.access_token }}">
+                                data-token="{{ credential_set.raw_token }}">
                             <i class="mdi mdi-content-copy me-1"></i> Copy
                         </button>
                     </div>
@@ -82,12 +78,6 @@ Displays the full credential token with security warnings and copy functionality
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="alert alert-info mt-3">
-                    <i class="mdi mdi-information me-2"></i>
-                    <strong>API Usage:</strong> Use this token in API requests with the
-                    <code>Authorization: Token {{ credential_set.access_token|truncatechars:20 }}...</code> header.
                 </div>
             </div>
             <div class="modal-footer">

@@ -113,7 +113,7 @@ class DeviceCredentialSetTable(NetBoxTable):
     access_token = tables.TemplateColumn(
         template_code="""
         <div class="d-flex align-items-center">
-            <code class="me-2">{{ record.access_token|truncatechars:20 }}...</code>
+            <code class="me-2">{% if record.raw_token %}{{ record.raw_token|truncatechars:20 }}{% else %}{{ record.access_token|truncatechars:20 }}{% endif %}...</code>
             <small class="text-muted">View details to reveal full token</small>
         </div>
         """,

@@ -2,8 +2,8 @@
 HTMX partial template for command output results
 {% endcomment %}
 
-{% if command_output %}
-    {% if execution_success %}
+{% if command_output or has_syntax_error %}
+    {% if execution_success and not has_syntax_error %}
         <!-- Successful command output -->
         <div class="alert alert-success d-flex align-items-start mb-3" role="alert">
             <i class="mdi mdi-check-circle me-2 mt-1 text-success"></i>
@@ -21,16 +21,16 @@ HTMX partial template for command output results
                 <ul class="nav nav-tabs nav-fill" id="outputTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="raw-output-tab" data-bs-toggle="tab"
-                                data-bs-target="#raw-output" type="button" role="tab"
-                                aria-controls="raw-output" aria-selected="true">
+                                 data-bs-target="#raw-output" type="button" role="tab"
+                                 aria-controls="raw-output" aria-selected="true">
                             Raw Output
                         </button>
                     </li>
                     {% if parsed_data %}
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="parsed-output-tab" data-bs-toggle="tab"
-                                data-bs-target="#parsed-output" type="button" role="tab"
-                                aria-controls="parsed-output" aria-selected="false">
+                                 data-bs-target="#parsed-output" type="button" role="tab"
+                                 aria-controls="parsed-output" aria-selected="false">
                             Parsed Data
                         </button>
                     </li>
@@ -43,8 +43,7 @@ HTMX partial template for command output results
                         <div class="p-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <small class="text-muted">Raw command output</small>
-                                <button class="btn btn-sm btn-outline-secondary"
-                                        onclick="NetBoxToolkit.Utils.copyToClipboard(this, document.getElementById('rawOutputContent').textContent)">
+                                <button class="btn btn-sm btn-outline-secondary copy-output-btn">
                                     <i class="mdi mdi-content-copy me-1"></i>Copy
                                 </button>
                             </div>
@@ -60,8 +59,8 @@ HTMX partial template for command output results
                                     {% if parsing_method %}(via {{ parsing_method }}){% endif %}
                                 </small>
                                 <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-outline-secondary"
-                                            onclick="NetBoxToolkit.Utils.copyToClipboard(this, JSON.stringify({{ parsed_data|safe }}, null, 2))">
+                                    <button class="btn btn-sm btn-outline-secondary copy-parsed-btn"
+                                            data-parsed-data="{{ parsed_data|safe }}">
                                         <i class="mdi mdi-content-copy me-1"></i>Copy JSON
                                     </button>
                                 {% if command_log_id %}
@@ -72,7 +71,7 @@ HTMX partial template for command output results
                                     </a>
                                 {% else %}
                                     <span class="btn btn-sm btn-outline-secondary disabled opacity-50"
-                                          title="CSV download requires command execution logging to be enabled">
+                                           title="CSV download requires command execution logging to be enabled">
                                         <i class="mdi mdi-download-off me-1"></i>CSV Unavailable
                                     </span>
                                 {% endif %}
@@ -112,23 +111,54 @@ HTMX partial template for command output results
             </div>
         </div>
     {% else %}
-        <!-- Error output -->
+        <!-- Error output (including syntax errors) -->
         <div class="alert alert-danger d-flex align-items-start mb-3" role="alert">
             <i class="mdi mdi-alert-circle me-2 mt-1 text-danger"></i>
             <div>
-                <strong class="text-danger">Command execution failed</strong>
-                <br><small class="text-muted">Check the output below for details</small>
+                <strong class="text-danger">
+                    {% if has_syntax_error %}
+                        {% if syntax_error_type == "empty_result" %}
+                            Command returned no results
+                        {% else %}
+                            Command syntax error detected
+                            {% if syntax_error_type %}
+                                ({{ syntax_error_type|title }})
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        Command execution failed
+                    {% endif %}
+                </strong>
+                {% if has_syntax_error %}
+                    {% if syntax_error_type == "empty_result" %}
+                        <br><small class="text-muted">The command executed successfully but returned no output</small>
+                    {% else %}
+                        <br><small class="text-muted">The command contains invalid syntax</small>
+                    {% endif %}
+                {% else %}
+                    <br><small class="text-muted">Check the output below for details</small>
+                {% endif %}
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">Error Output</small>
-                </div>
+                <small class="text-muted">
+                    {% if has_syntax_error %}
+                        {% if syntax_error_type == "empty_result" %}
+                            Empty Result Output
+                        {% else %}
+                            Syntax Error Output
+                        {% endif %}
+                    {% else %}
+                        Error Output
+                    {% endif %}
+                </small>
             </div>
-            <div class="card-body">
-                <pre class="command-output bg-surface p-3 rounded font-monospace" id="errorOutputContent">{{ command_output }}</pre>
+            <div class="card-body p-0">
+                <div class="p-3">
+                    <pre class="command-output bg-surface p-3 rounded font-monospace" id="errorOutputContent">{{ command_output|default:"No output received from device" }}</pre>
+                </div>
             </div>
         </div>
     {% endif %}

@@ -10,8 +10,8 @@ This replaces the static modal with dynamic content
     </div>
 {% else %}
     <!-- Complete Modal Dialog -->
-    <div class="modal fade credential-modal show" id="htmxExecutionModal" tabindex="-1" style="display: block;" aria-modal="true" role="dialog">
-        <div class="modal-dialog">
+    <div class="modal fade credential-modal show d-block" id="htmxExecutionModal" tabindex="-1" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered{% if has_variables %} modal-lg{% endif %} modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="w-100">
@@ -54,61 +54,191 @@ This replaces the static modal with dynamic content
                         {% csrf_token %}
                         <input type="hidden" name="command_id" value="{{ command.id }}">
 
-                        <!-- Command Variables Section -->
+                        <!-- Responsive Layout based on Variables -->
                         {% if has_variables %}
-                            <div class="mb-4">
-                                <h6 class="text-muted mb-3">Command Variables</h6>
-                                {% for var_field in variable_fields %}
+                            <!-- Two-column layout when variables exist -->
+                            <div class="row g-3">
+                                <!-- Left Column: Authentication -->
+                                <div class="col-xl-7 col-lg-8 col-md-9 col-sm-12">
                                     <div class="mb-3">
-                                        <label for="{{ var_field.field.id_for_label }}" class="form-label">
-                                            {{ var_field.label }}
-                                            {% if var_field.required %}
-                                                <span class="text-danger">*</span>
-                                            {% else %}
-                                                <span class="text-muted">(optional)</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ var_field.field }}
-                                        {% if var_field.help_text %}
-                                            <small class="form-text text-muted">{{ var_field.help_text }}</small>
-                                        {% endif %}
-                                        {% if var_field.field.errors %}
-                                            <div class="text-danger">
-                                                {% for error in var_field.field.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+                                        <label class="form-label">Authentication Method</label>
+                                        <div class="d-flex w-100 gap-2" role="group" aria-label="Authentication method">
+                                            <input type="radio" class="btn-check" name="auth_method" id="auth_stored" value="stored" checked autocomplete="off">
+                                            <label class="btn btn-outline-primary flex-fill" for="auth_stored" style="min-width: 0;">
+                                                <i class="mdi mdi-key-variant me-2 d-lg-inline d-none"></i>
+                                                <span class="d-lg-inline d-none">Use Stored Credentials</span>
+                                                <span class="d-lg-none d-inline"><i class="mdi mdi-key-variant me-1"></i>Stored</span>
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="auth_method" id="auth_onthefly" value="onthefly" autocomplete="off">
+                                            <label class="btn btn-outline-primary flex-fill" for="auth_onthefly" style="min-width: 0;">
+                                                <i class="mdi mdi-keyboard me-2 d-lg-inline d-none"></i>
+                                                <span class="d-lg-inline d-none">Enter Credentials</span>
+                                                <span class="d-lg-none d-inline"><i class="mdi mdi-keyboard me-1"></i>Manual</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Stored Credentials Section -->
+                                    <div id="stored-credentials-section">
+                                        <h6 class="text-muted mb-3">Device Credentials</h6>
+                                        {% if credential_sets %}
+                                            <div class="mb-3">
+                                                <label for="modalCredentialSet" class="form-label">
+                                                    <i class="mdi mdi-key-variant"></i> Credential Set <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="form-select" id="modalCredentialSet" name="credential_set_id" required>
+                                                    <option value="">Select credentials...</option>
+                                                    {% for cred_set in credential_sets %}
+                                                        <option value="{{ cred_set.id }}">{{ cred_set.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="alert alert-info">
+                                                <i class="mdi mdi-information me-1"></i>
+                                                <small>
+                                                    Credentials are securely stored and encrypted.
+                                                    <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_list' %}" target="_blank" class="alert-link">Manage credential sets</a>
+                                                </small>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-warning">
+                                                <i class="mdi mdi-alert me-1"></i>
+                                                <small>
+                                                    No credential sets available.
+                                                    <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_add' %}" target="_blank" class="alert-link">Create one now</a>
+                                                </small>
                                             </div>
                                         {% endif %}
                                     </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
 
-                        <h6 class="text-muted mb-3">Device Credentials</h6>
-                        {% if credential_sets %}
-                            <div class="mb-3">
-                                <label for="modalCredentialSet" class="form-label">
-                                    <i class="mdi mdi-key-variant"></i> Credential Set <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-select" id="modalCredentialSet" name="credential_set_id" required>
-                                    <option value="">Select credentials...</option>
-                                    {% for cred_set in credential_sets %}
-                                        <option value="{{ cred_set.id }}">{{ cred_set.name }}</option>
+                                    <!-- On-the-fly Credentials Section -->
+                                    <div id="onthefly-credentials-section" style="display: none;">
+                                        <h6 class="text-muted mb-3">Enter Device Credentials</h6>
+                                        <div class="mb-3">
+                                            <label for="ontheflyUsername" class="form-label">
+                                                <i class="mdi mdi-account me-1"></i>Username <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="ontheflyUsername" name="username" placeholder="Enter device username">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="ontheflyPassword" class="form-label">
+                                                <i class="mdi mdi-lock me-1"></i>Password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" id="ontheflyPassword" name="password" placeholder="Enter device password">
+                                        </div>
+                                        <div class="alert alert-warning">
+                                            <i class="mdi mdi-shield-alert me-1"></i>
+                                            <small>
+                                                <strong>Note:</strong> Credentials entered here are used only for this command execution and are not stored.
+                                                For API usage, please use stored credential sets.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Variables -->
+                                <div class="col-xl-5 col-lg-4 col-md-3 col-sm-12">
+                                    <h6 class="text-muted mb-3">Command Variables</h6>
+                                    {% for var_field in variable_fields %}
+                                        <div class="mb-3">
+                                            <label for="{{ var_field.field.id_for_label }}" class="form-label">
+                                                {{ var_field.label }}
+                                                {% if var_field.required %}
+                                                    <span class="text-danger">*</span>
+                                                {% else %}
+                                                    <span class="text-muted">(optional)</span>
+                                                {% endif %}
+                                            </label>
+                                            {{ var_field.field }}
+                                            {% if var_field.help_text %}
+                                                <small class="form-text text-muted">{{ var_field.help_text }}</small>
+                                            {% endif %}
+                                            {% if var_field.field.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in var_field.field.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     {% endfor %}
-                                </select>
-                            </div>
-                            <div class="alert alert-info">
-                                <i class="mdi mdi-information me-1"></i>
-                                <small>
-                                    Credentials are securely stored and encrypted.
-                                    <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_list' %}" target="_blank" class="alert-link">Manage credential sets</a>
-                                </small>
+                                </div>
                             </div>
                         {% else %}
-                            <div class="alert alert-warning">
-                                <i class="mdi mdi-alert me-1"></i>
-                                <small>
-                                    No credential sets available.
-                                    <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_add' %}" target="_blank" class="alert-link">Create one now</a>
-                                </small>
+                            <!-- Single column layout when no variables -->
+                            <div class="mb-3">
+                                <label class="form-label">Authentication Method</label>
+                                <div class="d-flex w-100 gap-2" role="group" aria-label="Authentication method">
+                                    <input type="radio" class="btn-check" name="auth_method" id="auth_stored" value="stored" checked autocomplete="off">
+                                    <label class="btn btn-outline-primary flex-fill" for="auth_stored" style="min-width: 0;">
+                                        <i class="mdi mdi-key-variant me-2 d-lg-inline d-none"></i>
+                                        <span class="d-lg-inline d-none">Use Stored Credentials</span>
+                                        <span class="d-lg-none d-inline"><i class="mdi mdi-key-variant me-1"></i>Stored</span>
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="auth_method" id="auth_onthefly" value="onthefly" autocomplete="off">
+                                    <label class="btn btn-outline-primary flex-fill" for="auth_onthefly" style="min-width: 0;">
+                                        <i class="mdi mdi-keyboard me-2 d-lg-inline d-none"></i>
+                                        <span class="d-lg-inline d-none">Enter Credentials</span>
+                                        <span class="d-lg-none d-inline"><i class="mdi mdi-keyboard me-1"></i>Manual</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Stored Credentials Section -->
+                            <div id="stored-credentials-section">
+                                <h6 class="text-muted mb-3">Device Credentials</h6>
+                                {% if credential_sets %}
+                                    <div class="mb-3">
+                                        <label for="modalCredentialSet" class="form-label">
+                                            <i class="mdi mdi-key-variant"></i> Credential Set <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" id="modalCredentialSet" name="credential_set_id" required>
+                                            <option value="">Select credentials...</option>
+                                            {% for cred_set in credential_sets %}
+                                                <option value="{{ cred_set.id }}">{{ cred_set.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="mdi mdi-information me-1"></i>
+                                        <small>
+                                            Credentials are securely stored and encrypted.
+                                            <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_list' %}" target="_blank" class="alert-link">Manage credential sets</a>
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="mdi mdi-alert me-1"></i>
+                                        <small>
+                                            No credential sets available.
+                                            <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_add' %}" target="_blank" class="alert-link">Create one now</a>
+                                        </small>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- On-the-fly Credentials Section -->
+                            <div id="onthefly-credentials-section" style="display: none;">
+                                <h6 class="text-muted mb-3">Enter Device Credentials</h6>
+                                <div class="mb-3">
+                                    <label for="ontheflyUsername" class="form-label">
+                                        <i class="mdi mdi-account me-1"></i>Username <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="ontheflyUsername" name="username" placeholder="Enter device username">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="ontheflyPassword" class="form-label">
+                                        <i class="mdi mdi-lock me-1"></i>Password <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" class="form-control" id="ontheflyPassword" name="password" placeholder="Enter device password">
+                                </div>
+                                <div class="alert alert-warning">
+                                    <i class="mdi mdi-shield-alert me-1"></i>
+                                    <small>
+                                        <strong>Note:</strong> Credentials entered here are used only for this command execution and are not stored.
+                                        For API usage, please use stored credential sets.
+                                    </small>
+                                </div>
                             </div>
                         {% endif %}
 
@@ -138,7 +268,7 @@ This replaces the static modal with dynamic content
     </div>
 
     <!-- Modal Backdrop -->
-    <div class="modal-backdrop fade show"></div>
+    <div class="modal-backdrop fade show" style="opacity: 0.5;"></div>
 
     <!-- JavaScript for HTMX event handling -->
     <script>
@@ -216,6 +346,67 @@ This replaces the static modal with dynamic content
 
         // Set up event handlers when this modal loads
         setupModalEventHandlers();
-    </script>
+
+        // Set up authentication method toggle functionality
+        function setupAuthMethodToggle() {
+            const storedRadio = document.getElementById('auth_stored');
+            const ontheflyRadio = document.getElementById('auth_onthefly');
+            const storedSection = document.getElementById('stored-credentials-section');
+            const ontheflySection = document.getElementById('onthefly-credentials-section');
+            const credentialSetSelect = document.getElementById('modalCredentialSet');
+            const usernameField = document.getElementById('ontheflyUsername');
+            const passwordField = document.getElementById('ontheflyPassword');
+
+            function toggleAuthSections() {
+                if (storedRadio.checked) {
+                    storedSection.style.display = 'block';
+                    ontheflySection.style.display = 'none';
+
+                    // Enable credential set requirement, disable direct credential fields
+                    if (credentialSetSelect) {
+                        credentialSetSelect.required = true;
+                        credentialSetSelect.disabled = false;
+                    }
+                    if (usernameField) {
+                        usernameField.required = false;
+                        usernameField.disabled = true;
+                        usernameField.value = '';
+                    }
+                    if (passwordField) {
+                        passwordField.required = false;
+                        passwordField.disabled = true;
+                        passwordField.value = '';
+                    }
+                } else {
+                    storedSection.style.display = 'none';
+                    ontheflySection.style.display = 'block';
+
+                    // Disable credential set requirement, enable direct credential fields
+                    if (credentialSetSelect) {
+                        credentialSetSelect.required = false;
+                        credentialSetSelect.disabled = true;
+                        credentialSetSelect.value = '';
+                    }
+                    if (usernameField) {
+                        usernameField.required = true;
+                        usernameField.disabled = false;
+                    }
+                    if (passwordField) {
+                        passwordField.required = true;
+                        passwordField.disabled = false;
+                    }
+                }
+            }
+
+            // Add event listeners
+            if (storedRadio) storedRadio.addEventListener('change', toggleAuthSections);
+            if (ontheflyRadio) ontheflyRadio.addEventListener('change', toggleAuthSections);
+
+            // Initialize on page load
+            toggleAuthSections();
+        }
+
+        // Set up authentication method toggle when modal loads
+        setupAuthMethodToggle();
     </script>
 {% endif %}

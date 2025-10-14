@@ -51,23 +51,43 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
             textArea.style.position = 'fixed';
             textArea.style.left = '-999999px';
             textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
+            textArea.style.opacity = '0';
+            textArea.style.pointerEvents = 'none';
+            textArea.style.tabIndex = '-1';
+
+            if (!document.body.contains(textArea)) {
+                document.body.appendChild(textArea);
+            }
 
             try {
+                const selection = document.getSelection();
+                const hasSelection = selection.rangeCount > 0;
+                const previousRange = hasSelection ? selection.getRangeAt(0) : null;
+
                 textArea.focus();
                 textArea.select();
+                textArea.setSelectionRange(0, text.length);
+
                 const successful = document.execCommand('copy');
+
                 if (successful) {
                     this.showButtonSuccess(btn);
                 } else {
-                    console.error('Fallback copy command failed');
-                    alert('Failed to copy to clipboard');
+                    console.warn('Fallback copy failed');
+                    this.alternativeCopy(text, btn);
                 }
             } catch (err) {
-                console.error('Fallback copy failed:', err);
-                alert('Failed to copy to clipboard');
+                console.warn('Fallback copy error:', err.message);
+                this.alternativeCopy(text, btn);
             } finally {
-                document.body.removeChild(textArea);
+                if (previousRange) {
+                    selection.removeAllRanges();
+                    selection.addRange(previousRange);
+                }
+
+                if (document.body.contains(textArea)) {
+                    document.body.removeChild(textArea);
+                }
             }
         },
 
@@ -86,7 +106,7 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 navigator.clipboard.writeText(text.trim()).then(() => {
                     this.showButtonSuccess(btn);
                 }).catch(err => {
-                    console.error('Failed to copy using Clipboard API:', err);
+                    console.warn('Clipboard API failed, using fallback:', err.message);
                     this.fallbackCopyText(text.trim(), btn);
                 });
             } else {
@@ -168,7 +188,7 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 navigator.clipboard.writeText(outputText.trim()).then(() => {
                     Toolkit.Utils.showButtonSuccess(btn);
                 }).catch(err => {
-                    console.error('Failed to copy using Clipboard API:', err);
+                    console.warn('Clipboard API failed, using fallback:', err.message);
                     Toolkit.Utils.fallbackCopyText(outputText.trim(), btn);
                 });
             } else {
@@ -178,57 +198,60 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
         },
 
         /**
-         * Handle copying parsed data from JSON script elements
+         * Handle copying parsed data from data attribute or script elements
          */
         handleCopyParsedData: function (event) {
             const btn = event.target.closest('.copy-parsed-btn');
             if (!btn) return;
 
-            // Try multiple possible element IDs for parsed data
-            const possibleIds = [
-                'parsed-data-json',           // device_toolkit.html
-                'commandlog-parsed-data-json' // commandlog.html
-            ];
+            let parsedDataStr = null;
 
-            let parsedDataElement = null;
-            for (const id of possibleIds) {
-                parsedDataElement = document.getElementById(id);
-                if (parsedDataElement) break;
+            // First try to get data from the button's data attribute
+            if (btn.dataset.parsedData) {
+                parsedDataStr = btn.dataset.parsedData;
+            } else {
+                // Fallback to script elements for backward compatibility
+                const possibleIds = [
+                    'parsed-data-json',           // device_toolkit.html
+                    'commandlog-parsed-data-json' // commandlog.html
+                ];
+
+                for (const id of possibleIds) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        parsedDataStr = element.textContent;
+                        break;
+                    }
+                }
             }
 
-            if (!parsedDataElement) {
-                console.error('No parsed data script element found with IDs:', possibleIds);
+            if (!parsedDataStr || parsedDataStr.trim() === '') {
+                console.error('No parsed data found to copy');
                 alert('No parsed data found to copy');
                 return;
             }
 
-            const parsedDataStr = parsedDataElement.textContent;
-            if (!parsedDataStr) {
-                console.error('No parsed data found to copy');
-                alert('No parsed data available');
-                return;
+            // Check if it's valid JSON before trying to parse
+            let formattedJson = null;
+            try {
+                const parsedData = JSON.parse(parsedDataStr);
+                formattedJson = JSON.stringify(parsedData, null, 2);
+            } catch (parseErr) {
+                // If it's not JSON, just copy the raw text
+                formattedJson = parsedDataStr;
             }
 
-            try {
-                // Parse and re-stringify for clean formatting
-                const parsedData = JSON.parse(parsedDataStr);
-                const formattedJson = JSON.stringify(parsedData, null, 2);
-
-                // Use modern Clipboard API if available
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(formattedJson).then(() => {
-                        Toolkit.Utils.showButtonSuccess(btn);
-                    }).catch(err => {
-                        console.error('Failed to copy using Clipboard API:', err);
-                        Toolkit.Utils.fallbackCopyText(formattedJson, btn);
-                    });
-                } else {
-                    // Fallback for older browsers or non-secure contexts
+            // Use modern Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(formattedJson).then(() => {
+                    Toolkit.Utils.showButtonSuccess(btn);
+                }).catch(err => {
+                    console.warn('Clipboard API failed, using fallback:', err.message);
                     Toolkit.Utils.fallbackCopyText(formattedJson, btn);
-                }
-            } catch (err) {
-                console.error('Error processing parsed data:', err);
-                alert('Failed to process parsed data for copying: ' + err.message);
+                });
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                Toolkit.Utils.fallbackCopyText(formattedJson, btn);
             }
         },
 
