@@ -25,7 +25,6 @@ from ..schemas import (
     COMMAND_PARTIAL_UPDATE_SCHEMA,
     COMMAND_RETRIEVE_SCHEMA,
     COMMAND_UPDATE_SCHEMA,
-    COMMAND_VALIDATE_VARIABLES_SCHEMA,
 )
 from ..serializers import (
     BulkCommandExecutionSerializer,
@@ -55,6 +54,36 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
         # based on the user's ObjectPermissions for 'view' action on Command objects
         return super().get_queryset()
 
+    def _get_variable_validation_suggestions(self, variable, device):
+        """Get helpful suggestions for variable validation errors"""
+        suggestions = []
+
+        if variable.variable_type == "netbox_interface":
+            suggestions.append(
+                f"Use the variable-choices endpoint to see available interfaces: GET /api/plugins/netbox-toolkit/commands/{variable.command_id}/variable-choices/?device_id={device.id}"
+            )
+            suggestions.append("Interface names should match exactly (case-sensitive)")
+        elif variable.variable_type == "netbox_vlan":
+            suggestions.append(
+                f"Use the variable-choices endpoint to see available VLANs: GET /api/plugins/netbox-toolkit/commands/{variable.command_id}/variable-choices/?device_id={device.id}"
+            )
+            suggestions.append("VLAN IDs should be numeric")
+        elif variable.variable_type == "netbox_ip":
+            suggestions.append(
+                f"Use the variable-choices endpoint to see available IP addresses: GET /api/plugins/netbox-toolkit/commands/{variable.command_id}/variable-choices/?device_id={device.id}"
+            )
+            suggestions.append(
+                "IP addresses should be in CIDR notation (e.g., '192.168.1.1/24')"
+            )
+        else:
+            suggestions.append(
+                f"Variable type '{variable.variable_type}' - check the variable definition for format requirements"
+            )
+            if variable.help_text:
+                suggestions.append(f"Help text: {variable.help_text}")
+
+        return suggestions
+
     @COMMAND_EXECUTE_SCHEMA
     @action(detail=True, methods=["post"], url_path="execute")
     def execute_command(self, request, pk=None):
@@ -69,7 +98,6 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
 
         validated_data = execution_serializer.validated_data
         device = validated_data["device"]
-        credential_set = validated_data["credential_set"]
         credential_token = validated_data["credential_token"]
         variables = validated_data.get("variables", {})
 
@@ -88,7 +116,18 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                     )
                     if not is_valid:
                         raise serializers.ValidationError({
-                            "variables": {variable.name: error_msg}
+                            "variables": {
+                                variable.name: f"Invalid value '{value}' for variable '{variable.name}': {error_msg}. Please check the variable requirements and try again."
+                            },
+                            "validation_details": {
+                                "variable_name": variable.name,
+                                "variable_type": variable.variable_type,
+                                "provided_value": value,
+                                "error_type": "netbox_data_validation",
+                                "suggestions": self._get_variable_validation_suggestions(
+                                    variable, device
+                                ),
+                            },
                         })
 
             processed_command_text, is_valid, errors = (
@@ -96,7 +135,28 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
             )
 
             if not is_valid:
-                raise serializers.ValidationError({"variables": errors})
+                # Enhance error messages with more context and actionable information
+                if isinstance(errors, dict):
+                    enhanced_errors = {}
+                    for var_name, error in errors.items():
+                        enhanced_errors[var_name] = (
+                            f"Variable '{var_name}' validation failed: {error}. Please check the variable format and requirements."
+                        )
+                else:
+                    # Handle case where errors is a list of strings
+                    enhanced_errors = [
+                        f"Variable validation failed: {error}. Please check the variable format and requirements."
+                        for error in errors
+                    ]
+
+                raise serializers.ValidationError({
+                    "variables": enhanced_errors,
+                    "validation_details": {
+                        "error_type": "variable_parsing",
+                        "total_errors": len(errors),
+                        "suggestions": "Please ensure all required variables are provided and use the correct format. Use the variable-choices endpoint to see available options.",
+                    },
+                })
 
             # Create temporary command object with processed text
             temp_command = CommandModel(
@@ -200,24 +260,6 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
         )
 
         return Response(response_data, status=status_code)
-
-    @COMMAND_VALIDATE_VARIABLES_SCHEMA
-    @action(detail=True, methods=["post"], url_path="validate-variables")
-    def validate_variables(self, request, pk=None):
-        """Validate variable values without execution - follows NetBox action pattern"""
-        command = self.get_object()
-        variables = request.data.get("variables", {})
-
-        from ...utils.variable_parser import CommandVariableParser
-
-        _, is_valid, errors = CommandVariableParser.prepare_command_for_execution(
-            command, variables
-        )
-
-        if not is_valid:
-            raise serializers.ValidationError({"variables": errors})
-
-        return Response({"detail": "Variables are valid"})
 
     @action(detail=True, methods=["get"], url_path="variable-choices")
     def variable_choices(self, request, pk=None):
@@ -341,7 +383,7 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                 try:
                     # Validate each execution using serializer
                     execution_serializer = BulkCommandExecutionSerializer(
-                        data=execution_data
+                        data=execution_data, context={"request": request}
                     )
                     if not execution_serializer.is_valid():
                         results.append({
@@ -355,8 +397,7 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                     validated_data = execution_serializer.validated_data
                     command_id = validated_data["command_id"]
                     device_id = validated_data["device_id"]
-                    username = validated_data["username"]
-                    password = validated_data["password"]
+                    credential_token = validated_data["credential_token"]
                     variables = validated_data.get("variables", {})
 
                     # Get command and device objects
@@ -418,35 +459,31 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                         })
                         continue
 
-                    # Execute command
+                    # Execute command using credential token
                     command_service = CommandExecutionService()
-                    result = command_service.execute_command_with_retry(
-                        command, device, username, password, max_retries=1
+                    result = command_service.execute_command_with_token(
+                        command, device, credential_token, request.user, max_retries=1
                     )
 
-                    # Create command log entry (this would typically be done by the service)
-                    log_entry = models.CommandLog.objects.create(
-                        command=command,
-                        device=device,
-                        username=username,
-                        output=result.output,
-                        error_message=result.error_message or "",
-                        execution_duration=result.execution_time,
-                        success=result.success and not result.has_syntax_error,
-                    )
+                    # Note: Command log entry is automatically created by the service
 
                     results.append({
                         "execution_id": i + 1,
                         "success": result.success and not result.has_syntax_error,
-                        "command_log_id": log_entry.id,
+                        "command_log_id": result.command_log_id,
                         "execution_time": result.execution_time,
                     })
 
                 except Exception as e:
+                    from ...utils.error_sanitizer import ErrorSanitizer
+
+                    sanitized_error = ErrorSanitizer.sanitize_api_error(
+                        e, "execute command"
+                    )
                     results.append({
                         "execution_id": i + 1,
                         "success": False,
-                        "error": f"Unexpected error: {str(e)}",
+                        "error": sanitized_error,
                     })
 
         # Generate summary

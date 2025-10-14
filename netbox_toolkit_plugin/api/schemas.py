@@ -74,47 +74,10 @@ COMMAND_EXECUTE_SCHEMA = extend_schema(
     },
 )
 
-COMMAND_VALIDATE_VARIABLES_SCHEMA = extend_schema(
-    summary="Validate command variables",
-    description="Validate variable values for a command without executing it.",
-    tags=["Commands"],
-    request={
-        "type": "object",
-        "properties": {
-            "variables": {
-                "type": "object",
-                "additionalProperties": {"type": "string"},
-                "description": "Variable values to validate (key-value pairs)",
-                "example": {
-                    "interface_name": "GigabitEthernet0/1",
-                    "access_list_name": "ACL_100",
-                },
-            }
-        },
-    },
-    responses={
-        200: OpenApiResponse(
-            description="Variables are valid",
-            examples=[{"detail": "Variables are valid"}],
-        ),
-        400: OpenApiResponse(
-            description="Variable validation failed",
-            examples=[
-                {
-                    "variables": [
-                        "Missing required variable: interface_name",
-                        "Invalid value for variable: access_list_name",
-                    ]
-                }
-            ],
-        ),
-        404: OpenApiResponse(description="Command not found"),
-    },
-)
 
 COMMAND_BULK_EXECUTE_SCHEMA = extend_schema(
     summary="Bulk execute commands",
-    description="Execute multiple commands on multiple devices in a single API call.",
+    description="Execute multiple commands on multiple devices using secure credential tokens.",
     tags=["Commands"],
     request={
         "type": "object",
@@ -126,10 +89,25 @@ COMMAND_BULK_EXECUTE_SCHEMA = extend_schema(
                     "properties": {
                         "command_id": {"type": "integer"},
                         "device_id": {"type": "integer"},
-                        "username": {"type": "string"},
-                        "password": {"type": "string", "format": "password"},
+                        "credential_token": {
+                            "type": "string",
+                            "maxLength": 128,
+                            "description": "Credential token for stored device credentials",
+                        },
+                        "variables": {
+                            "type": "object",
+                            "additionalProperties": {"type": "string"},
+                            "description": "Variable values for command substitution",
+                        },
+                        "timeout": {
+                            "type": "integer",
+                            "minimum": 5,
+                            "maximum": 300,
+                            "default": 30,
+                            "description": "Command execution timeout in seconds",
+                        },
                     },
-                    "required": ["command_id", "device_id", "username", "password"],
+                    "required": ["command_id", "device_id", "credential_token"],
                 },
             }
         },

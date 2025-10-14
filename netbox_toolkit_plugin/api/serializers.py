@@ -1,6 +1,5 @@
 from dcim.api.serializers import DeviceSerializer, PlatformSerializer
 from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializer
-from users.api.serializers import UserSerializer
 
 from rest_framework import serializers
 
@@ -74,9 +73,7 @@ class CommandExecutionSerializer(serializers.Serializer):
 
             from netbox_toolkit_plugin.models import DeviceCredentialSet
 
-            credential_set = DeviceCredentialSet.objects.get(
-                access_token=value, owner=request.user
-            )
+            DeviceCredentialSet.objects.get(access_token=value, owner=request.user)
             return value
         except DeviceCredentialSet.DoesNotExist as e:
             raise serializers.ValidationError(
@@ -184,20 +181,34 @@ class CommandLogSerializer(NetBoxModelSerializer):
         )
 
 
+class DeviceCredentialSetSerializer(NetBoxModelSerializer):
+    """Minimal serializer for DeviceCredentialSet - used only by NetBox's event system"""
+
+    class Meta:
+        model = DeviceCredentialSet
+        fields = (
+            "id",
+            "name",
+            "description",
+            "created_at",
+            "last_used",
+            "is_active",
+            "tags",
+            "custom_fields",
+            "created",
+            "last_updated",
+        )
+
+
 class BulkCommandExecutionSerializer(serializers.Serializer):
-    """Serializer for bulk command execution validation"""
+    """Serializer for bulk command execution validation using credential tokens"""
 
     command_id = serializers.IntegerField(help_text="ID of the command to execute")
     device_id = serializers.IntegerField(
         help_text="ID of the device to execute the command on"
     )
-    username = serializers.CharField(
-        max_length=100, help_text="Username for device authentication"
-    )
-    password = serializers.CharField(
-        max_length=255,
-        style={"input_type": "password"},
-        help_text="Password for device authentication",
+    credential_token = serializers.CharField(
+        max_length=128, help_text="Credential token for stored device credentials"
     )
     variables = serializers.DictField(
         child=serializers.CharField(max_length=500),
@@ -235,35 +246,19 @@ class BulkCommandExecutionSerializer(serializers.Serializer):
         except Device.DoesNotExist as e:
             raise serializers.ValidationError("Device not found") from e
 
+    def validate_credential_token(self, value):
+        """Validate that the credential token exists and belongs to the requesting user"""
+        try:
+            # Get the current user from context
+            request = self.context.get("request")
+            if not request or not request.user:
+                raise serializers.ValidationError("Authentication required")
 
-class DeviceCredentialSetSerializer(NetBoxModelSerializer):
-    """Serializer for DeviceCredentialSet model - credentials are never exposed via API"""
+            from netbox_toolkit_plugin.models import DeviceCredentialSet
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:netbox_toolkit_plugin-api:devicecredentialset-detail"
-    )
-    user = UserSerializer(nested=True, read_only=True)
-    platforms = PlatformSerializer(nested=True, many=True, read_only=True)
-
-    class Meta:
-        model = DeviceCredentialSet
-        fields = (
-            "id",
-            "url",
-            "display",
-            "name",
-            "description",
-            "user",
-            "platforms",
-            "access_token",  # Read-only, for token identification
-            "tags",
-            "custom_fields",
-            "created",
-            "last_updated",
-        )
-        # Never expose encrypted credentials or encryption keys
-        extra_kwargs = {
-            "access_token": {"read_only": True},
-            "user": {"read_only": True},
-        }
-        brief_fields = ("id", "url", "display", "name", "user")
+            DeviceCredentialSet.objects.get(access_token=value, owner=request.user)
+            return value
+        except DeviceCredentialSet.DoesNotExist as e:
+            raise serializers.ValidationError(
+                "Invalid credential token or token does not belong to current user"
+            ) from e
