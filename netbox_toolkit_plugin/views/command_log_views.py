@@ -1,10 +1,14 @@
 """Command log related views for the NetBox Toolkit Plugin."""
 
 import csv
+from datetime import timedelta
 
+from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
 from django.views import View
+from django.views.generic import TemplateView
 
 from netbox.views.generic import (
     ObjectDeleteView,
@@ -72,27 +76,17 @@ class CommandLogExportCSVView(View):
             # Import textfsm parser
             from ntc_templates.parse import parse_output
 
-            # Get the device platform for parsing and map it like the connectors do
+            # Get the device platform for parsing and use centralized normalization
             platform_slug = (
                 command_log.device.platform.slug
                 if command_log.device.platform
                 else "generic"
             )
 
-            # Use the same platform mapping as NetmikoConnector
-            platform_mappings = {
-                "ios": "cisco_ios",
-                "nxos": "cisco_nxos",
-                "nexus": "cisco_nxos",
-                "iosxr": "cisco_iosxr",
-                "ios-xr": "cisco_iosxr",
-                "ios-xe": "cisco_ios",  # Use cisco_ios templates for XE (better template coverage)
-                "iosxe": "cisco_ios",  # Use cisco_ios templates for XE (better template coverage)
-                "eos": "arista_eos",
-                "junos": "juniper_junos",
-                "asa": "cisco_asa",
-            }
-            device_platform = platform_mappings.get(platform_slug, platform_slug)
+            # Use centralized platform normalization (single source of truth)
+            from ..settings import ToolkitSettings
+
+            device_platform = ToolkitSettings.normalize_platform(platform_slug)
 
             # Try to parse the stored output using ntc-templates
             parsed_result = parse_output(
@@ -144,3 +138,64 @@ class CommandLogExportCSVView(View):
             return HttpResponse(
                 f"Failed to parse command output or generate CSV: {str(e)}", status=400
             )
+
+
+class ToolkitStatisticsView(TemplateView):
+    """View for displaying command execution statistics dashboard"""
+
+    template_name = "netbox_toolkit_plugin/toolkit_stats.html"
+
+    def get_context_data(self, **kwargs):
+        """Get statistics data for the template"""
+        context = super().get_context_data(**kwargs)
+
+        # Get all command logs
+        queryset = CommandLog.objects.all()
+
+        # Basic stats
+        total_logs = queryset.count()
+        successful_logs = queryset.filter(success=True).count()
+        success_rate = (successful_logs / total_logs * 100) if total_logs > 0 else 0
+
+        # Last 24 hours stats
+        last_24h = timezone.now() - timedelta(hours=24)
+        recent_logs = queryset.filter(execution_time__gte=last_24h)
+        recent_total = recent_logs.count()
+        recent_successful = recent_logs.filter(success=True).count()
+        recent_failed = recent_total - recent_successful
+
+        # Top commands
+        top_commands = (
+            queryset.values("command__name")
+            .annotate(count=Count("command"))
+            .order_by("-count")[:10]
+        )
+
+        # Common errors (non-empty error messages)
+        common_errors = (
+            queryset.filter(~Q(error_message=""), ~Q(error_message__isnull=True))
+            .values("error_message")
+            .annotate(count=Count("error_message"))
+            .order_by("-count")[:10]
+        )
+
+        # Add data to context
+        context.update({
+            "total_logs": total_logs,
+            "success_rate": round(success_rate, 2),
+            "last_24h": {
+                "total": recent_total,
+                "successful": recent_successful,
+                "failed": recent_failed,
+            },
+            "top_commands": [
+                {"command_name": item["command__name"], "count": item["count"]}
+                for item in top_commands
+            ],
+            "common_errors": [
+                {"error": item["error_message"][:100], "count": item["count"]}
+                for item in common_errors
+            ],
+        })
+
+        return context

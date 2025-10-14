@@ -24,7 +24,7 @@ class NetBoxDataValidator:
             Tuple of (is_valid, error_message)
         """
         try:
-            interface = device.interfaces.get(name=interface_name)
+            device.interfaces.get(name=interface_name)
             return True, ""
         except device.interfaces.model.DoesNotExist:
             available_interfaces = list(
@@ -56,9 +56,8 @@ class NetBoxDataValidator:
             return False, f"VLAN ID '{vlan_id}' must be a valid integer"
 
         # First check device VLANs if available
-        if hasattr(device, "vlans"):
-            if device.vlans.filter(vid=vlan_id_int).exists():
-                return True, ""
+        if hasattr(device, "vlans") and device.vlans.filter(vid=vlan_id_int).exists():
+            return True, ""
 
         # Fallback to site VLANs
         if device.site:
