@@ -47,6 +47,6 @@ sudo systemctl restart netbox netbox-rq
 
 If you encounter issues during upgrade:
 
-1. Check the [Changelog](../../changelog.md) for known issues
+1. Check the [Changelog](../changelog.md) for known issues
 2. Review [GitHub Issues](https://github.com/bonzo81/netbox-toolkit-plugin/issues)
 3. Ask in [GitHub Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
