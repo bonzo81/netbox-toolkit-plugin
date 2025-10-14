@@ -2,11 +2,13 @@
 
 ## Overview
 
-The NetBox Toolkit Plugin is configured through NetBox's standard `PLUGINS_CONFIG` dictionary in your `configuration.py` file. The plugin is designed with sensible defaults, so **minimal configuration is required** for basic operation.
+The NetBox Toolkit Plugin is configured through NetBox's standard `PLUGINS_CONFIG` dictionary in your `configuration.py` file.
+
+**⚠️ REQUIRED**: A security pepper must be configured (see Security Pepper section below). All other settings have sensible defaults.
 
 ## Basic Configuration
 
-### Minimal Setup
+### Minimal Setup (Required)
 
 ```python
 # In your NetBox configuration.py
@@ -15,10 +17,26 @@ PLUGINS = [
     # ... other plugins
 ]
 
-# Optional - plugin works with defaults if omitted
+# REQUIRED: Security pepper configuration
 PLUGINS_CONFIG = {
     'netbox_toolkit_plugin': {
-        # All settings optional - showing defaults
+        'security': {
+            'pepper': 'your-secure-pepper-value-minimum-32-chars',  # REQUIRED
+        },
+    },
+}
+```
+
+### Full Configuration (All Options)
+
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        # REQUIRED
+        'security': {
+            'pepper': 'your-secure-pepper-value-minimum-32-chars',
+        },
+        # OPTIONAL - Rate limiting settings (showing defaults)
         'rate_limiting_enabled': True,
         'device_command_limit': 10,
         'time_window_minutes': 5,
@@ -75,6 +93,233 @@ Rate limiting prevents network devices from being overwhelmed by excessive comma
 - **Default**: `False`
 - **Purpose**: Enable detailed debug logging for troubleshooting
 - **Example**: `'debug_logging': True` to enable verbose logging
+
+## Security Configuration
+
+### Overview
+The plugin uses **Argon2id** for secure credential token hashing and **Fernet encryption** for storing device credentials. A security pepper is **required** for enhanced protection.
+
+### Security Pepper (REQUIRED)
+
+**⚠️ CRITICAL**: You must configure a security pepper before using the plugin.
+
+Choose the method that best fits your deployment:
+
+---
+
+#### **Method 1: Configuration File**
+
+First, generate a secure pepper:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Then add it directly to your NetBox `configuration.py`:
+
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        'security': {
+            'pepper': 'your-secure-pepper-value-minimum-32-chars',
+        },
+    },
+}
+```
+
+**✅ Pros:** Simple, persistent across reboots
+**❌ Cons:** Visible in config file, risk of version control exposure
+
+**Security Notes:**
+- Never commit `configuration.py` with pepper to version control
+- Ensure proper file permissions: `chmod 640 /opt/netbox/netbox/netbox/configuration.py`
+- Consider using a separate secrets file that's excluded from git
+
+---
+
+#### **Method 2: Environment Variable**
+
+```bash
+# 1. Generate a secure pepper
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+
+# 2. Export in the shell where NetBox runs
+export NETBOX_TOOLKIT_PEPPER="your-generated-pepper-here"
+
+# 3. Restart NetBox
+sudo systemctl restart netbox netbox-rq
+```
+
+**✅ Pros:** Keeps pepper out of code, better for version control
+**❌ Cons:** Lost on reboot/logout (credentials must be recreated)
+
+**⚠️ Important:**
+- This method only works if NetBox is run from the same shell session
+- With systemd, the export won't persist - use Method 1 for production
+- If the environment variable is lost, all credential tokens become invalid
+
+---
+
+#### **Docker/Docker Compose**
+
+For containerized deployments:
+
+```yaml
+# docker-compose.yml
+services:
+  netbox:
+    environment:
+      - NETBOX_TOOLKIT_PEPPER=your-generated-pepper-here
+```
+
+Or use a `.env` file:
+```bash
+# .env file (same directory as docker-compose.yml)
+NETBOX_TOOLKIT_PEPPER=your-generated-pepper-here
+```
+
+**Note:** Docker environment variables persist across container restarts and system reboots.
+
+---
+
+### Quick Comparison
+
+| Method | Persistent | Setup | Best For |
+|--------|-----------|--------|----------|
+| **Config File** | ✅ Yes | Simple | Production |
+| **Export** | ❌ No* | Simple | Testing/Dev |
+| **Docker** | ✅ Yes | Simple | Containers |
+
+*Lost on reboot/logout
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        'security': {
+            'pepper': 'your-secure-pepper-value-minimum-32-chars',
+        },
+    },
+}
+```
+
+**⚠️ Important Security Notes:**
+- Pepper must be at least 32 characters long
+- Never commit the pepper to version control
+- Use environment variable for production deployments
+- Changing the pepper will invalidate all existing credential tokens
+
+### Argon2id Configuration (Optional)
+
+Fine-tune the Argon2id password hashing parameters:
+
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        'security': {
+            'argon2': {
+                'time_cost': 3,        # Number of iterations (higher = more secure, slower)
+                'memory_cost': 65536,  # Memory usage in KB (64MB default)
+                'parallelism': 1,      # Number of parallel threads
+                'hash_len': 32,        # Hash output length in bytes
+                'salt_len': 16,        # Salt length in bytes
+            },
+            'master_key_derivation': 'argon2id',  # Key derivation method
+        },
+    },
+}
+```
+
+**Performance vs Security Trade-offs:**
+- **Higher `time_cost`**: More secure but slower credential operations
+- **Higher `memory_cost`**: More resistant to GPU attacks but uses more RAM
+- **Higher `parallelism`**: Faster on multi-core systems but uses more resources
+
+**Recommended Settings:**
+- **Default (balanced)**: Good for most deployments
+- **High Security**: `time_cost=4`, `memory_cost=131072` (128MB)
+- **Low Resource**: `time_cost=2`, `memory_cost=32768` (32MB)
+
+## Advanced Configuration
+
+### SSH Transport Options
+
+Customize SSH connection behavior for legacy or modern devices:
+
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        'ssh_options': {
+            'disabled_algorithms': {
+                'kex': [],  # Key exchange algorithms to disable
+            },
+            'allowed_kex': [
+                'diffie-hellman-group-exchange-sha256',
+                'diffie-hellman-group16-sha512',
+                # Add more as needed
+            ],
+        },
+    },
+}
+```
+
+### Netmiko Fallback Configuration
+
+Configure Netmiko behavior when Scrapli connections fail:
+
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        'netmiko': {
+            'banner_timeout': 20,
+            'auth_timeout': 20,
+            'global_delay_factor': 1,
+            'fast_cli': False,  # Set True for faster connections on modern devices
+        },
+    },
+}
+```
+
+### Connection Timeouts
+
+While not directly configurable via PLUGINS_CONFIG, the plugin has intelligent timeout defaults:
+- **Default timeouts**: 15-30 seconds (suitable for most devices)
+- **Device-specific overrides**: Automatically applied for Catalyst and Nexus devices
+- **Fast test mode**: 8-second quick tests before full connection attempts
+
+## Complete Configuration Example
+
+```python
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        # Security (pepper via environment variable recommended)
+        'security': {
+            'argon2': {
+                'time_cost': 3,
+                'memory_cost': 65536,
+            },
+        },
+        # Rate limiting
+        'rate_limiting_enabled': True,
+        'device_command_limit': 10,
+        'time_window_minutes': 5,
+        'bypass_users': ['admin'],
+        'bypass_groups': ['Network Administrators'],
+        # Logging
+        'debug_logging': False,
+        # Advanced SSH options
+        'ssh_options': {
+            'allowed_kex': [
+                'diffie-hellman-group-exchange-sha256',
+                'diffie-hellman-group16-sha512',
+            ],
+        },
+        # Netmiko fallback
+        'netmiko': {
+            'banner_timeout': 20,
+            'fast_cli': False,
+        },
+    },
+}
+```
 
 
 

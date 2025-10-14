@@ -1,97 +1,118 @@
 # Installation
 
-This guide explains how to install the NetBox Toolkit Plugin in your NetBox environment.
+This guide covers the basic steps to install the NetBox Toolkit Plugin. For detailed configuration options, see the [Plugin Configuration](./plugin-configuration.md) guide.
+
 
 ## Installation Steps
 
-First activate your virtual environment and install the plugin:
+### 1. **Install the Plugin**
+
+Activate your virtual environment and install:
 
 ```bash
 source /opt/netbox/venv/bin/activate
-```
-
-### 1. **Install the Plugin**
-```bash
 pip install netbox-toolkit-plugin
 ```
 
-### 2. **Enable in NetBox**
-Add the plugin to your NetBox configuration:
+### 2. **Enable the Plugin**
+
+Add to your NetBox `configuration.py`:
 
 ```python
-# In your NetBox configuration.py
 PLUGINS = [
     'netbox_toolkit_plugin',
-    # ... other plugins
 ]
+```
 
+### 3. **Configure Security Pepper (REQUIRED)**
+
+The plugin requires a security pepper for credential encryption. Choose one method:
+
+**Option A: Configuration File (Recommended)**
+
+```bash
+# Generate a secure pepper (copy the output)
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Add to `configuration.py`:
+
+```python
 PLUGINS_CONFIG = {
     'netbox_toolkit_plugin': {
-        'rate_limiting_enabled': True,      # Enable/disable rate limiting (default: True)
-        'device_command_limit': 10,         # Max commands per device per time window (default: 10)
-        'time_window_minutes': 5,           # Time window in minutes (default: 5)
-        'bypass_users': [],                 # List of usernames who bypass rate limiting (default: [])
-        'bypass_groups': [],                # List of group names who bypass rate limiting (default: [])
-        'debug_logging': False,             # Enable debug logging for this plugin (default: False)
+        'security': {
+            'pepper': 'your-generated-pepper-here',  # Paste the generated value
+        },
     },
 }
 ```
-**See [Plugin Configuration](./plugin-configuration.md) for more details.**
 
-### 3. **Run Database Migrations**
+**Option B: Environment Variable**
 
-Apply the database migrations to create the necessary tables:
+```bash
+export NETBOX_TOOLKIT_PEPPER="your-generated-pepper-here"
+```
+
+> **⚠️ Warning:** Using `export` only sets the variable for the current shell session. It will be lost on system reboot or when the shell closes. For production use with systemd, use Option A (config file) instead.
+
+**Option C: Docker Compose**
+
+```yaml
+services:
+  netbox:
+    environment:
+      - NETBOX_TOOLKIT_PEPPER=your-generated-pepper-here
+```
+
+> **📖 More Details:** See [Plugin Configuration - Security Pepper](./plugin-configuration.md#security-pepper-required) for detailed setup options, pros/cons, and security best practices.
+
+### 4. **Run Database Migrations**
 
 ```bash
 cd /opt/netbox/netbox
 python3 manage.py migrate netbox_toolkit_plugin
 ```
 
-### 4. **Collect Static Files**
-
-Collect static files to ensure the plugin's CSS and JavaScript are properly served:
+### 5. **Collect Static Files**
 
 ```bash
-cd /opt/netbox/netbox
-python3 manage.py collectstatic
+python3 manage.py collectstatic --no-input
 ```
 
-### 5. **Restart NetBox Services**
-
-Restart the NetBox services to apply the changes:
+### 6. **Restart NetBox**
 
 ```bash
 sudo systemctl restart netbox netbox-rq
 ```
 
+
+## Configure Optional Settings
+
+The plugin works with default settings, but you can customize:
+
+- **Rate Limiting**: Control command execution frequency
+- **Debug Logging**: Enable detailed logs for troubleshooting
+- **Advanced Security**: Fine-tune Argon2id parameters
+
+**📖 See [Plugin Configuration](./plugin-configuration.md) for all available options.**
+
 ## Next Steps
 
 After successful installation:
 
-1. **Set Up Permissoins**: [Permissions Setup Guide](permissions-creation.md)
-2. **Create Commands**: [Command Creation](command-creation.md)
+1. **[Set Up Permissions](permissions-creation.md)** - Configure user access to plugin features
+2. **[Create Commands](command-creation.md)** - Define platform-specific commands
+3. **[Add Credentials](device-credentials.md)** - Set up device credentials for command execution
 
-## Upgrading
+## Troubleshooting
 
-To upgrade to a newer version of the plugin:
+**Plugin tab not appearing?**
+- Verify plugin is in `PLUGINS` list
+- Check pepper is configured
+- Review logs: `sudo journalctl -u netbox -n 50`
 
-1. Install the new version:
-   ```bash
-   pip install --upgrade netbox-toolkit-plugin
-   ```
+**Migration errors?**
+- Ensure virtual environment is activated
+- Check database connectivity
+- See [Plugin Upgrade](plugin-upgrade.md#troubleshooting) for more help
 
-2. Apply any new migrations:
-   ```bash
-   cd /opt/netbox/netbox
-   python3 manage.py migrate netbox_toolkit_plugin
-   ```
-
-3. Collect static files:
-   ```bash
-   python3 manage.py collectstatic
-   ```
-
-4. Restart NetBox services:
-   ```bash
-   sudo systemctl restart netbox netbox-rq
-   ```
