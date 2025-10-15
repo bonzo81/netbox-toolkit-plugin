@@ -25,7 +25,8 @@ class CommandVariableParser:
     # Regex pattern to match <variable_name> placeholders
     # Pattern matches: <interface_name>, <vlan_id>, etc.
     # Does NOT match Django template syntax: {{ variable_name }}
-    VARIABLE_PATTERN = re.compile(r"<([a-zA-Z_][a-zA-Z0-9_]*)>")
+    # Variables must start with a letter (not underscore) for user-facing clarity
+    VARIABLE_PATTERN = re.compile(r"<([a-zA-Z][a-zA-Z0-9_]*)>")
 
     @classmethod
     def extract_variables(cls, command_text: str) -> list[str]:

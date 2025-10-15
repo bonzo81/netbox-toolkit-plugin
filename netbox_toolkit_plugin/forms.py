@@ -71,13 +71,13 @@ class CommandForm(NetBoxModelForm):
         # Check for variables that don't match the valid pattern
         # Use the same regex pattern as CommandVariableParser
         all_angle_brackets = re.findall(r"<([^>]*)>", command_text)
-        valid_pattern = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+        valid_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*$")
 
         for var_name in all_angle_brackets:
             if not valid_pattern.match(var_name):
                 raise forms.ValidationError(
                     f"Invalid variable name '<{var_name}>'. "
-                    "Variable names must start with a letter or underscore, "
+                    "Variable names must start with a letter "
                     "and can only contain letters, numbers, and underscores. "
                     "Try: <{}>".format(var_name.replace(" ", "_").replace("-", "_"))
                 )
@@ -199,13 +199,13 @@ class CommandVariableForm(forms.ModelForm):
             raise forms.ValidationError("Variable name is required.")
 
         # Use the same regex pattern as the CommandVariableParser
-        valid_pattern = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+        valid_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*$")
 
         if not valid_pattern.match(name):
             raise forms.ValidationError(
-                "Variable name must start with a letter or underscore, "
+                "Variable name must start with a letter "
                 "and can only contain letters, numbers, and underscores. "
-                "No spaces or hyphens allowed. "
+                "No spaces, hyphens, or leading underscores allowed. "
                 f"Invalid name: '{name}'"
             )
 
