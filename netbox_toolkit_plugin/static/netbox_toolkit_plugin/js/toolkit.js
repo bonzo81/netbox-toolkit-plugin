@@ -74,12 +74,12 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 if (successful) {
                     this.showButtonSuccess(btn);
                 } else {
-                    console.warn('Fallback copy failed');
-                    this.alternativeCopy(text, btn);
+                    console.error('All clipboard copy methods failed');
+                    alert('Failed to copy to clipboard. Please copy manually.');
                 }
             } catch (err) {
-                console.warn('Fallback copy error:', err.message);
-                this.alternativeCopy(text, btn);
+                console.error('Fallback copy error:', err.message);
+                alert('Failed to copy to clipboard. Please copy manually.');
             } finally {
                 // Only restore selection if one existed
                 if (previousRange) {
