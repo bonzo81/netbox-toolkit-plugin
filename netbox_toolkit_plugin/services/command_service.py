@@ -123,6 +123,7 @@ class CommandExecutionService:
                     )
 
                 # Check for authentication errors and fail fast with clear message
+                # Only fail fast for explicit auth failures, not transient connection issues
                 if self._is_authentication_error(error_msg):
                     logger.error(
                         "Authentication failure detected for device %s",
@@ -146,6 +147,13 @@ class CommandExecutionService:
                     # Return the failed result instead of raising an exception
                     # This allows the web interface to handle it gracefully
                     return auth_failed_result
+
+                # Log if this is a retryable connection error
+                if self._is_connection_error(error_msg):
+                    logger.info(
+                        "Transient connection error detected for device %s - will retry",
+                        device.name,
+                    )
 
                 # Check for fast-fail scenario and automatically retry with Netmiko
                 if (
@@ -545,11 +553,16 @@ class CommandExecutionService:
         """
         Detect if an error message indicates authentication failure.
 
-        Uses the same comprehensive patterns as ScrapliConnector for consistency.
+        Only returns True for explicit authentication rejections, not transient
+        network errors that should be retried.
+
+        Returns:
+            True if the error is a definite authentication failure
         """
         error_lower = error_message.lower()
 
-        # Common authentication failure patterns
+        # Explicit authentication failure patterns only
+        # These indicate wrong credentials, not transient network issues
         auth_patterns = [
             "password prompt seen more than once",
             "authentication failed",
@@ -564,11 +577,7 @@ class CommandExecutionService:
             "authentication timeout",
             "too many authentication failures",
             "authentication attempts exceeded",
-            # EOF patterns that often indicate auth failure
-            "encountered eof reading from transport",
-            "connection closed by peer",
-            "connection reset by peer",
-            # Patterns from SSH banner/auth sequence
+            # SSH-specific auth failures
             "ssh handshake failed",
             "ssh authentication failed",
             "publickey authentication failed",
@@ -581,6 +590,40 @@ class CommandExecutionService:
             if pattern in error_lower:
                 logger.debug(
                     f"Authentication error pattern detected: '{pattern}' in '{error_message}'"
+                )
+                return True
+
+        return False
+
+    def _is_connection_error(self, error_message: str) -> bool:
+        """
+        Detect if an error message indicates a transient connection issue.
+
+        These errors may succeed on retry and should not be treated as
+        authentication failures.
+
+        Returns:
+            True if the error is a transient connection issue
+        """
+        error_lower = error_message.lower()
+
+        # Connection-level errors that are often transient
+        connection_patterns = [
+            "encountered eof reading from transport",
+            "connection closed by peer",
+            "connection reset by peer",
+            "connection timed out",
+            "connection refused",
+            "network is unreachable",
+            "host is unreachable",
+            "socket error",
+            "broken pipe",
+        ]
+
+        for pattern in connection_patterns:
+            if pattern in error_lower:
+                logger.debug(
+                    f"Connection error pattern detected: '{pattern}' in '{error_message}'"
                 )
                 return True
 
