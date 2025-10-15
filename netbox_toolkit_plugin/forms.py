@@ -382,16 +382,31 @@ class DeviceCredentialSetForm(NetBoxModelForm):
     username = forms.CharField(
         max_length=100,
         help_text="Username for device authentication",
-        widget=forms.TextInput(attrs={"class": "form-control"}),
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "off",  # Prevent browser from saving/suggesting
+            }
+        ),
     )
 
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "new-password",  # Prevent autofill, allow password managers
+            }
+        ),
         help_text="Password for device authentication",
     )
 
     confirm_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "new-password",  # Prevent autofill
+            }
+        ),
         help_text="Confirm password",
         label="Confirm Password",
     )
@@ -452,8 +467,8 @@ class DeviceCredentialSetForm(NetBoxModelForm):
                 else:
                     # Normal case - populate existing username
                     self.fields["username"].initial = current_username
-                    # Set password field to show masked value
-                    self.fields["password"].initial = "••••••••"  # Masked password
+                    # Do NOT set password initial value - this would expose it to browser autocomplete
+                    # Password fields should always be empty when editing existing credentials
 
             except Exception:
                 # If decryption fails completely, show helper message
