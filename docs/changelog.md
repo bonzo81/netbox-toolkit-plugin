@@ -1,7 +1,16 @@
 # Changelog
 
+## 0.1.4 (2025-10-15)
 
-## 0.1.3 (2025-10-09)
+* 🔐 New Credential Token System
+* 🌐 Enhanced Platform Support
+* 🔧 Command Variables
+* 📊 GUI Improvements
+* 🛠️ Technical Improvements
+* API Enhancements
+* 📚 Documentation Updates
+
+## 0.1.3 (2025-09-10)
 * Simplify type hints in connectors
 * Add permissions to navigation menu items
 * Enhance netbox stop and status commands
