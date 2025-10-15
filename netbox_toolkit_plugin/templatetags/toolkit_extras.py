@@ -1,5 +1,7 @@
 from django import template
 
+from ..forms import VARIABLE_FIELD_PREFIX
+
 register = template.Library()
 
 
@@ -20,4 +22,4 @@ def is_variable_field(field):
     Template filter to check if a form field is a variable field.
     Usage: {% if field|is_variable_field %}
     """
-    return hasattr(field, "name") and str(field.name).startswith("var_")
+    return hasattr(field, "name") and str(field.name).startswith(VARIABLE_FIELD_PREFIX)

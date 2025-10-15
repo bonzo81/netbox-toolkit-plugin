@@ -10,6 +10,10 @@ from utilities.forms.fields import DynamicModelMultipleChoiceField
 from .models import Command, CommandLog, CommandVariable, DeviceCredentialSet
 from .utils.variable_parser import CommandVariableParser
 
+# Constant for variable field naming prefix
+# Used to identify form fields that represent command variables
+VARIABLE_FIELD_PREFIX = "var_"
+
 
 class CommandForm(NetBoxModelForm):
     platforms = DynamicModelMultipleChoiceField(
@@ -231,7 +235,7 @@ class CommandExecutionForm(forms.Form):
 
         if command and command.variables.exists():
             for variable in command.variables.all():
-                field_name = f"var_{variable.name}"
+                field_name = f"{VARIABLE_FIELD_PREFIX}{variable.name}"
 
                 if variable.variable_type == "text":
                     self.fields[field_name] = forms.CharField(

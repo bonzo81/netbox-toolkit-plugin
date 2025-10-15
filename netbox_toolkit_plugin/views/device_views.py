@@ -9,7 +9,7 @@ from dcim.models import Device
 from netbox.views.generic import ObjectView
 from utilities.views import ViewTab, register_model_view
 
-from ..forms import CommandExecutionForm
+from ..forms import VARIABLE_FIELD_PREFIX, CommandExecutionForm
 from ..models import Command, DeviceCredentialSet
 from ..services.command_service import CommandExecutionService
 from ..services.device_service import DeviceService
@@ -226,7 +226,7 @@ class DeviceExecutionModalView(ObjectView):
             # Extract variable fields from the form
             variable_fields = []
             for field_name, field in execution_form.fields.items():
-                if field_name.startswith("var_"):
+                if field_name.startswith(VARIABLE_FIELD_PREFIX):
                     variable_fields.append({
                         "name": field_name,
                         "field": execution_form[field_name],
@@ -354,8 +354,8 @@ class DeviceCommandOutputView(View):
             # Collect variable values from POST data
             variables = {}
             for key, value in request.POST.items():
-                if key.startswith("var_"):
-                    variable_name = key[4:]  # Remove "var_" prefix
+                if key.startswith(VARIABLE_FIELD_PREFIX):
+                    variable_name = key[len(VARIABLE_FIELD_PREFIX):]  # Remove prefix
                     variables[variable_name] = value
 
             # Process command text with variable substitution using the parser utility
