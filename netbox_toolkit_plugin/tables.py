@@ -29,7 +29,6 @@ class CommandTable(NetBoxTable):
         model = Command
         fields = ("pk", "name", "platforms", "command_type", "description")
         default_columns = ("pk", "name", "platforms", "command_type", "description")
-        # Remove exclude = ("id",) to allow NetBox's automatic ID column to work with table configuration
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
