@@ -355,7 +355,7 @@ class DeviceCommandOutputView(View):
             variables = {}
             for key, value in request.POST.items():
                 if key.startswith(VARIABLE_FIELD_PREFIX):
-                    variable_name = key[len(VARIABLE_FIELD_PREFIX) :]  # Remove prefix
+                    variable_name = key.removeprefix(VARIABLE_FIELD_PREFIX)
                     variables[variable_name] = value
 
             # Process command text with variable substitution using the parser utility
