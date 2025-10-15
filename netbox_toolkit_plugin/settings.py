@@ -291,12 +291,12 @@ class ToolkitSettings:
         # Priority 3: Require explicit configuration (no auto-generation)
         else:
             raise ValueError(
-                "REQUIRED: Security pepper must be configured for this version.\n"
+                "REQUIRED: Security pepper must be configured for version 0.1.1 or later.\n"
                 "Set either:\n"
                 "1. NETBOX_TOOLKIT_PEPPER environment variable (recommended), or\n"
                 "2. 'security.pepper' in PLUGINS_CONFIG\n\n"
                 'Generate a secure pepper with: python -c "import secrets; print(secrets.token_urlsafe(48))"\n\n'
-                "This is a new requirement for encrypted credential storage functionality.\n"
+                "This is a new requirement for encrypted credential storage functionality introduced in version 0.1.1.\n"
                 "Store the pepper securely and never commit it to version control."
             )
 
