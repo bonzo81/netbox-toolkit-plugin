@@ -173,6 +173,19 @@ class CommandVariableForm(forms.ModelForm):
             "variable_type": forms.Select(choices=CommandVariable.VARIABLE_TYPES),
             "help_text": forms.Textarea(attrs={"rows": 2}),
         }
+        help_texts = {
+            "variable_type": (
+                "Type of variable input. "
+                "VLAN (VLAN ID): substitutes the numeric VLAN ID (e.g., '100'). "
+                "VLAN (VLAN Name): substitutes the VLAN name (e.g., 'MANAGEMENT'). "
+                "IP Address: substitutes only the IP without prefix (e.g., '192.168.1.1', not '192.168.1.1/24'). "
+                "Interface variables use the interface name."
+            ),
+            "help_text": (
+                "Additional help text shown to users when executing commands. "
+                "Clarify which value format your command expects."
+            ),
+        }
 
     def clean_name(self):
         """Validate variable name against the same pattern used in command text."""
@@ -255,38 +268,103 @@ class CommandExecutionForm(forms.Form):
                     )
                 elif variable.variable_type == "netbox_vlan" and device:
                     choices = [("", f"Select {variable.display_name.lower()}...")]
-                    # Note: This would need to be implemented based on your VLAN model structure
-                    # For now, using a placeholder implementation
+
+                    # Get VLANs from device interfaces (untagged and tagged)
+                    # VLANs are associated with interfaces, not directly with devices
+                    vlan_set = set()
+                    for interface in device.interfaces.all():
+                        if interface.untagged_vlan:
+                            vlan_set.add(interface.untagged_vlan)
+                        vlan_set.update(interface.tagged_vlans.all())
+
+                    # Sort VLANs by VID for consistent display
+                    sorted_vlans = sorted(vlan_set, key=lambda v: v.vid)
                     choices.extend([
-                        (vlan.name, str(vlan))
-                        for vlan in device.vlans.all()
-                        if hasattr(device, "vlans")
+                        (str(vlan.vid), f"{vlan.vid} - {vlan.name}")
+                        for vlan in sorted_vlans
                     ])
+
+                    # Add help text explaining that VLAN ID will be substituted
+                    field_help = (
+                        variable.help_text or
+                        "Select a VLAN. The VLAN ID (not name) will be used in the command."
+                    )
 
                     self.fields[field_name] = forms.ChoiceField(
                         label=variable.display_name,
                         choices=choices,
                         required=variable.required,
-                        help_text=variable.help_text,
+                        help_text=field_help,
+                        widget=forms.Select(
+                            attrs={"class": "form-select", "data-tomselect": "true"}
+                        ),
+                    )
+                elif variable.variable_type == "netbox_vlan_name" and device:
+                    choices = [("", f"Select {variable.display_name.lower()}...")]
+
+                    # Get VLANs from device interfaces (untagged and tagged)
+                    # VLANs are associated with interfaces, not directly with devices
+                    vlan_set = set()
+                    for interface in device.interfaces.all():
+                        if interface.untagged_vlan:
+                            vlan_set.add(interface.untagged_vlan)
+                        vlan_set.update(interface.tagged_vlans.all())
+
+                    # Sort VLANs by VID for consistent display
+                    sorted_vlans = sorted(vlan_set, key=lambda v: v.vid)
+                    choices.extend([
+                        (vlan.name, f"{vlan.vid} - {vlan.name}")
+                        for vlan in sorted_vlans
+                    ])
+
+                    # Add help text explaining that VLAN Name will be substituted
+                    field_help = (
+                        variable.help_text or
+                        "Select a VLAN. The VLAN Name (not ID) will be used in the command."
+                    )
+
+                    self.fields[field_name] = forms.ChoiceField(
+                        label=variable.display_name,
+                        choices=choices,
+                        required=variable.required,
+                        help_text=field_help,
                         widget=forms.Select(
                             attrs={"class": "form-select", "data-tomselect": "true"}
                         ),
                     )
                 elif variable.variable_type == "netbox_ip" and device:
                     choices = [("", f"Select {variable.display_name.lower()}...")]
-                    # Note: This would need to be implemented based on your IP address model structure
-                    # For now, using a placeholder implementation
+
+                    # Get IP addresses from device interfaces
+                    # IPs are associated with interfaces, not directly with devices
+                    ip_set = set()
+                    for interface in device.interfaces.all():
+                        ip_set.update(interface.ip_addresses.all())
+
+                    # Sort IPs for consistent display
+                    sorted_ips = sorted(ip_set, key=lambda ip: ip.address.ip)
+                    
+                    # Value uses just the IP address without prefix (e.g., "192.168.1.1")
+                    # Display shows full address with prefix and optional DNS name
                     choices.extend([
-                        (ip.address, str(ip))
-                        for ip in device.ip_addresses.all()
-                        if hasattr(device, "ip_addresses")
+                        (
+                            str(ip.address.ip),
+                            f"{ip.address}" + (f" - {ip.dns_name}" if ip.dns_name else "")
+                        )
+                        for ip in sorted_ips
                     ])
+
+                    # Add help text explaining that only the IP (without prefix) is used
+                    field_help = (
+                        variable.help_text or
+                        "Select an IP address. Only the IP (without /prefix) will be used in the command."
+                    )
 
                     self.fields[field_name] = forms.ChoiceField(
                         label=variable.display_name,
                         choices=choices,
                         required=variable.required,
-                        help_text=variable.help_text,
+                        help_text=field_help,
                         widget=forms.Select(
                             attrs={"class": "form-select", "data-tomselect": "true"}
                         ),

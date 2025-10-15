@@ -43,6 +43,10 @@ class NetBoxDataValidator:
         """
         Validate that a VLAN ID exists for the specified device.
 
+        Checks VLANs in the following order:
+        1. VLANs assigned to device interfaces (untagged or tagged)
+        2. VLANs available at the device's site
+
         Args:
             device: The NetBox Device object
             vlan_id: The VLAN ID to validate (as string, e.g., "100")
@@ -55,11 +59,17 @@ class NetBoxDataValidator:
         except ValueError:
             return False, f"VLAN ID '{vlan_id}' must be a valid integer"
 
-        # First check device VLANs if available
-        if hasattr(device, "vlans") and device.vlans.filter(vid=vlan_id_int).exists():
-            return True, ""
+        # Check VLANs assigned to device interfaces (untagged or tagged)
+        # VLANs are associated with interfaces, not directly with devices
+        for interface in device.interfaces.all():
+            # Check untagged VLAN
+            if interface.untagged_vlan and interface.untagged_vlan.vid == vlan_id_int:
+                return True, ""
+            # Check tagged VLANs
+            if interface.tagged_vlans.filter(vid=vlan_id_int).exists():
+                return True, ""
 
-        # Fallback to site VLANs
+        # Check site VLANs as fallback
         if device.site:
             from ipam.models import VLAN
 
@@ -67,7 +77,49 @@ class NetBoxDataValidator:
                 return True, ""
 
         return False, (
-            f"VLAN {vlan_id} not found for device '{device.name}' or its site"
+            f"VLAN {vlan_id} not found on device '{device.name}' interfaces or its site"
+        )
+
+    @staticmethod
+    def validate_vlan_name(device: Device, vlan_name: str) -> tuple[bool, str]:
+        """
+        Validate that a VLAN name exists for the specified device.
+
+        Checks VLANs in the following order:
+        1. VLANs assigned to device interfaces (untagged or tagged)
+        2. VLANs available at the device's site
+
+        Args:
+            device: The NetBox Device object
+            vlan_name: The VLAN name to validate (e.g., "MANAGEMENT")
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not vlan_name or not vlan_name.strip():
+            return False, "VLAN name cannot be empty"
+
+        vlan_name = vlan_name.strip()
+
+        # Check VLANs assigned to device interfaces (untagged or tagged)
+        # VLANs are associated with interfaces, not directly with devices
+        for interface in device.interfaces.all():
+            # Check untagged VLAN
+            if interface.untagged_vlan and interface.untagged_vlan.name == vlan_name:
+                return True, ""
+            # Check tagged VLANs
+            if interface.tagged_vlans.filter(name=vlan_name).exists():
+                return True, ""
+
+        # Check site VLANs as fallback
+        if device.site:
+            from ipam.models import VLAN
+
+            if VLAN.objects.filter(site=device.site, name=vlan_name).exists():
+                return True, ""
+
+        return False, (
+            f"VLAN '{vlan_name}' not found on device '{device.name}' interfaces or its site"
         )
 
     @staticmethod
@@ -106,7 +158,7 @@ class NetBoxDataValidator:
 
         Args:
             device: The NetBox Device object
-            variable_type: Type of variable (text, netbox_interface, netbox_vlan, netbox_ip)
+            variable_type: Type of variable (text, netbox_interface, netbox_vlan, netbox_vlan_name, netbox_ip)
             variable_name: Name of the variable (for error messages)
             value: The value to validate
 
@@ -121,6 +173,8 @@ class NetBoxDataValidator:
             return cls.validate_interface(device, value)
         elif variable_type == "netbox_vlan":
             return cls.validate_vlan(device, value)
+        elif variable_type == "netbox_vlan_name":
+            return cls.validate_vlan_name(device, value)
         elif variable_type == "netbox_ip":
             return cls.validate_ip_address(device, value)
         else:

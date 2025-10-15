@@ -119,16 +119,17 @@ class CommandVariable(models.Model):
 
     VARIABLE_TYPES = [
         ("text", "Free Text"),
-        ("netbox_interface", "Device Interface"),
-        ("netbox_vlan", "VLAN"),
-        ("netbox_ip", "IP Address"),
+        ("netbox_interface", "Device Interface (Interface Name)"),
+        ("netbox_vlan", "VLAN (VLAN ID)"),
+        ("netbox_vlan_name", "VLAN (VLAN Name)"),
+        ("netbox_ip", "IP Address (without prefix)"),
     ]
 
     variable_type = models.CharField(
         max_length=50,
         choices=VARIABLE_TYPES,
         default="text",
-        help_text="Type of variable - determines the input method",
+        help_text="Type of variable - determines the input method and what value is substituted",
     )
 
     required = models.BooleanField(

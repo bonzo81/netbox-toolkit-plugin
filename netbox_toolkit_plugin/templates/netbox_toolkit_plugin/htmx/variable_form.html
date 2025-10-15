@@ -68,10 +68,8 @@
                     }
                 });
 
-                // Also check innerHTML for any __prefix__ occurrences
-                if (element.innerHTML && element.innerHTML.includes('__prefix__')) {
-                    element.innerHTML = element.innerHTML.replace(/__prefix__/g, formIndex);
-                }
+                // Do NOT replace __prefix__ in innerHTML to avoid XSS vulnerabilities
+                // Only attributes are replaced above for security
             });
         }
     })();
