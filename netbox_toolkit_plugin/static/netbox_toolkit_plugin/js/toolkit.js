@@ -63,9 +63,7 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 // Only preserve selection if user has an active selection
                 // This avoids expensive operations when unnecessary
                 const selection = document.getSelection();
-                const previousRange = (selection && selection.rangeCount > 0)
-                    ? selection.getRangeAt(0)
-                    : null;
+                const previousRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
                 textArea.focus();
                 textArea.select();
