@@ -286,8 +286,8 @@ class CommandExecutionForm(forms.Form):
 
                     # Add help text explaining that VLAN ID will be substituted
                     field_help = (
-                        variable.help_text or
-                        "Select a VLAN. The VLAN ID (not name) will be used in the command."
+                        variable.help_text
+                        or "Select a VLAN. The VLAN ID (not name) will be used in the command."
                     )
 
                     self.fields[field_name] = forms.ChoiceField(
@@ -319,8 +319,8 @@ class CommandExecutionForm(forms.Form):
 
                     # Add help text explaining that VLAN Name will be substituted
                     field_help = (
-                        variable.help_text or
-                        "Select a VLAN. The VLAN Name (not ID) will be used in the command."
+                        variable.help_text
+                        or "Select a VLAN. The VLAN Name (not ID) will be used in the command."
                     )
 
                     self.fields[field_name] = forms.ChoiceField(
@@ -343,21 +343,22 @@ class CommandExecutionForm(forms.Form):
 
                     # Sort IPs for consistent display
                     sorted_ips = sorted(ip_set, key=lambda ip: ip.address.ip)
-                    
+
                     # Value uses just the IP address without prefix (e.g., "192.168.1.1")
                     # Display shows full address with prefix and optional DNS name
                     choices.extend([
                         (
                             str(ip.address.ip),
-                            f"{ip.address}" + (f" - {ip.dns_name}" if ip.dns_name else "")
+                            f"{ip.address}"
+                            + (f" - {ip.dns_name}" if ip.dns_name else ""),
                         )
                         for ip in sorted_ips
                     ])
 
                     # Add help text explaining that only the IP (without prefix) is used
                     field_help = (
-                        variable.help_text or
-                        "Select an IP address. Only the IP (without /prefix) will be used in the command."
+                        variable.help_text
+                        or "Select an IP address. Only the IP (without /prefix) will be used in the command."
                     )
 
                     self.fields[field_name] = forms.ChoiceField(
