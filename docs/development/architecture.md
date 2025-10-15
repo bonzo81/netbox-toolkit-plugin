@@ -39,7 +39,7 @@ command.platform = device.platform  # 'cisco_ios', 'cisco_nxos', etc.
 
 ### Custom Exception Hierarchy
 - `DeviceConnectionError` - Connection failures
-- `CommandExecutionError` - Command execution issues  
+- `CommandExecutionError` - Command execution issues
 - `UnsupportedPlatformError` - Platform not supported
 
 ### Error Recovery
@@ -56,6 +56,7 @@ command.platform = device.platform  # 'cisco_ios', 'cisco_nxos', etc.
 
 
 The error handling architecture provides:
+
 
 1. **Hierarchical Exceptions**: Custom exceptions for different error categories
 2. **Contextual Error Messages**: Errors include guidance based on the specific problem

@@ -8,7 +8,7 @@ class ToolkitPluginConfig(PluginConfig):
     """NetBox plugin configuration for the Toolkit plugin."""
 
     name = "netbox_toolkit_plugin"
-    verbose_name = "Command Toolkit Plugin"
+    verbose_name = "Toolkit Plugin"
     description = "NetBox plugin for running pre-defined commands on network devices"
     version = __version__
     author = __author__

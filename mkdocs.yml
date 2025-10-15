@@ -33,16 +33,24 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.instant
+#    - navigation.instant
     - navigation.tracking
-    - navigation.sections
-    - navigation.expand
+#    - navigation.sections
+#    - navigation.expand
+    - navigation.prune      # Collapses inactive sections
     - navigation.indexes
     - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
     - search.highlight
     - search.share
+    - content.action.edit
     - content.code.copy
     - content.code.annotate
+#    - toc.integrate         # DISABLED: This was causing the left sidebar to expand with page TOC
+  icon:
+    edit: material/pencil
 
 # Plugins
 plugins:
@@ -81,31 +89,47 @@ markdown_extensions:
 
 # Page tree
 nav:
-  - Home: README.md
+  - Start Here:
+      - README.md
+      - Platform Support: platform-support.md
+      - GUI vs API Comparison: user/gui-vs-api.md
   - User Documentation:
-      - Getting Started:
-          - Installation: user/installation.md
-          - Plugin Configuration: user/configuration.md
-      - Command Management:
+      - Setup Guides:
+          - Plugin Installation: user/plugin-installation.md
+          - Plugin Upgrade: user/plugin-upgrade.md
+          - Plugin Configuration: user/plugin-configuration.md
+          - Permissions Creation: user/permissions-creation.md
           - Command Creation: user/command-creation.md
-          - Permissions Setup: user/permissions-setup-guide.md
-          - Permission Examples: user/permission-examples.md
-      - Troubleshooting:
-          - Debug Logging: user/debug-logging.md
+          - Device Credentials: user/device-credentials.md
+          - Logging Guide: user/logging.md
   - API Documentation:
-      - Overview: api/index.md
-      - API Reference: api/overview.md
-      - Commands API: api/commands.md
-      - Command Logs API: api/command-logs.md
-      - Authentication & Permissions: api/auth.md
-      - Error Handling: api/errors.md
+      - Overview:
+          - api/index.md
+          - Commands API: api/commands.md
+          - Command Logs API: api/command-logs.md
+          - Authentication & Permissions: api/auth.md
+          - API Endpoint Reference: api/endpoint-reference.md
+          - Error Handling: api/errors.md
+  - Examples:
+          - Permission Examples: user/permission-examples.md
+          - API Examples: api/workflows.md
+          - API Automation Examples: api/automation-examples.md
+
   - Development:
-      - Start Here: development/contributing.md
-      - Setup: development/setup.md
-      - Code Guide: development/code-guide.md
-      - Architecture: development/architecture.md
-      - Module Structure: development/module-structure.md
-  - Changelog: changelog.md
+      - Start Here:
+          - development/index.md
+          - Setup: development/setup.md
+      - Contributing:
+          - Contribution Types: development/contribution-types.md
+          - Development Workflow: development/development-workflow.md
+          - Technical Stack: development/technical-stack.md
+          - Getting Help: development/getting-help.md
+      - Reference:
+          - Code Guide: development/code-guide.md
+          - Architecture: development/architecture.md
+          - Module Structure: development/module-structure.md
+  - Changelog:
+      - Changelog: changelog.md
 
 # Extra
 extra:
@@ -114,10 +138,6 @@ extra:
       link: https://github.com/bonzo81/netbox-toolkit-plugin
   version:
     provider: mike
-
-# Custom CSS
-extra_css:
-  - stylesheets/extra.css
 
 # Watch extra files
 watch:

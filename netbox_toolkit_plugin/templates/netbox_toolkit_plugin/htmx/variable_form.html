@@ -1,0 +1,87 @@
+{% load form_helpers %}
+
+<div class="variable-form border rounded p-3 mb-3" data-form-index="{{ form_index }}">
+    {% for field in form.hidden_fields %}
+        {{ field|safe }}
+    {% endfor %}
+    {% for field in form.visible_fields %}
+        {% if field.name != 'DELETE' %}
+            <div class="row mb-3{% if field.errors %} has-errors{% endif %}">
+                <div class="col-sm-3 text-lg-end">
+                    <label for="{{ field.id_for_label }}" class="col-form-label d-inline-block{% if field.field.required %} required{% endif %}">
+                        {{ field.label }}
+                    </label>
+                </div>
+                <div class="col">
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="form-text text-danger">
+                            {% for error in field.errors %}{{ error }}{% if not forloop.last %}<br />{% endif %}{% endfor %}
+                        </div>
+                    {% elif field.field.required %}
+                        <div class="invalid-feedback">This field is required.</div>
+                    {% endif %}
+                    {% if field.help_text %}
+                        <span class="form-text">{{ field.help_text|safe }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+    <div class="row mb-3">
+        <div class="col-sm-3"></div>
+        <div class="col text-end">
+            {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+            <button type="button" class="btn btn-outline-danger btn-sm delete-variable">
+                <i class="mdi mdi-delete"></i> Remove
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Execute immediately when this content is loaded by HTMX
+    (function() {
+        // Update the total forms count
+        const totalFormsInput = document.querySelector('#id_variables-TOTAL_FORMS');
+        if (totalFormsInput) {
+            const currentCount = parseInt(totalFormsInput.value) || 0;
+            totalFormsInput.value = currentCount + 1;
+        }
+
+        // Find the newly added form and fix the __prefix__ placeholders
+        const newForm = document.querySelector('.variable-form[data-form-index="{{ form_index }}"]');
+        if (newForm) {
+            const formIndex = '{{ form_index }}';
+
+            // Validate that formIndex is a number for data integrity
+            // Note: While Django's template auto-escaping helps prevent XSS,
+            // this validation is defense-in-depth to ensure formIndex is safe and valid
+            // before using it for DOM manipulation. This protects against DOM-based
+            // vulnerabilities, not just XSS.
+            if (/^\d+$/.test(formIndex)) {
+                // Update all elements that contain __prefix__
+                const elementsToUpdate = newForm.querySelectorAll('*');
+
+                elementsToUpdate.forEach(function(element) {
+                    ['name', 'id', 'for'].forEach(function(attr) {
+                        if (element.hasAttribute(attr)) {
+                            const value = element.getAttribute(attr);
+                            if (value && value.includes('__prefix__')) {
+                                const newValue = value.replace(/__prefix__/g, formIndex);
+                                element.setAttribute(attr, newValue);
+                            }
+                        }
+                    });
+
+                    // Do NOT replace __prefix__ in innerHTML
+                    // Django formset management handles content rendering
+                    // Only form element attributes (name, id, for) need manual updating
+                });
+            } else {
+                // If formIndex is not a valid number, skip replacement for data integrity
+                console.warn('Invalid formIndex for variable formset:', formIndex);
+            }
+        }
+    })();
+</script>

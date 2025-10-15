@@ -1,30 +1,78 @@
 # Authentication & Permissions
 
-The NetBox Toolkit API integrates with NetBox's built-in authentication and permission system.
+The NetBox Toolkit API uses **NetBox's standard authentication** combined with **credential tokens** for enhanced security and user isolation.
 
-## Authentication
+## Authentication with Credential Tokens
 
-### API Token Authentication
+### 1. NetBox API Token (Authentication)
+Standard NetBox token for user authentication:
 
-All API requests require authentication using NetBox's token system:
+- **Purpose**: Identifies and authenticates the user to NetBox
+- **Location**: `Authorization: Token <your-netbox-api-token>` header
+- **Scope**: All NetBox API access
+
+### 2. Credential Token (Device Access)
+Plugin-specific token for device credential access:
+
+- **Purpose**: References encrypted device credentials (username/password)
+- **Location**: `credential_token` field in request body
+- **Scope**: Device command execution only
+- **Security**: Bound to specific users, cannot access other users' credentials
+
+## Why Credential Tokens?
+
+🔒 **Enhanced Security**: Device credentials never transmitted in API calls
+
+👤 **User Isolation**: Users can only access their own stored credential sets
+
+📝 **Audit Trail**: All actions properly logged to user accounts
+
+🔄 **Token Rotation**: Credential tokens can be regenerated independently
+
+🎯 **Granular Control**: Different credential sets for different device groups
+
+## Getting Started
+
+### Step 1: Get Your NetBox API Token
 
 ```bash
-curl -H "Authorization: Token YOUR_TOKEN_HERE" \
-     -H "Content-Type: application/json" \
-     https://netbox.example.com/api/plugins/toolkit/commands/
+# Via NetBox Web UI:
+# 1. Log into NetBox
+# 2. Go to User → Profile → API Tokens
+# 3. Create a new token or copy an existing one
 ```
 
-### Getting Your API Token
+### Step 2: Create Device Credential Sets
 
-1. **Via NetBox Web UI:**
-   - Log into NetBox
-   - Go to User → Profile → API Tokens
-   - Create a new token or copy an existing one
+**Via NetBox Web Interface:**
 
-2. **Via Django Admin:**
-   - Access Django admin interface
-   - Navigate to Auth Token → Tokens
-   - Create or view existing tokens
+1. Navigate to **Plugins → Toolkit → Device Credential Sets**
+2. Click **"Add Device Credential Set"**
+3. Enter details:
+      - **Name**: Descriptive name (e.g., "Production Network Credentials")
+      - **Description**: Optional usage description
+      - **Username**: Device login username
+      - **Password**: Device login password
+      - **Platforms**: Optional - restrict to specific network platforms
+4. Click **"Create"** and copy the generated credential token
+5. Store the credential token securely for API use
+
+**Security Features:**
+- Passwords are encrypted using Fernet encryption with unique keys
+- Credential tokens are URL-safe and bound to your user account
+- Other users cannot access your credential sets
+
+### Step 3: Make API Calls
+
+```bash
+curl -X POST "https://netbox.example.com/api/plugins/toolkit/commands/17/execute/" \
+  -H "Authorization: Token <your-netbox-api-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": 1,
+    "credential_token": "<your-credential-token>"
+  }'
+```
 
 ## Permissions
 
@@ -242,11 +290,29 @@ PLUGINS_CONFIG = {
 }
 ```
 
-## Best Practices
+## Security Best Practices
 
+### Credential Management
+1. **Rotate Credentials**: Regularly rotate device passwords and regenerate credential tokens
+2. **Use Service Accounts**: Create dedicated accounts for automation systems
+3. **Secure Storage**: Store credential tokens in secure secret management systems
+4. **Least Privilege**: Only grant necessary device access permissions
+
+### Permission Management
 1. **Use Groups**: Assign permissions to groups rather than individual users
 2. **Principle of Least Privilege**: Only grant necessary permissions
 3. **Use Constraints**: Restrict permissions to specific platforms or command types
 4. **Rate Limit Bypass**: Only grant to trusted automation systems
 5. **Regular Audits**: Review and audit permissions regularly
-6. **Test Permissions**: Verify permissions work as expected before deploying
+
+### API Security
+1. **HTTPS Only**: Always use HTTPS for API communications
+2. **Token Rotation**: Regularly rotate NetBox API tokens
+3. **Monitor Usage**: Review command logs for suspicious activity
+4. **Error Handling**: Don't expose sensitive information in error messages
+
+## Related Documentation
+- **Setup**: [Installation Guide](../user/plugin-installation.md)
+- **Usage**: [Commands API](commands.md)
+- **Examples**: [API Automation Examples](automation-examples.md)
+- **Troubleshooting**: [Error Handling](errors.md)

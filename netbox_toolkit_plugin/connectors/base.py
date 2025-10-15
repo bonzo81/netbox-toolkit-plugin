@@ -41,6 +41,8 @@ class CommandResult:
     parsing_success: bool = False
     parsing_method: str | None = None  # 'textfsm', 'genie', 'ttp'
     parsing_error: str | None = None
+    # Command log ID for referencing the logged command
+    command_log_id: int | None = None
 
 
 class BaseDeviceConnector(ABC):

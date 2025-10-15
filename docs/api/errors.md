@@ -281,6 +281,7 @@ HTTP/1.1 400 Bad Request
 
 ## Error Handling Best Practices
 
+
 ### 1. Check Status Codes
 Always check HTTP status codes to determine the type of error:
 
@@ -325,16 +326,16 @@ def execute_with_retry(command_id, device_id, username, password, max_retries=3)
                 'password': password
             }
         )
-        
+
         if response.status_code == 429:
             # Rate limited, wait and retry
             retry_after = int(response.headers.get('Retry-After', 60))
             print(f"Rate limited, waiting {retry_after} seconds...")
             time.sleep(retry_after)
             continue
-        
+
         return response
-    
+
     raise Exception("Max retries exceeded")
 ```
 
@@ -343,14 +344,14 @@ def execute_with_retry(command_id, device_id, username, password, max_retries=3)
 ```python
 def validate_execution_request(device_id, username, password):
     errors = []
-    
+
     if not device_id:
         errors.append("device_id is required")
     if not username:
         errors.append("username is required")
     if not password:
         errors.append("password is required")
-    
+
     if errors:
         raise ValueError(f"Validation errors: {', '.join(errors)}")
 ```
@@ -365,12 +366,12 @@ logger = logging.getLogger(__name__)
 def execute_command(command_id, device_id, username, password):
     try:
         response = requests.post(...)
-        
+
         if response.status_code != 200:
             logger.error(
                 f"Command execution failed: {response.status_code} - {response.text}"
             )
-            
+
         return response
     except requests.exceptions.RequestException as e:
         logger.error(f"Network error during command execution: {e}")
@@ -381,8 +382,8 @@ def execute_command(command_id, device_id, username, password):
 
 If you encounter persistent errors:
 
-1. Check the [NetBox logs](../user/debug-logging.md) for detailed error information
-2. Verify your [permissions setup](../user/permissions-setup-guide.md)
-3. Review the [configuration guide](../user/configuration.md)
-3. Check for common issues in the [Troubleshooting](../user/troubleshooting.md) section
+1. Check the [NetBox logs](../user/logging.md) for detailed error information
+2. Verify your [permissions setup](../user/permissions-creation.md)
+3. Review the [configuration guide](../user/plugin-configuration.md)
+3. Check for common issues in the [Permission Examples](../user/permission-examples.md) section
 4. Check the [GitHub issues](https://github.com/yourusername/netbox-toolkit-plugin/issues) for known problems

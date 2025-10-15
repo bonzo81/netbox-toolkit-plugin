@@ -59,21 +59,22 @@ class ScrapliConnector(BaseDeviceConnector):
 
     @classmethod
     def normalize_platform_name(cls, platform_name: str) -> str:
-        """Normalize platform name for consistent mapping."""
+        """Normalize platform name for consistent mapping.
+
+        This method now delegates to the centralized normalization in ToolkitSettings
+        to ensure consistency across all components.
+        """
+        from ..settings import ToolkitSettings
+
         if not platform_name:
             return "generic"
 
-        normalized = platform_name.lower().strip()
+        # Use centralized platform normalization
+        normalized = ToolkitSettings.normalize_platform(platform_name)
 
-        # Handle common variations
-        if normalized in ["cisco ios", "ios", "cisco_ios"]:
-            return "cisco_ios"
-        elif normalized in ["cisco nxos", "nxos", "nexus"]:
-            return "cisco_nxos"
-        elif normalized in ["cisco iosxr", "iosxr", "ios-xr"]:
-            return "cisco_iosxr"
-        elif normalized in ["cisco xe", "ios-xe"]:
-            return "cisco_xe"
+        # Scrapli-specific fallback for unknown platforms
+        if normalized not in cls.DRIVER_MAP:
+            return "generic"
 
         return normalized
 
@@ -281,16 +282,26 @@ class ScrapliConnector(BaseDeviceConnector):
             except Exception as e:
                 last_error = e
                 error_msg = str(e)
-                logger.warning(
+                # Log connection attempts at DEBUG level to avoid duplicate messages
+                # The CommandExecutionService will handle user-facing logging
+                logger.debug(
                     f"Connection attempt {attempt + 1} failed for {self.config.hostname}: {error_msg}"
                 )
+
+                # Check for authentication failure first (before fast-fail patterns)
+                if self._is_authentication_error(error_msg):
+                    logger.error(
+                        f"Authentication failure detected for {self.config.hostname}"
+                    )
+                    formatted_error = self._format_connection_error(e)
+                    raise DeviceConnectionError(formatted_error) from e
 
                 # Check for fast-fail patterns on first attempt
                 if attempt == 0 and ToolkitSettings.should_fast_fail_to_netmiko(
                     error_msg
                 ):
-                    logger.info(f"Fast-fail pattern detected: {error_msg}")
-                    logger.info("Triggering immediate fallback to Netmiko")
+                    logger.debug(f"Fast-fail pattern detected: {error_msg}")
+                    logger.debug("Triggering immediate fallback to Netmiko")
                     raise DeviceConnectionError(
                         f"Fast-fail to Netmiko: {error_msg}"
                     ) from None
@@ -383,6 +394,11 @@ class ScrapliConnector(BaseDeviceConnector):
             f"Executing {command_type} command on {self.config.hostname}: {command}"
         )
 
+        # Log the exact command being sent to the device for troubleshooting
+        logger.info(
+            f"DEVICE_COMMAND: Sending {command_type} command to {self.config.hostname}: {command!r}"
+        )
+
         # Validate connection first
         if not self._validate_and_recover_connection():
             logger.error(
@@ -440,6 +456,20 @@ class ScrapliConnector(BaseDeviceConnector):
                 enhanced_output += parsed_error.guidance
 
                 result.output = enhanced_output
+            else:
+                # Check for empty output that might indicate a user error (e.g., invalid access list name)
+                if not response.result or not response.result.strip():
+                    # For certain command types, empty output might indicate invalid parameters
+                    if command.lower().startswith(("show access-list", "show acl")):
+                        # Set a custom syntax error for empty ACL results
+                        result.has_syntax_error = True
+                        result.syntax_error_type = "empty_result"
+                        result.syntax_error_vendor = self.config.platform or "generic"
+                        result.syntax_error_guidance = (
+                            "The command executed successfully but returned no output."
+                        )
+                        # Enhance the output with user-friendly message
+                        result.output = f"No output returned for command: {command}\n\nThis typically means:\n• The access list name is incorrect or doesn't exist\n• The access list exists but is empty\n• Check the access list name spelling\n• Verify the access list exists on this device"
 
             # Attempt to parse command output using TextFSM (only for successful commands without syntax errors)
             if result.success and not result.has_syntax_error:
@@ -560,12 +590,63 @@ class ScrapliConnector(BaseDeviceConnector):
                 "\n- A firewall or security device is intercepting the connection"
                 "\n- The SSH implementation on the device is non-standard or very old"
             )
-        elif "Authentication failed" in error_message:
+        elif self._is_authentication_error(error_message):
+            formatted_msg = (
+                f"Authentication failed for {self.config.hostname}: {error_message}"
+            )
             formatted_msg += (
-                "\n\nAuthentication failed. Please verify:"
+                "\n\nThis appears to be an authentication failure. Please verify:"
                 "\n- Username and password are correct"
-                "\n- The account is not locked"
-                "\n- The device allows the authentication method being used"
+                "\n- The account is not locked or disabled"
+                "\n- The device allows password authentication (not just key-based)"
+                "\n- Account permissions allow SSH access"
+                "\n- Maximum authentication attempts not exceeded"
             )
 
         return formatted_msg
+
+    def _is_authentication_error(self, error_message: str) -> bool:
+        """
+        Detect if an error message indicates authentication failure.
+
+        Scrapli doesn't have specific authentication exceptions like Netmiko,
+        so we need to detect patterns in error messages that suggest auth failure.
+        """
+        error_lower = error_message.lower()
+
+        # Common authentication failure patterns
+        auth_patterns = [
+            "password prompt seen more than once",
+            "authentication failed",
+            "auth failed",
+            "login failed",
+            "access denied",
+            "permission denied",
+            "authentication error",
+            "invalid password",
+            "invalid username",
+            "login incorrect",
+            "authentication timeout",
+            "too many authentication failures",
+            "authentication attempts exceeded",
+            # EOF patterns that often indicate auth failure
+            "encountered eof reading from transport",
+            "connection closed by peer",
+            "connection reset by peer",
+            # Patterns from SSH banner/auth sequence
+            "ssh handshake failed",
+            "ssh authentication failed",
+            "publickey authentication failed",
+            "password authentication failed",
+            "keyboard-interactive authentication failed",
+        ]
+
+        # Check if any authentication pattern is found
+        for pattern in auth_patterns:
+            if pattern in error_lower:
+                logger.debug(
+                    f"Authentication error pattern detected: '{pattern}' in '{error_message}'"
+                )
+                return True
+
+        return False

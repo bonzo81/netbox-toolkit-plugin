@@ -33,8 +33,14 @@
               <td>{{ object.name }}</td>
             </tr>
             <tr>
-              <th scope="row">Platform</th>
-              <td>{{ object.platform|linkify }}</td>
+              <th scope="row">Platforms</th>
+              <td>
+                {% for platform in object.platforms.all %}
+                  {{ platform|linkify }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  <em>No platforms assigned</em>
+                {% endfor %}
+              </td>
             </tr>
             <tr>
               <th scope="row">Command Type</th>

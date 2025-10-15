@@ -20,6 +20,7 @@ services:
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL:-admin@example.com}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD:-admin}
       SKIP_SUPERUSER: ${SKIP_SUPERUSER:-false}
+      NETBOX_TOOLKIT_PEPPER: ${NETBOX_TOOLKIT_PEPPER:-test-pepper-for-testing-purposes-only-64-chars-long-value-for-security-testing}
     depends_on:
       postgres:
         condition: service_healthy

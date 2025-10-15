@@ -1,11 +1,11 @@
 /**
  * NetBox Toolkit Plugin - Highly Optimized Styles
- * 
+ *
  * This optimized version removes CSS duplication and leverages Tabler/NetBox
  * built-in classes to improve maintainability and consistency.
- * 
+ *
  * Total lines reduced from ~513 to ~131 lines (74% reduction)
- * 
+ *
  * Most styles have been replaced with Tabler utility classes:
  * - Layout: d-flex, flex-column, h-100
  * - Tables: align-middle, border-0, fw-semibold, text-muted, font-monospace
@@ -46,6 +46,15 @@
    COMMAND LIST INTERFACE ENHANCEMENTS
    ======================================== */
 
+/* Command search input styling */
+#command-search {
+    transition: all 0.2s ease;
+}
+
+#command-search:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.25);
+}
+
 /* Command item specific styling that extends Tabler list-group */
 .list-group-item.command-item {
     white-space: nowrap;
@@ -66,7 +75,7 @@
 }
 
 .card-commands {
-    max-height: 500px;
+    height: 400px;
     overflow-y: auto;
 }
 
@@ -140,4 +149,34 @@
 
 .collapsed .collapse-icon {
     transform: rotate(180deg);
+}
+
+/* ========================================
+   CARD RESPONSIVE BEHAVIOR WITH TABLER UTILITIES
+   ======================================== */
+
+/* Prevent text overflow in list items using Tabler's text utilities */
+.list-group-item .d-flex {
+    min-width: 0;
+    /* Allow flex items to shrink below their content size */
+}
+
+.list-group-item .fw-semibold {
+    white-space: nowrap;
+    /* Prevent label text from wrapping */
+    text-overflow: ellipsis;
+    overflow: hidden;
+    flex-shrink: 0;
+    /* Labels don't shrink */
+    min-width: 0;
+}
+
+.list-group-item .font-monospace {
+    text-align: right;
+    word-break: break-word;
+    /* Allow long values to wrap cleanly */
+    overflow-wrap: break-word;
+    flex-shrink: 1;
+    /* Values can shrink */
+    min-width: 0;
 }

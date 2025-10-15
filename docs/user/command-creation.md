@@ -1,94 +1,118 @@
-# Command Creation Guide
+# Command Creation
 
-Learn how to create and organize commands for different network platforms.
+This guide explains how to create and manage network commands in the NetBox Toolkit Plugin.
 
 ## Overview
 
-Before executing commands on devices, you need to define reusable commands via the plugin menu. This guide walks you through the command creation process.
+Commands are the core building blocks of the NetBox Toolkit Plugin. Each command defines:
 
-Make sure to understand the different command types and their usage before proceeding.
+- The network command to execute (e.g., `show version`, `show interfaces status`)
+- The network platform it works with (Cisco IOS, Juniper JunOS, etc.)
+- Command type (Show commands for read-only operations, Config commands for changes)
+- Variables for dynamic command execution
 
-## Command Types
+## Creating Your First Command
 
-### Show Commands
-Read-only operations that retrieve information:
+### Step 1: Access Command Management
+1. Log in to your NetBox instance
+2. Click on **Command Toolkit > Commands** in the navigation bar
+3. Click **"Add"** to create a new command
 
-- Status and monitoring commands
-- Configuration display commands
+### Step 2: Basic Command Information
+Fill in the essential command details:
 
-**Examples**: `show version`, `show interfaces`, `show ip route`
+- **Name**: A descriptive name that clearly indicates what the command does
+    - Good: `"Show Interface Status"`, `"Check Device Version"`
+    - Avoid: `"Command 1"`, `"Test"`
 
-### Configuration Commands
-Commands that modify device configuration:
+- **Command**: The actual network command to execute
+    - Simple commands: `show version`, `show running-config`
+    - Commands with variables: `show interface <interface_name> status`
 
-- Interface configuration
-- Routing protocol configuration
-- System configuration changes
+- **Platform**: The network device platform this command works with
+    - Common options: `cisco_ios`, `cisco_nxos`, `juniper_junos`, `arista_eos`
 
-**Examples**: `interface GigabitEthernet1/1`, `router ospf 1`, `hostname new-name`
+- **Command Type**: Choose the appropriate type:
+    - **Show Command**: Read-only operations (monitoring, troubleshooting)
+    - **Configuration Command**: Write operations (configuration changes)
 
-> ⚠️ **Warning**: Configuration commands can impact network operations. Use appropriate permissions and testing procedures.
+### Step 3: Add Command Variables (Optional)
+ It is possible to add varaibles to a command. Variable can be free text or can be linked to NetBox objects. Currently only interfaces, IP addresses and VLANs are supported as NetBox object types.
 
-### Benefits of using command types:
+In the **Command** box, use snake_case - `<variable_name>` - syntax to define each variable.
 
-- **Permissions Control** - Users can be restricted to executing only show commands
-- **Output Parsing** - Show commands are parsed for structured output, config commands are not
+For example:
+```show interface <interface_name> status```
 
-## Creating Commands
+Or multiple variables in one command:
+```ping <destination_ip> source <source_interface>```
 
-### 1. Plugin Command Toolkit Menu
+1. Click **"Add Variable"** to create a new variable
+2. Configure each variable:
+    - **Name**: Variable identifier in snake_case (e.g., `interface_name`)
+    - **Display Name**: User-friendly name (e.g., `Interface Name`)
+    - **Variable Type**: Field type (Free Text or NetBox Object - Interface, IP Address, VLAN)
+    - **Required**: Whether the variable must be filled
+    - **Help Text**: Help text for users
+    - **Default Value**: Optional default value
 
-1. Navigate to **Plugins > Command Toolkit > Commands**
-2. Click **"Add"** to create a new command
+### Step 4: Save the Command
+Click **"Create"** to save your new command.
 
-### 2. Fill Command Details
+## Command Examples by Platform
 
-Complete the following fields:
+### Cisco IOS/IOS-XE
+```
+show version
+show running-config
+show interfaces status
+show ip interface brief
+show inventory
+show environment all
+show processes cpu sorted
+show ip route
+```
 
-- **Name**: A descriptive name (e.g., "Show Version")
-- **Command**: The actual command to execute (e.g., `show version`) 
-  > Use full command syntax for optimal TextFSM template parsing
-- **Description**: Optional explanation of what the command does
-- **Platform**: The device platform this command is designed for (e.g., `cisco_ios`, `cisco_nxos`, `arista_eos`)
-- **Command Type**: Choose from:
-    - `Show Command` - Read-only operations
-    - `Configuration Command` - Write operations
-- **Tags**: Optional tags for better organization
+### Cisco NX-OS
+```
+show version
+show running-config
+show interface status
+show ip interface brief
+show inventory
+show environment
+show processes cpu sort
+show ip route
+```
 
-### 3. Save the Command
+### Juniper Junos
+```
+show version
+show configuration
+show interfaces terse
+show chassis hardware
+show chassis environment
+show system processes extensive
+show route
+```
 
-Click **"Create"** to save the command for use across your devices.
-
-
-
-## Best Practices
-
-### Command Naming
-- Use descriptive, consistent names (e.g., "Show Version", "Show Interfaces", "Show Routing Table")
-- Include platform in name if creating platform-specific variants
-- Group related commands with consistent prefixes
+### Arista EOS
+```
+show version
+show running-config
+show interfaces status
+show ip interface brief
+show inventory
+show environment all
+show processes top
+show ip route
+```
 
 ### Command Organization
-- **Group by function**: Interface commands, routing commands, system commands
-- **Use tags effectively**: Tag commands by category (monitoring, troubleshooting, configuration)
-- **Platform-specific commands**: Create separate commands for each platform rather than generic ones
+- **Naming Conventions**: Use consistent naming patterns (e.g., "Show - Interface Status", "Config - VLAN Setup")
+- **Tags**: Apply tags to group related commands for easier filtering
+- **Descriptions**: Provide clear descriptions of command purpose and expected output
 
-### TextFSM Integration
-- Use complete command syntax (e.g., `show ip interface brief` instead of `sh ip int br`)
-- Full commands provide better TextFSM template matching
-- Structured output parsing works best with standard command formats
-
-### Security Considerations
-- **Show commands**: Generally safe for all users
-- **Configuration commands**: Restrict to senior engineers and administrators
-- **Sensitive commands**: Be cautious with commands that might reveal credentials or security information
-
-
-## Next Steps
-
-After creating commands:
-
-1. **Set up permissions** - Configure who can execute which commands [📖 Permissions Setup Guide](./permissions-setup-guide.md)
-
-2. **Monitor usage** - Review command logs for performance and security
-3. **Enable debug logging** for troubleshooting (optional) [🐛 Debug Logging Guide](./debug-logging.md)
+### Platform-Specific Commands
+- Always specify the correct platform when creating commands
+- Consider platform-specific syntax differences

@@ -1,128 +1,102 @@
 # NetBox Toolkit Plugin
 
-Execute network commands directly from NetBox with raw and parsed outputs.
+ The NetBox Toolkit plugin allows you to run command execution directly from NetBox device pages or via the API. Features command variables, command history, encrypted credential storage with token authentication for API, and comprehensive logging options.
 
-## 🚀 What Does This Plugin Do?
+> ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️
+> This plugin is in very early development and not recommended for production use. There will be bugs and possible incomplete functionality. Use at your own risk! If you do, give some feedback in [Discussions](https://github.com/bonzo81/netbox-toolkit-plugin/discussions)
 
-### 📋 Feature Overview
-- **🔧 Command Creation**: Define platform-specific commands (show/config types)
-- **🔐 Command Permissions**: Granular access control using NetBox's permission system
-- **⚡ Command Execution**: Run commands directly from device pages via "Toolkit" tab
+
+### 📋 Core Features
+
+- **🔧 Command Creation**: Define platform-specific commands (show/config types) with variables
+
+- **⚡ Command Execution**: Run commands from device pages via "Toolkit" tab or REST API
 - **📄 Raw Output**: View complete, unfiltered command responses
 - **🔍 Parsed Output**: Automatic JSON parsing using textFSM templates
 - **📊 Command Logs**: Complete execution history with timestamps
+- **🔐 Secure Credentials**: Encrypted storage with credential tokens via API, or on-the-fly entry in the GUI (no storage required)
+- **📊 Statistics Dashboard**: Execution analytics, success rates, and performance metrics
+- **🚀 Bulk Operations**: Execute multiple commands across multiple devices via API
 - **🐛 Debug Logging**: Optional detailed logging for troubleshooting
+
 
 ## 📚 Essential Guides
 
-| Setup | Configuration | Usage |
-|---|---|---|
-| [📦 Installation](./user/installation.md) | [⚙️ Configuration](./user/configuration.md) | [📋 Command Creation](./user/command-creation.md) |
-| [🔐 Permissions Setup](./user/permissions-setup-guide.md) | [📋 Command Creation](./user/command-creation.md) | [🐛 Debug Logging](./user/debug-logging.md) |
+### 🚀 Getting Started
+- [📦 Plugin Installation](./user/plugin-installation.md) - Install the plugin in your NetBox environment
+- [🔄 Plugin Upgrade](./user/plugin-upgrade.md) - Upgrade to newer versions
+- [⚙️ Plugin Configuration](./user/plugin-configuration.md) - Configure plugin settings and security options
+- [🔐 Permissions Creation](./user/permissions-creation.md) - Set up user access and permissions
+- [📋 Command Creation](./user/command-creation.md) - Create platform-specific commands with variables
+- [🔑 Device Credentials](./user/device-credentials.md) - Secure credential storage and token management
+- [📝 Logging Guide](./user/logging.md) - Enable logging for troubleshooting
+
+### 🔌 API Integration
+- [📖 API Overview](./api/index.md) - REST API capabilities and features
+- [🔑 Authentication & Permissions](./api/auth.md) - API authentication with credential tokens
+- [⚡ Commands API](./api/commands.md) - Command execution and management
+- [📊 Command Logs API](./api/command-logs.md) - Access execution history and logs
+- [🛡️ Error Handling](./api/errors.md) - API error responses and troubleshooting
+- [🔄 API Workflows](./api/workflows.md) - Common API usage patterns
+- [🤖 Automation Examples](./api/automation-examples.md) - Scripts and automation scenarios
+
+### 📋 Configuration Examples
+- [📝 Permission Examples](./user/permission-examples.md) - Example permission configurations
+- [⚖️ GUI vs API Comparison](./user/gui-vs-api.md) - Feature comparison between web interface and API
+
+### 👨‍💻 Development
+- [🏗️ Developer Guide](./development/index.md) - Complete overview for contributors
+- [🔧 Development Setup](./development/setup.md) - Set up your development environment
 
 
-## ⚡ Toolkit Setup Steps
 
-Follow these steps to get the NetBox Toolkit Plugin running in your environment.
+### Security Architecture
+- **Credential Token System**: Secure API execution using credential tokens (no password transmission)
+- **Fernet Encryption**: AES-128 CBC + HMAC-SHA256 for credential encryption
+- **Argon2id**: Secure key derivation and token hashing with pepper-based authentication
+- **Encrypted Storage**: Device credentials encrypted with unique keys per set
+- **User Isolation**: Credential tokens bound to specific users
+- **No Credential Transmission**: Passwords never sent in API calls
+- **Secure Audit Trail**: Operations logged with sanitized data (credentials excluded from change logs)
 
-First activate your NetBox virtual environment and install the plugin:
+### Built With
+- **Scrapli**: Primary network device connection library (SSH/Telnet/NETCONF)
+- **Scrapli Community**: Extended platform support for network devices
+- **Netmiko**: Fallback SSH client for enhanced device compatibility
+- **TextFSM**: Structured data parsing for command outputs
+
+See [Platform Support](./platform-support.md) for detailed information on supported network devices and connection methods.
+
+### Minimal Install
+
+**Installation:**
 
 ```bash
-source /opt/netbox/venv/bin/activate
-```
-
-### 1. **Install the Plugin**
-```bash
+# 1. Install the plugin
 pip install netbox-toolkit-plugin
+
+# 2. Add to NetBox configuration.py
+PLUGINS = ['netbox_toolkit_plugin']
+
+# 3. Configure security pepper (REQUIRED)
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"  # Generate pepper
+
+PLUGINS_CONFIG = {
+    'netbox_toolkit_plugin': {
+        'security': {
+            'pepper': 'your-generated-pepper-here',
+        },
+    },
+}
+
+# 4. Run migrations and restart
+python3 manage.py migrate netbox_toolkit_plugin
+python3 manage.py collectstatic --no-input
+sudo systemctl restart netbox netbox-rq
 ```
 
-[📖 Detailed Installation Guide](./user/installation.md)
-
-### 2. **Enable in NetBox**
-Add `'netbox_toolkit'` to `PLUGINS` in your NetBox configuration
-
-[⚙️ Configuration Details](./user/configuration.md)
-
-### 3. **Run Database Migration**
-```bash
-python manage.py migrate netbox_toolkit
-```
-
-### 4. **Configure Plugin Settings**
-Add basic settings to `PLUGINS_CONFIG` in your NetBox configuration
-
-[⚙️ Configuration Options](./user/configuration.md)
-
-### 5. **Set Up Permissions**
-Create either 'show' or 'config'command execution permissions to assign to users or groups
-
-[🔐 Permissions Setup Guide](./user/permissions-setup-guide.md)
-
-### 6. **Create Commands**
-Define platform-specific commands through the NetBox admin interface
-
-[📋 Command Creation Guide](./user/command-creation.md)
-
-### 7. **Start Using**
-Visit any device page → "Toolkit" tab → Execute commands
-
-## 🌐 Platform Support
-
-The plugin uses **Scrapli** as the primary connection library with **Netmiko** as a fallback, providing robust support for various network device platforms:
-
-### Primary Connection Engine: Scrapli
-Scrapli provides fast, modern SSH connectivity with structured output parsing capabilities:
-
-- **Cisco IOS/IOS-XE** (`cisco_ios`) - Traditional Cisco platforms with TextFSM parsing
-- **Cisco NX-OS** (`cisco_nxos`) - Data center switching with enhanced JSON output support
-- **Cisco IOS-XR** (`cisco_iosxr`) - Service provider routing platforms
-- **Juniper Junos** (`juniper_junos`) - Juniper devices with XML/JSON output parsing
-- **Arista EOS** (`arista_eos`) - Arista switches with native JSON API support
-
-### Fallback Connection: Netmiko
-When Scrapli encounters connection issues, the plugin automatically falls back to Netmiko for broader device compatibility:
-
-- **Extended Platform Support** - Covers additional vendor platforms and older device models
-- **Legacy Device Support** - Better compatibility with older firmware versions
-- **SSH Troubleshooting** - Alternative SSH implementation for problematic connections
-
-### Key Benefits
-- **Automatic Fallback**: Seamless switching between connection methods
-- **TextFSM Integration**: Structured data parsing for show commands
-- **JSON Output**: Native support for modern network OS JSON responses
-- **Connection Resilience**: Multiple connection strategies ensure reliability
+📖 **Full installation guide:** [Plugin Installation](./user/plugin-installation.md)
 
 
-### Platform Selection
-When creating commands, select the appropriate platform slug to ensure:
 
-- Correct command syntax validation
-- Optimal connection method selection
-- Proper output parsing (TextFSM templates, JSON, etc.)
-- Platform-specific error handling
 
-## 📊 Command Logs
-Complete execution history tracking:
-
-- **Timestamp** - When command was executed
-- **User** - Who executed the command
-- **Device** - Target device information
-- **Command** - Exact command executed
-- **Status** - Success/failure with error details
-- **Duration** - Execution time
-
-## 🐛 Debug Logging
-Optional detailed logging for troubleshooting:
-
-- **Connection details** - SSH handshake and authentication
-- **Command flow** - Step-by-step execution process
-- **Error diagnostics** - Detailed failure messages
-
-## 👨‍💻 For Developers
-
-**Start Here**: [Contributor Guide](./development/contributing.md) - Fast navigation for developers ⭐
-
-### Core Documentation
-- [Architecture Overview](./development/architecture.md) - System design and patterns
-- [Module Structure](./development/module-structure.md) - Code organization and key classes
-- [Development Setup](./development/setup.md) - Environment setup and workflows (includes develop branch)

@@ -1,0 +1,189 @@
+{% extends 'generic/object_list.html' %}
+{% load helpers %}
+
+{% block title %}Toolkit Statistics{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="mdi mdi-chart-line"></i>
+                    Command Execution Statistics
+                </h3>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-outline-primary"
+                            onclick="location.reload()"
+                            title="Refresh statistics">
+                        <i class="mdi mdi-refresh"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if total_logs > 0 %}
+                    <!-- Summary Cards Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card border-primary" title="Total number of command executions performed across all devices">
+                                <div class="card-body text-center">
+                                    <i class="mdi mdi-chart-line display-2 text-primary mb-3"></i>
+                                    <h2 class="card-title text-primary">{{ total_logs }}</h2>
+                                    <p class="card-text text-muted">Total Executions</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-success" title="Percentage of successful command executions out of total attempts">
+                                <div class="card-body text-center">
+                                    <i class="mdi mdi-check-circle display-2 text-success mb-3"></i>
+                                    <h2 class="card-title text-success">{{ success_rate }}%</h2>
+                                    <p class="card-text text-muted">Success Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-info" title="Total number of command executions performed in the last 24 hours">
+                                <div class="card-body text-center">
+                                    <i class="mdi mdi-clock-outline display-2 text-info mb-3"></i>
+                                    <h2 class="card-title text-info">{{ last_24h.total }}</h2>
+                                    <p class="card-text text-muted">Last 24h</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-warning" title="Number of failed command executions in the last 24 hours">
+                                <div class="card-body text-center">
+                                    <i class="mdi mdi-alert-circle display-2 text-warning mb-3"></i>
+                                    <h2 class="card-title text-warning">{{ last_24h.failed }}</h2>
+                                    <p class="card-text text-muted">Recent Failures</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Row -->
+                    <div class="row">
+                        <!-- Top Commands -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">
+                                        <i class="mdi mdi-code-tags"></i>
+                                        Most Used Commands
+                                    </h4>
+                                </div>
+                                <div class="card-body">
+                                    {% if top_commands %}
+                                        <div class="list-group list-group-flush">
+                                            {% for command in top_commands %}
+                                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="mdi mdi-console text-muted me-2"></i>
+                                                    <span class="fw-semibold">{{ command.command_name }}</span>
+                                                </div>
+                                                <span class="badge bg-primary text-white">{{ command.count }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-info">
+                                            <i class="mdi mdi-information-outline"></i>
+                                            No command usage data available.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Common Errors -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">
+                                        <i class="mdi mdi-alert-circle"></i>
+                                        Common Errors
+                                    </h4>
+                                </div>
+                                <div class="card-body">
+                                    {% if common_errors %}
+                                        <div class="list-group list-group-flush">
+                                            {% for error in common_errors %}
+                                            <div class="list-group-item px-0">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <code class="text-danger">{{ error.error|truncatechars:80 }}</code>
+                                                    </div>
+                                                    <span class="badge bg-danger text-white ms-2">{{ error.count }}</span>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-success">
+                                            <i class="mdi mdi-check-circle"></i>
+                                            No recent errors found.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Last 24h Details -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">
+                                        <i class="mdi mdi-clock-outline"></i>
+                                        Recent Activity (Last 24 Hours)
+                                    </h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-4">
+                                            <div class="border-end">
+                                                <i class="mdi mdi-check-circle text-success display-3 mb-2"></i>
+                                                <h2 class="text-success">{{ last_24h.successful }}</h2>
+                                                <p class="text-muted mb-0">Successful</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="border-end">
+                                                <i class="mdi mdi-close-circle text-danger display-3 mb-2"></i>
+                                                <h2 class="text-danger">{{ last_24h.failed }}</h2>
+                                                <p class="text-muted mb-0">Failed</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <i class="mdi mdi-chart-bar text-info display-3 mb-2"></i>
+                                            <h2 class="text-info">{{ last_24h.total }}</h2>
+                                            <p class="text-muted mb-0">Total</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                {% else %}
+                    <!-- No Data State -->
+                    <div class="alert alert-info text-center py-5">
+                        <i class="mdi mdi-chart-bar" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3">No Statistics Available</h4>
+                        <p class="mb-0">No command executions have been recorded yet. Execute some commands to see statistics here.</p>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="location.reload()">
+                                <i class="mdi mdi-refresh"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

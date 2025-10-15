@@ -13,7 +13,6 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
 
     // Prevent multiple initialization
     if (Toolkit.initialized) {
-        console.log('NetBox Toolkit already initialized, skipping');
         return;
     }
 
@@ -52,53 +51,117 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
             textArea.style.position = 'fixed';
             textArea.style.left = '-999999px';
             textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
+            textArea.style.opacity = '0';
+            textArea.style.pointerEvents = 'none';
+            textArea.style.tabIndex = '-1';
+
+            if (!document.body.contains(textArea)) {
+                document.body.appendChild(textArea);
+            }
 
             try {
+                // Only preserve selection if user has an active selection
+                // This avoids expensive operations when unnecessary
+                const selection = document.getSelection();
+                const previousRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
                 textArea.focus();
                 textArea.select();
+                textArea.setSelectionRange(0, text.length);
+
                 const successful = document.execCommand('copy');
+
                 if (successful) {
                     this.showButtonSuccess(btn);
                 } else {
-                    console.error('Fallback copy command failed');
-                    alert('Failed to copy to clipboard');
+                    console.error('All clipboard copy methods failed');
+                    alert('Failed to copy to clipboard. Please copy manually.');
                 }
             } catch (err) {
-                console.error('Fallback copy failed:', err);
-                alert('Failed to copy to clipboard');
+                console.error('Fallback copy error:', err.message);
+                alert('Failed to copy to clipboard. Please copy manually.');
             } finally {
-                document.body.removeChild(textArea);
+                // Only restore selection if one existed
+                if (previousRange) {
+                    const selection = document.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(previousRange);
+                }
+
+                if (document.body.contains(textArea)) {
+                    document.body.removeChild(textArea);
+                }
+            }
+        },
+
+        /**
+         * Copy text to clipboard (modern approach)
+         */
+        copyToClipboard: function (btn, text) {
+            if (!text) {
+                console.error('No text provided to copy');
+                alert('No text available to copy');
+                return;
+            }
+
+            // Use modern Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text.trim()).then(() => {
+                    this.showButtonSuccess(btn);
+                }).catch(err => {
+                    console.warn('Clipboard API failed, using fallback:', err.message);
+                    this.fallbackCopyText(text.trim(), btn);
+                });
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                this.fallbackCopyText(text.trim(), btn);
             }
         }
     };
 
     /**
-     * Copy functionality for both parsed data and raw output
+     * Copy functionality for parsed data and raw output
      * Works with multiple element ID patterns for flexibility
+     * CSV downloads are handled by Django API endpoints
      */
     Toolkit.CopyManager = {
+        // Track initialization state at module level
+        _delegationInitialized: false,
+
         /**
-         * Initialize copy functionality for both parsed data and raw output buttons
+         * Initialize copy functionality using event delegation
+         * This prevents duplicate event listeners when content is swapped
          */
         init: function () {
-            // Initialize parsed data copy buttons
-            const copyParsedBtns = document.querySelectorAll('.copy-parsed-btn');
-            copyParsedBtns.forEach(btn => {
-                btn.addEventListener('click', this.handleCopyParsedData.bind(this));
-            });
+            // Use event delegation instead of individual button listeners
+            // This prevents duplicate listeners when HTMX swaps content
+            if (!this._delegationInitialized) {
+                document.body.addEventListener('click', this.handleDelegatedClick.bind(this));
+                this._delegationInitialized = true;
+            }
+        },
 
-            // Initialize raw output copy buttons
-            const copyOutputBtns = document.querySelectorAll('.copy-output-btn');
-            copyOutputBtns.forEach(btn => {
-                btn.addEventListener('click', this.handleCopyRawOutput.bind(this));
-            });
+        /**
+         * Handle all click events through delegation
+         */
+        handleDelegatedClick: function (event) {
+            const target = event.target.closest('button');
+            if (!target) return;
 
-            // Initialize CSV download buttons
-            const downloadCsvBtns = document.querySelectorAll('.download-csv-btn');
-            downloadCsvBtns.forEach(btn => {
-                btn.addEventListener('click', this.handleDownloadCSV.bind(this));
-            });
+            if (target.classList.contains('copy-parsed-btn')) {
+                this.handleCopyParsedData(event);
+            } else if (target.classList.contains('copy-output-btn')) {
+                this.handleCopyRawOutput(event);
+            } else if (target.classList.contains('copy-token-btn')) {
+                this.handleCopyToken(event);
+            }
+        },
+
+        /**
+         * Clean up existing event listeners (called before re-initialization)
+         */
+        cleanup: function () {
+            // Event delegation doesn't need cleanup since it's on body
         },
 
         /**
@@ -131,7 +194,7 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 navigator.clipboard.writeText(outputText.trim()).then(() => {
                     Toolkit.Utils.showButtonSuccess(btn);
                 }).catch(err => {
-                    console.error('Failed to copy using Clipboard API:', err);
+                    console.warn('Clipboard API failed, using fallback:', err.message);
                     Toolkit.Utils.fallbackCopyText(outputText.trim(), btn);
                 });
             } else {
@@ -141,318 +204,78 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
         },
 
         /**
-         * Handle copying parsed data from JSON script elements
+         * Handle copying parsed data from data attribute or script elements
          */
         handleCopyParsedData: function (event) {
             const btn = event.target.closest('.copy-parsed-btn');
             if (!btn) return;
 
-            // Try multiple possible element IDs for parsed data
-            const possibleIds = [
-                'parsed-data-json',           // device_toolkit.html
-                'commandlog-parsed-data-json' // commandlog.html
-            ];
+            let parsedDataStr = null;
 
-            let parsedDataElement = null;
-            for (const id of possibleIds) {
-                parsedDataElement = document.getElementById(id);
-                if (parsedDataElement) break;
+            // First try to get data from the button's data attribute
+            if (btn.dataset.parsedData) {
+                parsedDataStr = btn.dataset.parsedData;
+            } else {
+                // Fallback to script elements for backward compatibility
+                const possibleIds = [
+                    'parsed-data-json',           // device_toolkit.html
+                    'commandlog-parsed-data-json' // commandlog.html
+                ];
+
+                for (const id of possibleIds) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        parsedDataStr = element.textContent;
+                        break;
+                    }
+                }
             }
 
-            if (!parsedDataElement) {
-                console.error('No parsed data script element found with IDs:', possibleIds);
+            if (!parsedDataStr || parsedDataStr.trim() === '') {
+                console.error('No parsed data found to copy');
                 alert('No parsed data found to copy');
                 return;
             }
 
-            const parsedDataStr = parsedDataElement.textContent;
-            if (!parsedDataStr) {
-                console.error('No parsed data found to copy');
-                alert('No parsed data available');
-                return;
+            // Check if it's valid JSON before trying to parse
+            let formattedJson = null;
+            try {
+                const parsedData = JSON.parse(parsedDataStr);
+                formattedJson = JSON.stringify(parsedData, null, 2);
+            } catch (parseErr) {
+                // If it's not JSON, just copy the raw text
+                formattedJson = parsedDataStr;
             }
 
-            try {
-                // Parse and re-stringify for clean formatting
-                const parsedData = JSON.parse(parsedDataStr);
-                const formattedJson = JSON.stringify(parsedData, null, 2);
-
-                // Use modern Clipboard API if available
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(formattedJson).then(() => {
-                        Toolkit.Utils.showButtonSuccess(btn);
-                    }).catch(err => {
-                        console.error('Failed to copy using Clipboard API:', err);
-                        Toolkit.Utils.fallbackCopyText(formattedJson, btn);
-                    });
-                } else {
-                    // Fallback for older browsers or non-secure contexts
+            // Use modern Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(formattedJson).then(() => {
+                    Toolkit.Utils.showButtonSuccess(btn);
+                }).catch(err => {
+                    console.warn('Clipboard API failed, using fallback:', err.message);
                     Toolkit.Utils.fallbackCopyText(formattedJson, btn);
-                }
-            } catch (err) {
-                console.error('Error processing parsed data:', err);
-                alert('Failed to process parsed data for copying: ' + err.message);
+                });
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                Toolkit.Utils.fallbackCopyText(formattedJson, btn);
             }
         },
 
         /**
-         * Handle downloading parsed data as CSV
-         * Uses data URLs instead of blob URLs to avoid COOP issues in non-HTTPS environments
+         * Handle copying credential token from data attribute
          */
-        handleDownloadCSV: function (event) {
-            const btn = event.target.closest('.download-csv-btn');
+        handleCopyToken: function (event) {
+            const btn = event.target.closest('.copy-token-btn');
             if (!btn) return;
 
-            // Try multiple possible element IDs for parsed data
-            const possibleIds = [
-                'parsed-data-json',           // device_toolkit.html
-                'commandlog-parsed-data-json' // commandlog.html
-            ];
-
-            let parsedDataElement = null;
-            for (const id of possibleIds) {
-                parsedDataElement = document.getElementById(id);
-                if (parsedDataElement) break;
-            }
-
-            if (!parsedDataElement) {
-                console.error('No parsed data script element found with IDs:', possibleIds);
-                alert('No parsed data found to download');
+            const token = btn.dataset.token;
+            if (!token) {
+                console.error('No token data attribute found');
+                alert('No token available to copy');
                 return;
             }
 
-            const parsedDataStr = parsedDataElement.textContent;
-            if (!parsedDataStr) {
-                console.error('No parsed data found to download');
-                alert('No parsed data available');
-                return;
-            }
-
-            try {
-                const parsedData = JSON.parse(parsedDataStr);
-                const csvContent = this.convertToCSV(parsedData);
-
-                // Create and trigger download
-                const link = document.createElement('a');
-
-                if (link.download !== undefined) { // Feature detection
-                    // For smaller files, use data URL to avoid COOP issues in non-HTTPS environments
-                    // For larger files, fall back to blob URL which is more efficient
-                    const maxDataUrlSize = 1024 * 1024; // 1MB limit for data URLs
-
-                    if (csvContent.length < maxDataUrlSize) {
-                        // Use data URL for smaller files (avoids COOP issues)
-                        const encodedCSV = encodeURIComponent(csvContent);
-                        const dataUrl = 'data:text/csv;charset=utf-8,' + encodedCSV;
-                        link.setAttribute('href', dataUrl);
-                    } else {
-                        // Use blob URL for larger files (more efficient but may trigger COOP in non-HTTPS)
-                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                        const url = URL.createObjectURL(blob);
-                        link.setAttribute('href', url);
-
-                        // Clean up blob URL after download
-                        link.addEventListener('click', function () {
-                            setTimeout(() => URL.revokeObjectURL(url), 100);
-                        });
-                    }
-
-                    link.setAttribute('download', 'parsed_data.csv');
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Show success feedback
-                    Toolkit.Utils.showButtonSuccess(btn, '<i class="mdi mdi-check me-1"></i>Downloaded!');
-                } else {
-                    // Fallback for older browsers
-                    alert('CSV download not supported in your browser');
-                }
-            } catch (err) {
-                console.error('Error processing parsed data for CSV:', err);
-                alert('Failed to process parsed data for CSV download: ' + err.message);
-            }
-        },
-
-        /**
-         * Convert JSON data to CSV format
-         */
-        convertToCSV: function (data) {
-            if (!data) return '';
-
-            // Handle different types of data
-            if (Array.isArray(data) && data.length > 0) {
-                if (typeof data[0] === 'object' && data[0] !== null) {
-                    // Array of objects - structured data
-                    const headers = Object.keys(data[0]);
-                    const csvRows = [];
-
-                    // Add header row
-                    csvRows.push(headers.map(header => this.escapeCSVField(header)).join(','));
-
-                    // Add data rows
-                    data.forEach(row => {
-                        const values = headers.map(header => {
-                            const value = row[header];
-                            return this.escapeCSVField(value);
-                        });
-                        csvRows.push(values.join(','));
-                    });
-
-                    return csvRows.join('\n');
-                } else {
-                    // Array of simple values
-                    return 'Value\n' + data.map(item => this.escapeCSVField(item)).join('\n');
-                }
-            } else if (typeof data === 'object' && data !== null) {
-                // Single object - convert to key-value pairs
-                const csvRows = ['Key,Value'];
-                Object.entries(data).forEach(([key, value]) => {
-                    csvRows.push(`${this.escapeCSVField(key)},${this.escapeCSVField(value)}`);
-                });
-                return csvRows.join('\n');
-            } else {
-                // Simple value
-                return 'Data\n' + this.escapeCSVField(data);
-            }
-        },
-
-        /**
-         * Escape CSV field values
-         */
-        escapeCSVField: function (field) {
-            if (field === null || field === undefined) return '';
-
-            const stringField = String(field);
-
-            // If field contains comma, quote, or newline, wrap in quotes and escape quotes
-            if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n') || stringField.includes('\r')) {
-                return '"' + stringField.replace(/"/g, '""') + '"';
-            }
-
-            return stringField;
-        }
-    };
-
-    /**
-     * Modal management for device toolkit
-     */
-    Toolkit.ModalManager = {
-        instance: null,
-
-        /**
-         * Initialize modal functionality
-         */
-        init: function () {
-            const credentialModal = document.getElementById('credentialModal');
-            if (!credentialModal) return;
-
-            // Try Bootstrap modal first, fallback to manual control
-            try {
-                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    this.instance = new bootstrap.Modal(credentialModal);
-                    console.log('Bootstrap modal initialized successfully');
-                } else {
-                    console.log('Bootstrap not available, using manual modal control');
-                    this.instance = this.createManualModal(credentialModal);
-                }
-            } catch (error) {
-                console.error('Bootstrap modal initialization failed:', error);
-                this.instance = this.createManualModal(credentialModal);
-            }
-
-            this.setupModalEvents(credentialModal);
-        },
-
-        /**
-         * Create manual modal controls for fallback
-         */
-        createManualModal: function (modalElement) {
-            return {
-                show: function () {
-                    modalElement.style.display = 'block';
-                    modalElement.classList.add('show');
-                    document.body.classList.add('modal-open');
-
-                    // Create backdrop
-                    const backdrop = document.createElement('div');
-                    backdrop.className = 'modal-backdrop fade show';
-                    backdrop.id = 'credentialModalBackdrop';
-                    document.body.appendChild(backdrop);
-
-                    // Trigger shown event
-                    const shownEvent = new Event('shown.bs.modal');
-                    modalElement.dispatchEvent(shownEvent);
-                },
-                hide: function () {
-                    modalElement.style.display = 'none';
-                    modalElement.classList.remove('show');
-                    document.body.classList.remove('modal-open');
-
-                    // Remove backdrop
-                    const backdrop = document.getElementById('credentialModalBackdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
-
-                    // Trigger hidden event
-                    const hiddenEvent = new Event('hidden.bs.modal');
-                    modalElement.dispatchEvent(hiddenEvent);
-                }
-            };
-        },
-
-        /**
-         * Setup modal event handlers
-         */
-        setupModalEvents: function (credentialModal) {
-            // Handle close button clicks
-            const modalCloseButton = credentialModal.querySelector('.btn-close');
-            const modalCancelButton = credentialModal.querySelector('.btn-secondary');
-
-            if (modalCloseButton) {
-                modalCloseButton.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    if (this.instance) {
-                        this.instance.hide();
-                    }
-                });
-            }
-
-            if (modalCancelButton) {
-                modalCancelButton.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    if (this.instance) {
-                        this.instance.hide();
-                    }
-                });
-            }
-
-            // Handle backdrop clicks for manual modal
-            credentialModal.addEventListener('click', (event) => {
-                if (event.target === credentialModal && this.instance) {
-                    this.instance.hide();
-                }
-            });
-        },
-
-        /**
-         * Show the modal
-         */
-        show: function () {
-            if (this.instance) {
-                this.instance.show();
-            }
-        },
-
-        /**
-         * Hide the modal
-         */
-        hide: function () {
-            if (this.instance) {
-                this.instance.hide();
-            }
+            Toolkit.Utils.copyToClipboard(btn, token);
         }
     };
 
@@ -460,23 +283,12 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
      * Command execution functionality for device toolkit
      */
     Toolkit.CommandManager = {
-        currentCommandData: null,
-
         /**
-         * Initialize command execution functionality
+         * Initialize command functionality
          */
         init: function () {
-            // Initialize modal first
-            Toolkit.ModalManager.init();
-
             // Setup collapse toggle for connection info
             this.setupConnectionInfoToggle();
-
-            // Setup command execution
-            this.setupCommandExecution();
-
-            // Setup modal form handlers
-            this.setupModalForm();
         },
 
         /**
@@ -495,277 +307,199 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                     connectionInfoToggleButton.classList.remove('collapsed');
                 });
             }
+        }
+    };
+
+    /**
+     * Variable Formset Manager
+     * Handles deletion of command variables and total form count management
+     * Form addition is now handled by HTMX
+     */
+    Toolkit.VariableFormsetManager = {
+        /**
+         * Initialize variable formset functionality
+         */
+        init: function () {
+            const variableFormsContainer = document.getElementById('variable-forms');
+            const totalFormsInput = document.querySelector('#id_variables-TOTAL_FORMS');
+
+            if (!variableFormsContainer || !totalFormsInput) {
+                return; // Not on command edit page
+            }
+
+            // Handle delete buttons (using event delegation for dynamically added forms)
+            variableFormsContainer.addEventListener('click', function (e) {
+                if (e.target.closest('.delete-variable')) {
+                    const formToDelete = e.target.closest('.variable-form');
+                    if (formToDelete) {
+                        formToDelete.remove();
+                        this.updateFormIndices();
+                    }
+                }
+            }.bind(this));
         },
 
         /**
-         * Setup command execution event handlers
+         * Update form indices and total count after deletion
          */
-        setupCommandExecution: function () {
-            const commandContainer = document.querySelector('.card-commands');
-            if (!commandContainer) {
-                console.error('Command container not found');
+        updateFormIndices: function () {
+            const variableFormsContainer = document.getElementById('variable-forms');
+            const totalFormsInput = document.querySelector('#id_variables-TOTAL_FORMS');
+
+            if (!variableFormsContainer || !totalFormsInput) {
                 return;
             }
 
-            // Use event delegation to avoid duplicate listeners
-            commandContainer.removeEventListener('click', this.handleRunButtonClick.bind(this));
-            commandContainer.addEventListener('click', this.handleRunButtonClick.bind(this));
+            const forms = variableFormsContainer.querySelectorAll('.variable-form');
+
+            // Update TOTAL_FORMS count
+            totalFormsInput.value = forms.length;
+
+            // Update form indices in names and IDs
+            forms.forEach((form, index) => {
+                form.setAttribute('data-form-index', index);
+
+                // Update all input names and IDs
+                const inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.name && input.name.includes('variables-')) {
+                        input.name = input.name.replace(/variables-\d+-/, `variables-${index}-`);
+                    }
+                    if (input.id && input.id.includes('variables-')) {
+                        input.id = input.id.replace(/variables-\d+-/, `variables-${index}-`);
+                    }
+                });
+
+                // Update label for attributes
+                const labels = form.querySelectorAll('label');
+                labels.forEach(label => {
+                    if (label.getAttribute('for') && label.getAttribute('for').includes('variables-')) {
+                        label.setAttribute('for',
+                            label.getAttribute('for').replace(/variables-\d+-/, `variables-${index}-`)
+                        );
+                    }
+                });
+            });
+        }
+    };
+
+    /**
+     * HTMX Event Manager
+     * Handles HTMX-specific events for modal management and content swapping
+     */
+    Toolkit.HTMXManager = {
+        /**
+         * Initialize HTMX event handlers
+         */
+        init: function () {
+            // Only initialize if HTMX is available
+            if (typeof htmx === 'undefined') {
+                return;
+            }
+
+            // HTMX after swap event handler
+            document.addEventListener('htmx:afterSwap', this.handleAfterSwap.bind(this));
+
+            // HTMX after request event handler
+            document.addEventListener('htmx:afterRequest', this.handleAfterRequest.bind(this));
         },
 
         /**
-         * Handle run button clicks
+         * Handle HTMX afterSwap events
          */
-        handleRunButtonClick: function (event) {
-            // Only handle clicks on run buttons
-            const runButton = event.target.closest('.command-run-btn');
-            if (!runButton) return;
-
-            // Prevent any other event handlers from running
-            event.preventDefault();
-            event.stopImmediatePropagation();
-
-            console.log('Run button clicked:', runButton);
-
-            // Prevent double-clicks by checking if already processing
-            if (runButton.dataset.processing === 'true') {
-                console.log('Command already processing, ignoring click');
-                return;
+        handleAfterSwap: function (evt) {
+            if (evt.detail.target.id === 'htmx-modal-container') {
+                // Modal was loaded, add backdrop click handler
+                this.setupModalHandlers(evt.detail.target);
+                // Reinitialize tooltips in the modal content
+                window.NetBoxToolkit.TooltipManager.init();
+            } else if (evt.detail.target.tagName === 'BODY') {
+                // Body content was swapped (after command execution)
+                // With event delegation, we don't need to re-initialize CopyManager
+                // But we do need to reinitialize tooltips
+                window.NetBoxToolkit.TooltipManager.init();
+            } else {
+                // Any other content swap (partial updates)
+                // Reinitialize tooltips for the new content
+                window.NetBoxToolkit.TooltipManager.init();
             }
+        },
 
-            // Get the command item and set active state
-            const commandItem = runButton.closest('.command-item');
-            const allCommandItems = document.querySelectorAll('.command-item');
-            allCommandItems.forEach(ci => ci.classList.remove('active'));
-            commandItem.classList.add('active');
-
-            // Store command data for modal
-            const commandId = runButton.getAttribute('data-command-id');
-            const commandName = runButton.getAttribute('data-command-name');
-
-            this.currentCommandData = {
-                id: commandId,
-                name: commandName,
-                element: commandItem,
-                button: runButton,
-                originalIconClass: runButton.querySelector('i').className
-            };
-
-            // Update modal content
-            const commandToExecuteElement = document.getElementById('commandToExecute');
-            if (commandToExecuteElement) {
-                commandToExecuteElement.textContent = commandName;
+        /**
+         * Handle HTMX afterRequest events
+         */
+        handleAfterRequest: function (evt) {
+            if (evt.detail.xhr.status === 200 && evt.detail.target.tagName === 'FORM') {
+                // Form submitted successfully, modal should be closed by body swap
             }
+        },
 
-            // Clear previous credentials and show modal
-            const modalUsernameField = document.getElementById('modalUsername');
-            const modalPasswordField = document.getElementById('modalPassword');
-            if (modalUsernameField) modalUsernameField.value = '';
-            if (modalPasswordField) modalPasswordField.value = '';
+        /**
+         * Setup modal backdrop and escape key handlers
+         */
+        setupModalHandlers: function (container) {
+            const modal = container.querySelector('.modal');
+            const backdrop = container.querySelector('.modal-backdrop');
+            const closeButtons = container.querySelectorAll('[data-modal-close]');
 
-            // Show the modal
-            Toolkit.ModalManager.show();
+            if (modal && backdrop) {
+                // Backdrop click handler
+                backdrop.addEventListener('click', function () {
+                    Toolkit.HTMXManager.closeModal();
+                });
 
-            // Focus on username field when modal is shown
-            const credentialModal = document.getElementById('credentialModal');
-            if (credentialModal && modalUsernameField) {
-                credentialModal.addEventListener('shown.bs.modal', function () {
-                    modalUsernameField.focus();
+                // Escape key handler (one-time use)
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') {
+                        Toolkit.HTMXManager.closeModal();
+                    }
                 }, { once: true });
             }
-        },
 
-        /**
-         * Setup modal form handlers
-         */
-        setupModalForm: function () {
-            const executeCommandBtn = document.getElementById('executeCommandBtn');
-            const modalUsernameField = document.getElementById('modalUsername');
-            const modalPasswordField = document.getElementById('modalPassword');
-            const credentialModal = document.getElementById('credentialModal');
-
-            if (!executeCommandBtn) return;
-
-            // Handle execute button click in modal
-            executeCommandBtn.addEventListener('click', this.executeCommand.bind(this));
-
-            // Handle Enter key in modal form
-            if (modalPasswordField) {
-                modalPasswordField.addEventListener('keypress', (event) => {
-                    if (event.key === 'Enter') {
-                        event.preventDefault();
-                        executeCommandBtn.click();
-                    }
+            // All modal close button handlers (handles both btn-close and btn-secondary)
+            closeButtons.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    Toolkit.HTMXManager.closeModal();
                 });
-            }
-
-            if (modalUsernameField) {
-                modalUsernameField.addEventListener('keypress', (event) => {
-                    if (event.key === 'Enter') {
-                        event.preventDefault();
-                        if (modalPasswordField) {
-                            modalPasswordField.focus();
-                        }
-                    }
-                });
-            }
-
-            // Clean up when modal is hidden
-            if (credentialModal) {
-                credentialModal.addEventListener('hidden.bs.modal', () => {
-                    if (this.currentCommandData && this.currentCommandData.button.dataset.processing !== 'true') {
-                        this.currentCommandData.element.classList.remove('active');
-                    }
-                    this.currentCommandData = null;
-                    if (modalUsernameField) modalUsernameField.value = '';
-                    if (modalPasswordField) modalPasswordField.value = '';
-                });
-            }
-        },
-
-        /**
-         * Execute the selected command
-         */
-        executeCommand: function () {
-            const modalUsernameField = document.getElementById('modalUsername');
-            const modalPasswordField = document.getElementById('modalPassword');
-
-            // Validate credentials
-            if (!modalUsernameField?.value || !modalPasswordField?.value) {
-                alert('Please enter both username and password');
-                return;
-            }
-
-            if (!this.currentCommandData) {
-                alert('No command selected');
-                return;
-            }
-
-            console.log('Executing command:', this.currentCommandData);
-
-            // Set processing flag and update UI
-            this.setCommandProcessing(true);
-
-            // Update output area
-            this.showCommandRunning();
-
-            // Prepare and submit form
-            this.submitCommandForm();
-        },
-
-        /**
-         * Set command processing state
-         */
-        setCommandProcessing: function (processing) {
-            if (!this.currentCommandData) return;
-
-            const button = this.currentCommandData.button;
-            const buttonIcon = button.querySelector('i');
-
-            button.dataset.processing = processing.toString();
-            button.disabled = processing;
-
-            if (processing) {
-                buttonIcon.className = 'mdi mdi-loading mdi-spin';
-            } else {
-                buttonIcon.className = this.currentCommandData.originalIconClass;
-            }
-        },
-
-        /**
-         * Show command running state in output area
-         */
-        showCommandRunning: function () {
-            const outputContainer = document.getElementById('commandOutputContainer');
-            const commandHeader = document.querySelector('.output-card .card-header span.text-muted');
-
-            if (outputContainer) {
-                outputContainer.innerHTML = `
-                    <div class="alert alert-primary d-flex align-items-center mb-0">
-                        <div class="spinner-border spinner-border-sm me-3" role="status" aria-hidden="true" style="width: 1rem; height: 1rem; border-width: 0.125em;"></div>
-                        <div>
-                            <strong>Running command:</strong> ${this.currentCommandData.name}<br>
-                            <small class="text-muted">Please wait while the command executes...</small>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Update command header to show executing command
-            if (commandHeader) {
-                commandHeader.textContent = `Executing: ${this.currentCommandData.name}`;
-            }
-        },
-
-        /**
-         * Submit the command execution form
-         */
-        submitCommandForm: function () {
-            const commandForm = document.getElementById('commandExecutionForm');
-            const selectedCommandIdField = document.getElementById('selectedCommandId');
-            const formUsernameField = document.getElementById('formUsername');
-            const formPasswordField = document.getElementById('formPassword');
-            const modalUsernameField = document.getElementById('modalUsername');
-            const modalPasswordField = document.getElementById('modalPassword');
-
-            if (!commandForm) {
-                console.error('Command form not found');
-                this.handleSubmissionError('Form not found');
-                return;
-            }
-
-            // Prepare form data
-            if (selectedCommandIdField) selectedCommandIdField.value = this.currentCommandData.id;
-            if (formUsernameField) formUsernameField.value = modalUsernameField.value;
-            if (formPasswordField) formPasswordField.value = modalPasswordField.value;
-
-            console.log('Form data:', {
-                commandId: selectedCommandIdField?.value,
-                username: formUsernameField?.value,
-                hasPassword: !!formPasswordField?.value
             });
-
-            // Close modal
-            Toolkit.ModalManager.hide();
-
-            try {
-                commandForm.submit();
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                this.handleSubmissionError('Error submitting form. Please check the console for details.');
-            }
         },
 
         /**
-         * Handle form submission errors
+         * Close the HTMX modal
          */
-        handleSubmissionError: function (message) {
-            alert(message);
-
-            // Reset processing state
-            this.setCommandProcessing(false);
-
-            // Show error in output container
-            const outputContainer = document.getElementById('commandOutputContainer');
-            const commandHeader = document.querySelector('.output-card .card-header span.text-muted');
-
-            if (outputContainer) {
-                outputContainer.innerHTML = `
-                    <div class="alert alert-danger d-flex align-items-start mb-3">
-                        <i class="mdi mdi-alert-circle me-2 mt-1"></i>
-                        <div>
-                            <strong>Form submission error</strong>
-                            <br><small class="text-muted">${message}</small>
-                        </div>
-                    </div>
-                    <div class="alert alert-info" id="defaultMessage">
-                        Select a command to execute from the list on the left.
-                    </div>
-                `;
+        closeModal: function () {
+            const modalContainer = document.getElementById('htmx-modal-container');
+            if (modalContainer) {
+                modalContainer.innerHTML = '';
             }
+        }
+    };
 
-            // Clear command header
-            if (commandHeader) {
-                commandHeader.textContent = '';
+    /**
+     * Bootstrap Tooltip Manager
+     */
+    Toolkit.TooltipManager = {
+        /**
+         * Initialize Bootstrap tooltips
+         */
+        init: function () {
+            // Initialize tooltips for elements with data-bs-toggle="tooltip"
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                // Dispose existing tooltips first to avoid duplicates
+                const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                existingTooltips.forEach(function (element) {
+                    const existingTooltip = bootstrap.Tooltip.getInstance(element);
+                    if (existingTooltip) {
+                        existingTooltip.dispose();
+                    }
+                });
+
+                // Initialize new tooltips
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
             }
         }
     };
@@ -774,10 +508,17 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
      * Main initialization function
      */
     Toolkit.init = function () {
-        console.log('Initializing NetBox Toolkit JavaScript');
-
         // Initialize copy functionality (available on all pages)
         this.CopyManager.init();
+
+        // Initialize Bootstrap tooltips (available on all pages)
+        this.TooltipManager.init();
+
+        // Initialize HTMX functionality (device toolkit page)
+        this.HTMXManager.init();
+
+        // Initialize variable formset functionality (command edit page)
+        this.VariableFormsetManager.init();
 
         // Initialize command functionality only if elements exist (device toolkit page)
         const commandForm = document.getElementById('commandExecutionForm');
@@ -786,7 +527,6 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
         }
 
         this.initialized = true;
-        console.log('NetBox Toolkit JavaScript initialized successfully');
     };
 
     // Auto-initialize when DOM is ready

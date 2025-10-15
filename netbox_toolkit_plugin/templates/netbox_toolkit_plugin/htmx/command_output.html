@@ -1,0 +1,172 @@
+{% comment %}
+HTMX partial template for command output results
+{% endcomment %}
+
+{% if command_output or has_syntax_error %}
+    {% if execution_success and not has_syntax_error %}
+        <!-- Successful command output -->
+        <div class="alert alert-success d-flex align-items-start mb-3" role="alert">
+            <i class="mdi mdi-check-circle me-2 mt-1 text-success"></i>
+            <div>
+                <strong class="text-success">Command executed successfully</strong>
+                {% if execution_time %}
+                    <br><small class="text-muted">Execution time: {{ execution_time|floatformat:3 }}s</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabbed output interface -->
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs nav-fill" id="outputTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="raw-output-tab" data-bs-toggle="tab"
+                                 data-bs-target="#raw-output" type="button" role="tab"
+                                 aria-controls="raw-output" aria-selected="true">
+                            Raw Output
+                        </button>
+                    </li>
+                    {% if parsed_data %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="parsed-output-tab" data-bs-toggle="tab"
+                                 data-bs-target="#parsed-output" type="button" role="tab"
+                                 aria-controls="parsed-output" aria-selected="false">
+                            Parsed Data
+                        </button>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="card-body p-0">
+                <div class="tab-content" id="outputTabsContent">
+                    <div class="tab-pane fade show active" id="raw-output" role="tabpanel" aria-labelledby="raw-output-tab">
+                        <div class="p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Raw command output</small>
+                                <button class="btn btn-sm btn-outline-secondary copy-output-btn">
+                                    <i class="mdi mdi-content-copy me-1"></i>Copy
+                                </button>
+                            </div>
+                            <pre class="command-output bg-surface p-3 rounded font-monospace" id="rawOutputContent">{{ command_output }}</pre>
+                        </div>
+                    </div>
+
+                    {% if parsed_data %}
+                    <div class="tab-pane fade" id="parsed-output" role="tabpanel" aria-labelledby="parsed-output-tab">
+                        <div class="p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Structured data
+                                    {% if parsing_method %}(via {{ parsing_method }}){% endif %}
+                                </small>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-secondary copy-parsed-btn"
+                                            data-parsed-data="{{ parsed_data|safe }}">
+                                        <i class="mdi mdi-content-copy me-1"></i>Copy JSON
+                                    </button>
+                                {% if command_log_id %}
+                                    <a href="{% url 'plugins:netbox_toolkit_plugin:commandlog_export_csv' pk=command_log_id %}"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="Download parsed data as CSV">
+                                        <i class="mdi mdi-download me-1"></i>Download CSV
+                                    </a>
+                                {% else %}
+                                    <span class="btn btn-sm btn-outline-secondary disabled opacity-50"
+                                           title="CSV download requires command execution logging to be enabled">
+                                        <i class="mdi mdi-download-off me-1"></i>CSV Unavailable
+                                    </span>
+                                {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Display as formatted table if it's an array of objects -->
+                            {% if parsed_data|length > 0 and parsed_data.0.keys %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                {% for header in parsed_data.0.keys %}
+                                                    <th scope="col">{{ header }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in parsed_data %}
+                                                <tr>
+                                                    {% for value in row.values %}
+                                                        <td class="font-monospace text-xs">{{ value }}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <!-- Display as JSON if it's not a table format -->
+                                <pre class="command-output font-monospace">{{ parsed_data|safe }}</pre>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Error output (including syntax errors) -->
+        <div class="alert alert-danger d-flex align-items-start mb-3" role="alert">
+            <i class="mdi mdi-alert-circle me-2 mt-1 text-danger"></i>
+            <div>
+                <strong class="text-danger">
+                    {% if has_syntax_error %}
+                        {% if syntax_error_type == "empty_result" %}
+                            Command returned no results
+                        {% else %}
+                            Command syntax error detected
+                            {% if syntax_error_type %}
+                                ({{ syntax_error_type|title }})
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        Command execution failed
+                    {% endif %}
+                </strong>
+                {% if has_syntax_error %}
+                    {% if syntax_error_type == "empty_result" %}
+                        <br><small class="text-muted">The command executed successfully but returned no output</small>
+                    {% else %}
+                        <br><small class="text-muted">The command contains invalid syntax</small>
+                    {% endif %}
+                {% else %}
+                    <br><small class="text-muted">Check the output below for details</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <small class="text-muted">
+                    {% if has_syntax_error %}
+                        {% if syntax_error_type == "empty_result" %}
+                            Empty Result Output
+                        {% else %}
+                            Syntax Error Output
+                        {% endif %}
+                    {% else %}
+                        Error Output
+                    {% endif %}
+                </small>
+            </div>
+            <div class="card-body p-0">
+                <div class="p-3">
+                    <pre class="command-output bg-surface p-3 rounded font-monospace" id="errorOutputContent">{{ command_output|default:"No output received from device" }}</pre>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% else %}
+    <!-- No output yet -->
+    <div class="text-center text-muted py-5">
+        <i class="mdi mdi-console-line display-4"></i>
+        <p class="mt-3">No command output yet</p>
+        <small>Execute a command to see results here</small>
+    </div>
+{% endif %}

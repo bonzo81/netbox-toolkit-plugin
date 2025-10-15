@@ -74,9 +74,10 @@ COMMAND_EXECUTE_SCHEMA = extend_schema(
     },
 )
 
+
 COMMAND_BULK_EXECUTE_SCHEMA = extend_schema(
     summary="Bulk execute commands",
-    description="Execute multiple commands on multiple devices in a single API call.",
+    description="Execute multiple commands on multiple devices using secure credential tokens.",
     tags=["Commands"],
     request={
         "type": "object",
@@ -88,10 +89,25 @@ COMMAND_BULK_EXECUTE_SCHEMA = extend_schema(
                     "properties": {
                         "command_id": {"type": "integer"},
                         "device_id": {"type": "integer"},
-                        "username": {"type": "string"},
-                        "password": {"type": "string", "format": "password"},
+                        "credential_token": {
+                            "type": "string",
+                            "maxLength": 128,
+                            "description": "Credential token for stored device credentials",
+                        },
+                        "variables": {
+                            "type": "object",
+                            "additionalProperties": {"type": "string"},
+                            "description": "Variable values for command substitution",
+                        },
+                        "timeout": {
+                            "type": "integer",
+                            "minimum": 5,
+                            "maximum": 300,
+                            "default": 30,
+                            "description": "Command execution timeout in seconds",
+                        },
                     },
-                    "required": ["command_id", "device_id", "username", "password"],
+                    "required": ["command_id", "device_id", "credential_token"],
                 },
             }
         },

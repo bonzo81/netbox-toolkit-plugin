@@ -1,0 +1,95 @@
+{% comment %}
+HTMX template for token reveal modal
+Displays the full credential token with security warnings and copy functionality
+{% endcomment %}
+
+<div class="modal fade credential-modal show" id="tokenModal" tabindex="-1" style="display: block;" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Credential Token - {{ credential_set.name }}</h5>
+                <button type="button" class="btn-close" data-modal-close aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="mdi mdi-alert me-2"></i>
+                    <strong>Security Warning:</strong> This token provides access to your stored credentials.
+                    Keep it secure and never share it with others.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Credential Set: {{ credential_set.name }}</label>
+                </div>
+
+                <div class="mb-3">
+                    <label for="fullToken" class="form-label">Full Credential Token:</label>
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control font-monospace"
+                               id="fullToken"
+                               value="{% if credential_set.raw_token %}{{ credential_set.raw_token }}{% else %}{{ credential_set.access_token }}{% endif %}"
+                               readonly>
+                        <button class="btn btn-outline-secondary copy-token-btn"
+                                type="button"
+                                data-token="{{ credential_set.raw_token }}">
+                            <i class="mdi mdi-content-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card card-sm">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="bg-blue text-white avatar">
+                                            <i class="mdi mdi-calendar"></i>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="font-weight-medium">Created</div>
+                                        <div class="text-muted">{{ credential_set.created_at|date:"M d, Y H:i" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card card-sm">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="bg-green text-white avatar">
+                                            <i class="mdi mdi-clock"></i>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="font-weight-medium">Last Used</div>
+                                        <div class="text-muted">
+                                            {% if credential_set.last_used %}
+                                                {{ credential_set.last_used|date:"M d, Y H:i" }}
+                                            {% else %}
+                                                Never
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'plugins:netbox_toolkit_plugin:devicecredentialset_regenerate_token' pk=credential_set.pk %}"
+                   class="btn btn-warning me-auto">
+                    <i class="mdi mdi-refresh me-1"></i> Regenerate Token
+                </a>
+                <button type="button" class="btn btn-secondary" data-modal-close>Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade show"></div>

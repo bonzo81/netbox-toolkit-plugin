@@ -112,26 +112,24 @@ class NetmikoConnector(BaseDeviceConnector):
 
     @classmethod
     def normalize_platform_name(cls, platform_name: str) -> str:
-        """Normalize platform name for consistent mapping."""
+        """Normalize platform name for consistent mapping.
+
+        This method now delegates to the centralized normalization in ToolkitSettings
+        to ensure consistency across all components.
+        """
+        from ..settings import ToolkitSettings
+
         if not platform_name:
             return "autodetect"
 
-        normalized = platform_name.lower().strip()
+        # Use centralized platform normalization
+        normalized = ToolkitSettings.normalize_platform(platform_name)
 
-        # Handle common variations
-        platform_mappings = {
-            "ios": "cisco_ios",
-            "nxos": "cisco_nxos",
-            "nexus": "cisco_nxos",
-            "iosxr": "cisco_iosxr",
-            "ios-xr": "cisco_iosxr",
-            "ios-xe": "cisco_xe",
-            "eos": "arista_eos",
-            "junos": "juniper_junos",
-            "asa": "cisco_asa",
-        }
+        # Netmiko-specific fallback for unknown platforms
+        if normalized not in cls.DEVICE_TYPE_MAP:
+            return "autodetect"
 
-        return platform_mappings.get(normalized, normalized)
+        return normalized
 
     def _get_device_type(self) -> str:
         """Get the appropriate Netmiko device_type for the platform."""
@@ -273,9 +271,7 @@ class NetmikoConnector(BaseDeviceConnector):
                 return
 
             except NetmikoAuthenticationException as e:
-                logger.error(
-                    f"Authentication failed for {self.config.hostname}: {str(e)}"
-                )
+                logger.error(f"Authentication failed for {self.config.hostname}")
                 raise DeviceConnectionError(f"Authentication failed: {str(e)}") from e
 
             except NetmikoTimeoutException as e:
@@ -289,7 +285,7 @@ class NetmikoConnector(BaseDeviceConnector):
                     ) from e
 
             except NetmikoBaseException as e:
-                logger.warning(f"Netmiko error for {self.config.hostname}: {str(e)}")
+                logger.warning(f"Netmiko connection error for {self.config.hostname}")
 
                 if attempt >= max_retries:
                     raise DeviceConnectionError(
@@ -297,7 +293,7 @@ class NetmikoConnector(BaseDeviceConnector):
                     ) from e
 
             except Exception as e:
-                logger.warning(f"Unexpected error for {self.config.hostname}: {str(e)}")
+                logger.warning(f"Connection error for {self.config.hostname}")
 
                 if attempt >= max_retries:
                     raise DeviceConnectionError(f"Connection failed: {str(e)}") from e
@@ -332,6 +328,12 @@ class NetmikoConnector(BaseDeviceConnector):
         logger.debug(
             f"Executing {command_type} command on {self.config.hostname}: {command}"
         )
+
+        # Log the exact command being sent to the device for troubleshooting
+        logger.info(
+            f"DEVICE_COMMAND: Sending {command_type} command to {self.config.hostname}: {command!r}"
+        )
+
         start_time = time.time()
 
         try:
@@ -382,6 +384,20 @@ class NetmikoConnector(BaseDeviceConnector):
                 enhanced_output += parsed_error.guidance
 
                 result.output = enhanced_output
+            else:
+                # Check for empty output that might indicate a user error (e.g., invalid access list name)
+                if not output or not output.strip():
+                    # For certain command types, empty output might indicate invalid parameters
+                    if command.lower().startswith(("show access-list", "show acl")):
+                        # Set a flag for empty result (not a syntax error)
+                        result.has_syntax_error = True
+                        result.syntax_error_type = "empty_result"
+                        result.syntax_error_vendor = self.config.platform or "generic"
+                        result.syntax_error_guidance = (
+                            "The command executed successfully but returned no output."
+                        )
+                        # Enhance the output with user-friendly message
+                        result.output = f"No output returned for command: {command}\n\nThis typically means:\n• The access list name is incorrect or doesn't exist\n• The access list exists but is empty\n• Check the access list name spelling\n• Verify the access list exists on this device"
 
             # Log final result summary
             if parsed_data:
@@ -479,9 +495,6 @@ class NetmikoConnector(BaseDeviceConnector):
         except Exception as e:
             logger.error(f"Config command failed: {str(e)}")
             raise CommandExecutionError(f"Config command failed: {str(e)}") from e
-
-    # Note: The _attempt_parsing method has been removed as parsing is now handled
-    # directly in _execute_show_command to avoid re-executing commands on the device
 
     def is_connected(self) -> bool:
         """Check if device is connected."""

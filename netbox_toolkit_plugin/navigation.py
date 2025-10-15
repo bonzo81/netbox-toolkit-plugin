@@ -27,6 +27,32 @@ menu = PluginMenu(
                     link_text="Command Logs",
                     permissions=["netbox_toolkit_plugin.view_commandlog"],
                 ),
+                PluginMenuItem(
+                    link="plugins:netbox_toolkit_plugin:toolkit_stats",
+                    link_text="Statistics",
+                    permissions=["netbox_toolkit_plugin.view_commandlog"],
+                ),
+            ),
+        ),
+        (
+            "Credentials",
+            (
+                PluginMenuItem(
+                    link="plugins:netbox_toolkit_plugin:devicecredentialset_list",
+                    link_text="Device Credentials",
+                    permissions=["netbox_toolkit_plugin.view_devicecredentialset"],
+                    buttons=(
+                        PluginMenuButton(
+                            "plugins:netbox_toolkit_plugin:devicecredentialset_add",
+                            "Add",
+                            "mdi mdi-plus-thick",
+                            ButtonColorChoices.GRAY,
+                            permissions=[
+                                "netbox_toolkit_plugin.add_devicecredentialset"
+                            ],
+                        ),
+                    ),
+                ),
             ),
         ),
     ),
