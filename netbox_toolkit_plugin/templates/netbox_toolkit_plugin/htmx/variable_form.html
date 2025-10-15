@@ -54,8 +54,9 @@
         if (newForm) {
             const formIndex = '{{ form_index }}';
 
-            // Validate that formIndex is a number before using it
-            // This prevents potential injection if the value is manipulated
+            // Validate that formIndex is a number for data integrity
+            // Note: Django's template auto-escaping already prevents XSS
+            // This check ensures the index is valid before DOM manipulation
             if (/^\d+$/.test(formIndex)) {
                 // Update all elements that contain __prefix__
                 const elementsToUpdate = newForm.querySelectorAll('*');
@@ -75,7 +76,7 @@
                     // Only attributes are replaced above for security
                 });
             } else {
-                // If formIndex is not a valid number, skip replacement for safety
+                // If formIndex is not a valid number, skip replacement for data integrity
                 console.warn('Invalid formIndex for variable formset:', formIndex);
             }
         }
