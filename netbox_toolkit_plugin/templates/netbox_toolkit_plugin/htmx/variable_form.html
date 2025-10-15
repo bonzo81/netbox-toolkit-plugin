@@ -72,8 +72,9 @@
                         }
                     });
 
-                    // Do NOT replace __prefix__ in innerHTML to avoid XSS vulnerabilities
-                    // Only attributes are replaced above for security
+                    // Do NOT replace __prefix__ in innerHTML
+                    // Django formset management handles content rendering
+                    // Only form element attributes (name, id, for) need manual updating
                 });
             } else {
                 // If formIndex is not a valid number, skip replacement for data integrity
