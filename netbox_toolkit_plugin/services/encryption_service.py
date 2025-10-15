@@ -3,7 +3,8 @@ Enhanced encryption service for secure device credential storage.
 
 This service provides secure encryption and decryption of device credentials
 using industry-standard cryptography with Argon2id for key derivation and
-token hashing. It includes pepper-based security enhancements.
+token hashing, and HKDF for per-credential key derivation. It includes
+pepper-based security enhancements.
 """
 
 import base64
@@ -13,6 +14,8 @@ import secrets
 from django.conf import settings
 
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 try:
     import argon2
@@ -293,20 +296,30 @@ class CredentialEncryptionService:
         """
         Derive a unique encryption key for a specific credential set.
 
+        Uses HKDF (HMAC-based Key Derivation Function) with SHA256 for
+        cryptographically secure key derivation. This is superior to
+        simple hashing as it provides proper key stretching and domain
+        separation.
+
         Args:
             key_id: Unique identifier for this credential set
 
         Returns:
             32-byte key suitable for Fernet encryption
         """
-        # Combine master key with key ID to create unique key
-        key_material = self._master_key + key_id.encode("utf-8")
+        # Use HKDF for proper cryptographic key derivation
+        # This provides defense-in-depth over simple SHA256 hashing
+        hkdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,  # 32 bytes for Fernet
+            salt=None,  # Master key already salted via Argon2id
+            info=key_id.encode("utf-8"),  # Domain separation per credential
+        )
 
-        # Hash to get consistent 32-byte key
-        key_hash = hashlib.sha256(key_material).digest()
+        derived_key = hkdf.derive(self._master_key)
 
         # Encode for Fernet (base64url)
-        return base64.urlsafe_b64encode(key_hash)
+        return base64.urlsafe_b64encode(derived_key)
 
     def validate_token_format(self, token: str) -> bool:
         """
