@@ -125,6 +125,9 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
      * CSV downloads are handled by Django API endpoints
      */
     Toolkit.CopyManager = {
+        // Track initialization state at module level
+        _delegationInitialized: false,
+
         /**
          * Initialize copy functionality using event delegation
          * This prevents duplicate event listeners when content is swapped
@@ -132,9 +135,9 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
         init: function () {
             // Use event delegation instead of individual button listeners
             // This prevents duplicate listeners when HTMX swaps content
-            if (!document.body.dataset.copyDelegationInitialized) {
+            if (!this._delegationInitialized) {
                 document.body.addEventListener('click', this.handleDelegatedClick.bind(this));
-                document.body.dataset.copyDelegationInitialized = 'true';
+                this._delegationInitialized = true;
             }
         },
 
