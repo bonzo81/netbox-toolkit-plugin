@@ -54,23 +54,30 @@
         if (newForm) {
             const formIndex = '{{ form_index }}';
 
-            // Update all elements that contain __prefix__
-            const elementsToUpdate = newForm.querySelectorAll('*');
+            // Validate that formIndex is a number before using it
+            // This prevents potential injection if the value is manipulated
+            if (/^\d+$/.test(formIndex)) {
+                // Update all elements that contain __prefix__
+                const elementsToUpdate = newForm.querySelectorAll('*');
 
-            elementsToUpdate.forEach(function(element) {
-                ['name', 'id', 'for'].forEach(function(attr) {
-                    if (element.hasAttribute(attr)) {
-                        const value = element.getAttribute(attr);
-                        if (value && value.includes('__prefix__')) {
-                            const newValue = value.replace(/__prefix__/g, formIndex);
-                            element.setAttribute(attr, newValue);
+                elementsToUpdate.forEach(function(element) {
+                    ['name', 'id', 'for'].forEach(function(attr) {
+                        if (element.hasAttribute(attr)) {
+                            const value = element.getAttribute(attr);
+                            if (value && value.includes('__prefix__')) {
+                                const newValue = value.replace(/__prefix__/g, formIndex);
+                                element.setAttribute(attr, newValue);
+                            }
                         }
-                    }
-                });
+                    });
 
-                // Do NOT replace __prefix__ in innerHTML to avoid XSS vulnerabilities
-                // Only attributes are replaced above for security
-            });
+                    // Do NOT replace __prefix__ in innerHTML to avoid XSS vulnerabilities
+                    // Only attributes are replaced above for security
+                });
+            } else {
+                // If formIndex is not a valid number, skip replacement for safety
+                console.warn('Invalid formIndex for variable formset:', formIndex);
+            }
         }
     })();
 </script>
