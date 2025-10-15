@@ -32,6 +32,7 @@ class CredentialEncryptionService:
     Features:
     - Fernet (AES-128 CBC + HMAC-SHA256) for credential encryption/decryption
     - Argon2id for master key derivation and token hashing with pepper
+    - HKDF for per-credential key derivation
     - Unique encryption keys per credential set
     - Secure token validation with resistance to timing attacks
     - No keys stored in database - all derived deterministically
@@ -41,6 +42,17 @@ class CredentialEncryptionService:
     - SECRET_KEY is SECONDARY (provides defense in depth)
     - Credentials remain secure even if Django SECRET_KEY is compromised
     - Both secrets required for complete compromise (key isolation)
+
+    Important - Secret Rotation:
+    Changing PEPPER or SECRET_KEY will make existing encrypted credentials
+    inaccessible. This is acceptable since the plugin stores credentials for
+    convenience only - they are not the source of truth. Simply recreate the
+    DeviceCredentialSet objects with the actual credentials after rotation.
+
+    Recommended Practice:
+    - Set PEPPER once during initial deployment
+    - Store PEPPER securely (e.g., environment variable, secrets manager)
+    - If rotation needed: delete old credentials, users re-enter them
     """
 
     def __init__(self):
