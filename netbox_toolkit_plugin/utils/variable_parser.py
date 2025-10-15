@@ -5,6 +5,13 @@ This module provides functionality to:
 1. Extract variable placeholders from command text
 2. Validate variables against CommandVariable model
 3. Substitute variable values into command text
+
+Variable Syntax:
+    Commands use angle bracket syntax for variables: <variable_name>
+    Example: "show interface <interface_name> status"
+
+    Note: This is NOT Django template syntax ({{ }}) - that's only used
+    in Django templates for rendering HTML, not in command text.
 """
 
 import re
@@ -16,6 +23,8 @@ class CommandVariableParser:
     """Parser for handling command variables with <variable_name> syntax."""
 
     # Regex pattern to match <variable_name> placeholders
+    # Pattern matches: <interface_name>, <vlan_id>, etc.
+    # Does NOT match Django template syntax: {{ variable_name }}
     VARIABLE_PATTERN = re.compile(r"<([a-zA-Z_][a-zA-Z0-9_]*)>")
 
     @classmethod

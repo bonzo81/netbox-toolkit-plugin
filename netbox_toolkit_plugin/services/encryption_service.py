@@ -32,6 +32,12 @@ class CredentialEncryptionService:
     - Unique encryption keys per credential set
     - Secure token validation with resistance to timing attacks
     - No keys stored in database - all derived deterministically
+
+    Security Model:
+    - PEPPER is the PRIMARY secret (must be set via environment/config)
+    - SECRET_KEY is SECONDARY (provides defense in depth)
+    - Credentials remain secure even if Django SECRET_KEY is compromised
+    - Both secrets required for complete compromise (key isolation)
     """
 
     def __init__(self):
@@ -238,19 +244,27 @@ class CredentialEncryptionService:
         """
         Derive master encryption key using Argon2id with pepper.
 
+        Security Model:
+            - Pepper is the PRIMARY secret (from environment or config)
+            - SECRET_KEY is SECONDARY (for defense in depth)
+            - This ensures credentials remain secure even if SECRET_KEY is compromised
+            - Requires both pepper AND SECRET_KEY for complete compromise
+
         Returns:
             32-byte key suitable for Fernet encryption
         """
-        # Use Django's SECRET_KEY as the primary secret
-        secret_key = settings.SECRET_KEY.encode("utf-8")
+        # Use pepper as primary secret, SECRET_KEY as secondary for defense in depth
+        # This isolates credential encryption from Django's SECRET_KEY
+        primary_secret = self._pepper
+        secondary_secret = settings.SECRET_KEY.encode("utf-8")
 
         # Service-specific salt to prevent key reuse
         salt = b"netbox_toolkit_credentials_v2"
 
         # Check if we should use Argon2id or fall back to PBKDF2
         if self._security_config.get("master_key_derivation") == "argon2id":
-            # Use Argon2id for master key derivation with pepper
-            key_material = secret_key + self._pepper + salt
+            # Combine secrets with pepper as primary component
+            key_material = primary_secret + secondary_secret + salt
 
             # Use lower parameters for master key derivation (performance)
             derived_key_raw = argon2.low_level.hash_secret_raw(
@@ -264,7 +278,7 @@ class CredentialEncryptionService:
             )
         else:
             # Fallback to PBKDF2 for compatibility
-            key_material = secret_key + self._pepper
+            key_material = primary_secret + secondary_secret
             derived_key_raw = hashlib.pbkdf2_hmac(
                 "sha256",
                 key_material,

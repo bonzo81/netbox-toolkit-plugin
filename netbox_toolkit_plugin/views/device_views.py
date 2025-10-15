@@ -1,9 +1,8 @@
 """Device-related views for the NetBox Toolkit Plugin."""
 
 from django.contrib import messages
-from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 from dcim.models import Device
@@ -33,8 +32,9 @@ class DeviceToolkitView(ObjectView):
         self.rate_limiting_service = RateLimitingService()
 
     def get_object(self, **kwargs):
-        """Override get_object to properly filter by pk"""
-        return Device.objects.get(pk=self.kwargs.get("pk", kwargs.get("pk")))
+        """Get device object with proper 404 error handling"""
+        pk = self.kwargs.get("pk") or kwargs.get("pk")
+        return get_object_or_404(Device, pk=pk)
 
     def get(self, request, pk):
         """Return the device toolkit page"""
@@ -198,17 +198,7 @@ class DeviceExecutionModalView(ObjectView):
 
     def get(self, request, pk):
         """Return rendered HTML for the complete execution modal"""
-        try:
-            device = Device.objects.get(pk=pk)
-        except Device.DoesNotExist:
-            return render(
-                request,
-                self.template_name,
-                {
-                    "error": "Device not found",
-                    "device": None,
-                },
-            )
+        device = get_object_or_404(Device, pk=pk)
 
         command_id = request.GET.get("command_id")
 
@@ -251,21 +241,10 @@ class DeviceExecutionModalView(ObjectView):
             )
 
             # Get user's credential sets, filtered by device platform
-            # Include credential sets that either:
-            # 1. Have no platform associations (universal credentials)
-            # 2. Include the device's platform
-            if device.platform:
-                user_credential_sets = (
-                    DeviceCredentialSet.objects.filter(owner=request.user)
-                    .filter(Q(platforms__isnull=True) | Q(platforms=device.platform))
-                    .distinct()
-                    .order_by("name")
-                )
-            else:
-                # If device has no platform, only show universal credentials
-                user_credential_sets = DeviceCredentialSet.objects.filter(
-                    owner=request.user, platforms__isnull=True
-                ).order_by("name")
+            # Use the manager method for consistent platform filtering
+            user_credential_sets = DeviceCredentialSet.objects.for_user_and_device(
+                request.user, device
+            )
 
             return render(
                 request,
@@ -309,21 +288,18 @@ class DeviceRateLimitUpdateView(View):
 
     def get(self, request, pk):
         """Return just the rate limiting card content as HTML"""
-        try:
-            device = Device.objects.get(pk=pk)
-            rate_limit_status = self.rate_limiting_service.get_rate_limit_status(
-                device, request.user
-            )
+        device = get_object_or_404(Device, pk=pk)
+        rate_limit_status = self.rate_limiting_service.get_rate_limit_status(
+            device, request.user
+        )
 
-            return render(
-                request,
-                "netbox_toolkit_plugin/htmx/rate_limit_card.html",
-                {
-                    "rate_limit_status": rate_limit_status,
-                },
-            )
-        except Device.DoesNotExist:
-            return HttpResponse("Device not found", status=404)
+        return render(
+            request,
+            "netbox_toolkit_plugin/htmx/rate_limit_card.html",
+            {
+                "rate_limit_status": rate_limit_status,
+            },
+        )
 
 
 class DeviceCommandOutputView(View):
@@ -336,10 +312,7 @@ class DeviceCommandOutputView(View):
 
     def post(self, request, pk):
         """Execute command and return just the output section"""
-        try:
-            device = Device.objects.get(pk=pk)
-        except Device.DoesNotExist:
-            return HttpResponse("Device not found", status=404)
+        device = get_object_or_404(Device, pk=pk)
 
         # Get command from form data
         command_id = request.POST.get("command_id")
@@ -463,16 +436,13 @@ class DeviceRecentHistoryView(View):
 
     def get(self, request, pk):
         """Return just the recent history content as HTML"""
-        try:
-            device = Device.objects.get(pk=pk)
-            recent_history = device.command_logs.all().order_by("-execution_time")[:3]
+        device = get_object_or_404(Device, pk=pk)
+        recent_history = device.command_logs.all().order_by("-execution_time")[:3]
 
-            return render(
-                request,
-                "netbox_toolkit_plugin/htmx/recent_history.html",
-                {
-                    "recent_history": recent_history,
-                },
-            )
-        except Device.DoesNotExist:
-            return HttpResponse("Device not found", status=404)
+        return render(
+            request,
+            "netbox_toolkit_plugin/htmx/recent_history.html",
+            {
+                "recent_history": recent_history,
+            },
+        )

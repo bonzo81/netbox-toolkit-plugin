@@ -59,7 +59,7 @@ curl -H "Authorization: Token YOUR_TOKEN" \
       "url": "https://netbox.example.com/api/plugins/toolkit/commands/1/",
       "display": "Show Interfaces",
       "name": "Show Interfaces",
-      "command": "show interfaces {{ interface_name }}",
+      "command": "show interfaces <interface_name>",
       "description": "Display interface status and configuration",
       "platforms": [
         {
@@ -120,7 +120,7 @@ curl -H "Authorization: Token YOUR_TOKEN" \
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | ✅ | Command name (max 100 characters) |
-| `command` | string | ✅ | Command text (supports variables with `{{ var_name }}`) |
+| `command` | string | ✅ | Command text (supports variables with `<variable_name>` syntax) |
 | `description` | string | ❌ | Command description |
 | `platforms` | array | ✅ | Array of platform IDs |
 | `command_type` | string | ✅ | `show` or `config` |

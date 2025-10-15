@@ -60,9 +60,12 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
             }
 
             try {
+                // Only preserve selection if user has an active selection
+                // This avoids expensive operations when unnecessary
                 const selection = document.getSelection();
-                const hasSelection = selection.rangeCount > 0;
-                const previousRange = hasSelection ? selection.getRangeAt(0) : null;
+                const previousRange = (selection && selection.rangeCount > 0)
+                    ? selection.getRangeAt(0)
+                    : null;
 
                 textArea.focus();
                 textArea.select();
@@ -80,7 +83,9 @@ window.NetBoxToolkit = window.NetBoxToolkit || {};
                 console.warn('Fallback copy error:', err.message);
                 this.alternativeCopy(text, btn);
             } finally {
+                // Only restore selection if one existed
                 if (previousRange) {
+                    const selection = document.getSelection();
                     selection.removeAllRanges();
                     selection.addRange(previousRange);
                 }

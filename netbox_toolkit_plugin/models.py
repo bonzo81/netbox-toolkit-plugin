@@ -1,7 +1,9 @@
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 from netbox.models import NetBoxModel
+from utilities.querysets import RestrictedQuerySet
 
 
 class Command(NetBoxModel):
@@ -155,6 +157,42 @@ class CommandVariable(models.Model):
         return f"Variable: {self.display_name}"
 
 
+class DeviceCredentialSetManager(models.Manager):
+    """Custom manager for DeviceCredentialSet with platform filtering logic"""
+
+    def get_queryset(self):
+        """Return RestrictedQuerySet for NetBox permission compatibility"""
+        return RestrictedQuerySet(self.model, using=self._db)
+
+    def for_user_and_device(self, user, device):
+        """
+        Get credential sets for a specific user and device.
+
+        Returns credential sets that either:
+        1. Have no platform associations (universal credentials), or
+        2. Include the device's platform
+
+        Args:
+            user: The user who owns the credential sets
+            device: The device for which credentials are needed
+
+        Returns:
+            QuerySet of DeviceCredentialSet objects filtered and ordered by name
+        """
+        queryset = self.filter(owner=user)
+
+        if device.platform:
+            # Include universal credentials OR platform-specific credentials
+            queryset = queryset.filter(
+                Q(platforms__isnull=True) | Q(platforms=device.platform)
+            ).distinct()
+        else:
+            # If device has no platform, only show universal credentials
+            queryset = queryset.filter(platforms__isnull=True)
+
+        return queryset.order_by("name")
+
+
 class DeviceCredentialSet(NetBoxModel):
     """Stores encrypted device credentials for users with token-based access"""
 
@@ -221,6 +259,9 @@ class DeviceCredentialSet(NetBoxModel):
     is_active = models.BooleanField(
         default=True, help_text="Whether this credential set is active and can be used"
     )
+
+    # Custom manager
+    objects = DeviceCredentialSetManager()
 
     class Meta:
         unique_together = [("owner", "name")]

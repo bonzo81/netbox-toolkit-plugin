@@ -21,14 +21,21 @@ This replaces the static modal with dynamic content
                         </div>
                         <!-- Rate Limiting Information in Header -->
                         {% if rate_limit_status.enabled and not rate_limit_status.bypassed %}
-                        <div class="text-muted small">
-                            <i class="mdi {% if rate_limit_status.is_exceeded %}mdi-block-helper text-danger{% elif rate_limit_status.is_warning %}mdi-alert-outline text-warning{% else %}mdi-information-outline{% endif %} me-1"></i>
+                        <div class="text-muted small" role="status" aria-live="polite">
+                            <i class="mdi {% if rate_limit_status.is_exceeded %}mdi-block-helper text-danger{% elif rate_limit_status.is_warning %}mdi-alert-outline text-warning{% else %}mdi-information-outline{% endif %} me-1" aria-hidden="true"></i>
                             <span class="{% if rate_limit_status.is_exceeded %}text-danger{% elif rate_limit_status.is_warning %}text-warning{% endif %}">
+                                <span class="visually-hidden">
+                                    {% if rate_limit_status.is_exceeded %}
+                                    Warning: Rate limit exceeded.
+                                    {% elif rate_limit_status.is_warning %}
+                                    Warning: Approaching rate limit.
+                                    {% endif %}
+                                </span>
                                 Rate Limit: {{ rate_limit_status.remaining }} of {{ rate_limit_status.limit }} commands remaining
                                 {% if rate_limit_status.is_exceeded %}
-                                (Commands blocked)
+                                <span aria-label="Commands are currently blocked due to rate limit">(Commands blocked)</span>
                                 {% elif rate_limit_status.is_warning %}
-                                (Approaching limit)
+                                <span aria-label="Warning: You are approaching your rate limit">(Approaching limit)</span>
                                 {% endif %}
                             </span>
                         </div>

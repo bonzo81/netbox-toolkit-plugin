@@ -18,11 +18,16 @@ class DeviceService:
 
         Returns:
             List of available commands
+
+        Note:
+            Platform filtering uses direct Platform object matching, not normalized slugs.
+            Platform normalization (via ToolkitSettings.normalize_platform) is only needed
+            for connector library compatibility (Scrapli/Netmiko), not for command filtering.
         """
         if not device.platform:
             return []
 
-        # Filter commands that include the device's platform in their platforms field
+        # Filter commands by Platform object relationship (no normalization needed)
         commands = Command.objects.filter(platforms=device.platform)
 
         return list(commands)
