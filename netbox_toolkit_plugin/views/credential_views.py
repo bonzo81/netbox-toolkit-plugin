@@ -119,10 +119,6 @@ class DeviceCredentialSetEditView(ObjectEditView):
         return qs
 
     def get(self, request, *args, **kwargs):
-            # Store the form with errors in the instance so get_form() returns it
-            self._form_with_errors = self.form_with_errors
-            # Clean up
-            delattr(self, "form_with_errors")
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -183,25 +179,17 @@ class DeviceCredentialSetEditView(ObjectEditView):
         return "plugins:netbox_toolkit_plugin:devicecredentialset_list"
 
     def get_form(self, form_class=None):
-        print("DEBUG: DeviceCredentialSetEditView.get_form() called")
         # If we have a form with errors from a failed POST, use it
         if hasattr(self, "_form_with_errors"):
-            print(
-                f"DEBUG: returning form with errors = {self._form_with_errors.errors}"
-            )
             form = self._form_with_errors
             # Clean up
             delattr(self, "_form_with_errors")
             return form
 
-        print(f"DEBUG: self.request.user = {self.request.user}")
         form_class = form_class or self.form
         kwargs = self.get_form_kwargs()
-        print(f"DEBUG: kwargs before adding user = {kwargs}")
         kwargs["user"] = self.request.user
-        print(f"DEBUG: kwargs after adding user = {kwargs}")
         form = form_class(**kwargs)
-        print(f"DEBUG: form.user after creation = {form.user}")
         return form
 
     def form_valid(self, form):

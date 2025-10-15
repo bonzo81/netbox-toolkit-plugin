@@ -33,14 +33,14 @@ class CommandTable(NetBoxTable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logger.info(
+        logger.debug(
             f"CommandTable initialized. Columns: {[col.name for col in self.columns]}"
         )
-        logger.info(f"CommandTable Meta fields: {self.Meta.fields}")
-        logger.info(
+        logger.debug(f"CommandTable Meta fields: {self.Meta.fields}")
+        logger.debug(
             f"CommandTable Meta exclude: {getattr(self.Meta, 'exclude', 'None')}"
         )
-        logger.info(f"CommandTable Meta default_columns: {self.Meta.default_columns}")
+        logger.debug(f"CommandTable Meta default_columns: {self.Meta.default_columns}")
 
 
 class CommandLogTable(NetBoxTable):
@@ -76,14 +76,14 @@ class CommandLogTable(NetBoxTable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logger.info(
+        logger.debug(
             f"CommandLogTable initialized. Columns: {[col.name for col in self.columns]}"
         )
-        logger.info(f"CommandLogTable Meta fields: {self.Meta.fields}")
-        logger.info(
+        logger.debug(f"CommandLogTable Meta fields: {self.Meta.fields}")
+        logger.debug(
             f"CommandLogTable Meta exclude: {getattr(self.Meta, 'exclude', 'None')}"
         )
-        logger.info(
+        logger.debug(
             f"CommandLogTable Meta default_columns: {self.Meta.default_columns}"
         )
 
