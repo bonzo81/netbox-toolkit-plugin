@@ -373,14 +373,15 @@ class DeviceCommandOutputView(View):
                 )
 
             # Create a temporary command object with the processed command text
+            # Note: This is an in-memory object used only for execution, not saved to DB
+            # Only the fields actually used during execution are set
             temp_command = Command(
-                id=command.id,
-                name=command.name,
-                command=processed_command_text,
-                command_type=command.command_type,
-                description=command.description,
+                id=command.id,  # For logging reference
+                name=command.name,  # For logging and display
+                command=processed_command_text,  # The actual command with variables substituted
+                command_type=command.command_type,  # For connector selection
+                description=command.description,  # For context
             )
-            temp_command.platforms.set(command.platforms.all())
 
             # Execute the command based on authentication method
             if auth_method == "stored":
