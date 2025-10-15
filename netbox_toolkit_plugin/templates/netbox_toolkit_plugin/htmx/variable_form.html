@@ -55,8 +55,10 @@
             const formIndex = '{{ form_index }}';
 
             // Validate that formIndex is a number for data integrity
-            // Note: Django's template auto-escaping already prevents XSS
-            // This check ensures the index is valid before DOM manipulation
+            // Note: While Django's template auto-escaping helps prevent XSS,
+            // this validation is defense-in-depth to ensure formIndex is safe and valid
+            // before using it for DOM manipulation. This protects against DOM-based
+            // vulnerabilities, not just XSS.
             if (/^\d+$/.test(formIndex)) {
                 // Update all elements that contain __prefix__
                 const elementsToUpdate = newForm.querySelectorAll('*');
