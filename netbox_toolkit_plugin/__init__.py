@@ -1,3 +1,5 @@
+from django.core.exceptions import ImproperlyConfigured
+
 from netbox.plugins import PluginConfig
 
 __author__ = "Andy Norwood"
@@ -16,7 +18,7 @@ class ToolkitPluginConfig(PluginConfig):
     min_version = "4.2.0"
 
     # Database migrations
-    required_settings = []
+    required_settings = []  # Custom validation in ready() method
 
     # Default plugin settings
     default_settings = {
@@ -27,6 +29,27 @@ class ToolkitPluginConfig(PluginConfig):
         "bypass_groups": [],
         "debug_logging": False,  # Enable debug logging for this plugin
     }
+
+    def ready(self):
+        """
+        Validate plugin configuration at startup.
+
+        This runs when Django initializes the app registry, ensuring
+        critical settings (like the security pepper) are configured
+        before NetBox starts accepting requests.
+        """
+        super().ready()
+
+        # Validate security configuration (including pepper requirement)
+        from .settings import ToolkitSettings
+
+        try:
+            ToolkitSettings.get_security_config()
+        except ValueError as e:
+            # Re-raise as ImproperlyConfigured for Django consistency
+            raise ImproperlyConfigured(
+                f"Plugin {self.name} configuration error: {str(e)}"
+            ) from e
 
 
 config = ToolkitPluginConfig
