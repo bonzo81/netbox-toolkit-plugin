@@ -23,6 +23,7 @@ urlpatterns = [
         "commands/<int:pk>/changelog/",
         views.CommandChangeLogView.as_view(),
         name="command_changelog",
+        kwargs={"model": models.Command},
     ),
     # HTMX endpoints
     path(

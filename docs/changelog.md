@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5 (2025-10-16)
+
+* **Bug Fix**: Fixed missing model parameter in command changelog URL that caused TypeError when viewing command change logs (#19)
+
 ## 0.1.4 (2025-10-15)
 
 * 🔐 New Credential Token System
