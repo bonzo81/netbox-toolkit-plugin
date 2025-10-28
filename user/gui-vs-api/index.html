@@ -1,0 +1,1691 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NetBox plugin for running commands on network devices using Scrapli">
+      
+      
+        <meta name="author" content="NetBox Toolkit Contributors">
+      
+      
+        <link rel="canonical" href="https://bonzo81.github.io/netbox-toolkit-plugin/user/gui-vs-api/">
+      
+      
+        <link rel="prev" href="../../platform-support/">
+      
+      
+        <link rel="next" href="../plugin-installation/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.22">
+    
+    
+      
+        <title>GUI vs API Comparison - NetBox Toolkit Plugin</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.84d31ad4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-vs-web-interface-feature-comparison" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="NetBox Toolkit Plugin" class="md-header__button md-logo" aria-label="NetBox Toolkit Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NetBox Toolkit Plugin
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              GUI vs API Comparison
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bonzo81/netbox-toolkit-plugin" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    netbox-toolkit-plugin
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Start Here
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../plugin-installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  User Documentation
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API Documentation
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../permission-examples/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../development/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../changelog/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Changelog
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="NetBox Toolkit Plugin" class="md-nav__button md-logo" aria-label="NetBox Toolkit Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NetBox Toolkit Plugin
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bonzo81/netbox-toolkit-plugin" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    netbox-toolkit-plugin
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Start Here
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Start Here
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platform-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Platform Support
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    GUI vs API Comparison
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    GUI vs API Comparison
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Comparison
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detailed Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#permission-creation-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Permission Creation &amp; Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#credential-creation-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Credential Creation &amp; Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command Creation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-history-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command History &amp; Logging
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-exclusive-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      API-Exclusive Use Cases
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API-Exclusive Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-bulk-multi-device-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Bulk Multi-Device Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-bulk-export-with-date-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Bulk Export with Date Filtering
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-programmatic-variable-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Programmatic Variable Discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-programmatic-statistics-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Programmatic Statistics Access
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../plugin-installation/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    User Documentation
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../api/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../permission-examples/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../development/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../changelog/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Comparison
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detailed Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#permission-creation-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Permission Creation &amp; Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#credential-creation-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Credential Creation &amp; Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command Creation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-history-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command History &amp; Logging
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-exclusive-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      API-Exclusive Use Cases
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API-Exclusive Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-bulk-multi-device-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Bulk Multi-Device Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-bulk-export-with-date-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Bulk Export with Date Filtering
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-programmatic-variable-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Programmatic Variable Discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-programmatic-statistics-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Programmatic Statistics Access
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/bonzo81/netbox-toolkit-plugin/edit/main/docs/user/gui-vs-api.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="api-vs-web-interface-feature-comparison">API vs Web Interface Feature Comparison<a class="headerlink" href="#api-vs-web-interface-feature-comparison" title="Permanent link">&para;</a></h1>
+<p>This document provides a comprehensive comparison between the NetBox Toolkit Plugin's REST API and Web Interface capabilities.</p>
+<h2 id="detailed-comparison">Detailed Comparison<a class="headerlink" href="#detailed-comparison" title="Permanent link">&para;</a></h2>
+<h3 id="permission-creation-management">Permission Creation &amp; Management<a class="headerlink" href="#permission-creation-management" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Web Interface</th>
+<th>API</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Create ObjectPermissions</strong></td>
+<td>✅ NetBox UI</td>
+<td>✅ NetBox API</td>
+<td>Uses NetBox's built-in permission system</td>
+</tr>
+<tr>
+<td><strong>Assign Actions</strong></td>
+<td>✅ <code>execute_show</code>, <code>execute_config</code></td>
+<td>✅ Same actions</td>
+<td>Custom permission actions</td>
+</tr>
+<tr>
+<td><strong>User/Group Assignment</strong></td>
+<td>✅ Visual selection</td>
+<td>✅ Programmatic assignment</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Bulk Permission Creation</strong></td>
+<td>❌ Manual only</td>
+<td>✅ API automation</td>
+<td>API enables programmatic permission management</td>
+</tr>
+<tr>
+<td><strong>Permission Templates</strong></td>
+<td>❌</td>
+<td>✅ Scriptable</td>
+<td>Create standardized permission sets via API</td>
+</tr>
+<tr>
+<td><strong>Constraint Configuration</strong></td>
+<td>✅ Visual form</td>
+<td>✅ JSON structure</td>
+<td>API requires understanding of constraint syntax</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="credential-creation-management">Credential Creation &amp; Management<a class="headerlink" href="#credential-creation-management" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Web Interface</th>
+<th>API</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Create Credential Sets</strong></td>
+<td>✅ Form-based</td>
+<td>❌</td>
+<td><strong>Web Interface only</strong> - Security by design</td>
+</tr>
+<tr>
+<td><strong>Edit/Update Credentials</strong></td>
+<td>✅ Edit form</td>
+<td>❌</td>
+<td><strong>Web Interface only</strong> - Prevents password transmission</td>
+</tr>
+<tr>
+<td><strong>Delete Credential Sets</strong></td>
+<td>✅ Delete action</td>
+<td>❌</td>
+<td><strong>Web Interface only</strong></td>
+</tr>
+<tr>
+<td><strong>Platform Restrictions</strong></td>
+<td>✅ Multi-select platforms</td>
+<td>❌</td>
+<td>Configure during web creation</td>
+</tr>
+<tr>
+<td><strong>Generate Access Token</strong></td>
+<td>✅ Auto-generated on save</td>
+<td>N/A</td>
+<td>Token used for API command execution</td>
+</tr>
+<tr>
+<td><strong>View Token</strong></td>
+<td>✅ Displayed after creation</td>
+<td>N/A</td>
+<td>Token visible only once for security</td>
+</tr>
+<tr>
+<td><strong>View Credential List</strong></td>
+<td>✅ List view</td>
+<td>❌</td>
+<td><strong>Web Interface only</strong></td>
+</tr>
+<tr>
+<td><strong>Credential Encryption</strong></td>
+<td>✅ Automatic</td>
+<td>N/A</td>
+<td>Passwords encrypted at rest</td>
+</tr>
+<tr>
+<td><strong>Last Used Tracking</strong></td>
+<td>✅ Displayed in list</td>
+<td>N/A</td>
+<td>Automatic timestamp updates</td>
+</tr>
+<tr>
+<td><strong>Active/Inactive Status</strong></td>
+<td>✅ Toggle switch</td>
+<td>N/A</td>
+<td>Disable without deletion</td>
+</tr>
+<tr>
+<td><strong>Use Token in Execution</strong></td>
+<td>N/A</td>
+<td>✅ <code>credential_token</code> field</td>
+<td>API uses tokens, not credentials directly</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Use Web Interface For:</strong></p>
+<ul>
+<li><strong>ALL credential management operations</strong> (create, edit, delete)</li>
+</ul>
+<p><strong>API Design:</strong></p>
+<ul>
+<li>❌ <strong>No API endpoints for credential CRUD</strong> - By design for security</li>
+<li>✅ <strong>API uses credential tokens only</strong> - Created via Web Interface</li>
+<li>🔒 <strong>Why?</strong> Prevents password transmission over API, enforces secure credential management</li>
+</ul>
+<p><strong>Security Note:</strong> Credentials (username/password) can only be created and managed through the Web Interface. The API accepts only pre-generated <code>credential_token</code> values for command execution, ensuring passwords are never transmitted via API calls.</p>
+<hr />
+<h3 id="command-creation">Command Creation<a class="headerlink" href="#command-creation" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Web Interface</th>
+<th>API</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Create/Edit Commands</strong></td>
+<td>✅ Form-based</td>
+<td>✅ Programmatic</td>
+<td>Full CRUD operations</td>
+</tr>
+<tr>
+<td><strong>Variable Management</strong></td>
+<td>✅ Inline formsets</td>
+<td>✅ Nested serializers</td>
+<td>Create variables with commands</td>
+</tr>
+<tr>
+<td><strong>Platform Assignment</strong></td>
+<td>✅ Multi-select dropdown</td>
+<td>✅ Array of IDs</td>
+<td>Assign multiple platforms</td>
+</tr>
+<tr>
+<td><strong>Command Type Selection</strong></td>
+<td>✅ Radio buttons</td>
+<td>✅ String field</td>
+<td><code>show</code> or <code>config</code></td>
+</tr>
+<tr>
+<td><strong>Validation</strong></td>
+<td>✅ Real-time form validation</td>
+<td>✅ Serializer validation</td>
+<td>Same validation rules</td>
+</tr>
+<tr>
+<td><strong>Advanced Filtering</strong></td>
+<td>⚠️ Basic search</td>
+<td>✅ Full filter options</td>
+<td>API: filter by platform, type, name patterns</td>
+</tr>
+<tr>
+<td><strong>Bulk Command Creation</strong></td>
+<td>❌</td>
+<td>✅ API automation</td>
+<td>Create multiple commands programmatically</td>
+</tr>
+<tr>
+<td><strong>Import from Templates</strong></td>
+<td>❌</td>
+<td>✅ Scriptable</td>
+<td>Import command libraries via API</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="command-execution">Command Execution<a class="headerlink" href="#command-execution" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Web Interface</th>
+<th>API</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Single Device Execution</strong></td>
+<td>✅ Interactive form</td>
+<td>✅ POST <code>/execute/</code></td>
+<td>Same functionality</td>
+</tr>
+<tr>
+<td><strong>Multi-Device Execution</strong></td>
+<td>❌</td>
+<td>✅ POST <code>/bulk-execute/</code></td>
+<td><strong>API exclusive</strong></td>
+</tr>
+<tr>
+<td><strong>Variable Discovery</strong></td>
+<td>✅ Dynamic dropdowns</td>
+<td>✅ GET <code>/variable-choices/</code></td>
+<td>API enables programmatic discovery</td>
+</tr>
+<tr>
+<td><strong>Variable Validation</strong></td>
+<td>✅ Client-side validation</td>
+<td>✅ Enhanced server validation</td>
+<td>API provides detailed error messages</td>
+</tr>
+<tr>
+<td><strong>Real-time Output</strong></td>
+<td>✅ Live display</td>
+<td>✅ JSON response</td>
+<td>Web shows formatted, API returns structured</td>
+</tr>
+<tr>
+<td><strong>Syntax Error Detection</strong></td>
+<td>✅ Visual indicators</td>
+<td>✅ Response field</td>
+<td>Both detect and report syntax errors</td>
+</tr>
+<tr>
+<td><strong>Parsed Output</strong></td>
+<td>✅ Download CSV</td>
+<td>✅ JSON field</td>
+<td>API includes parsed data in response</td>
+</tr>
+<tr>
+<td><strong>Credential Management</strong></td>
+<td>✅ Credential Set selection</td>
+<td>✅ <code>credential_token</code></td>
+<td>Both use DeviceCredentialSet tokens</td>
+</tr>
+<tr>
+<td><strong>Rate Limit Status</strong></td>
+<td>✅ Real-time widget</td>
+<td>⚠️ Check separately</td>
+<td>Web shows live status</td>
+</tr>
+<tr>
+<td><strong>Execution Timeout</strong></td>
+<td>✅ Default 30s</td>
+<td>✅ Configurable 5-300s</td>
+<td>API allows custom timeout</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="command-history-logging">Command History &amp; Logging<a class="headerlink" href="#command-history-logging" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Web Interface</th>
+<th>API</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Browse History</strong></td>
+<td>✅ Paginated list</td>
+<td>✅ GET <code>/command-logs/</code></td>
+<td>Both support filtering</td>
+</tr>
+<tr>
+<td><strong>View Execution Details</strong></td>
+<td>✅ Detail page</td>
+<td>✅ GET <code>/command-logs/{id}/</code></td>
+<td>Full execution details</td>
+</tr>
+<tr>
+<td><strong>Filter by Device</strong></td>
+<td>✅ Filter form</td>
+<td>✅ <code>?device_id=</code></td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Filter by Command</strong></td>
+<td>✅ Filter form</td>
+<td>✅ <code>?command_id=</code></td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Filter by User</strong></td>
+<td>✅ Filter form</td>
+<td>✅ <code>?user_id=</code></td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Filter by Date Range</strong></td>
+<td>✅ Date picker</td>
+<td>✅ <code>?created__gte=&amp;created__lte=</code></td>
+<td>API supports more date formats</td>
+</tr>
+<tr>
+<td><strong>Filter by Success/Failure</strong></td>
+<td>✅ Status filter</td>
+<td>✅ <code>?success=true/false</code></td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Export Single Log CSV</strong></td>
+<td>✅ Per-log download</td>
+<td>✅ Included in response</td>
+<td>Export parsed data</td>
+</tr>
+<tr>
+<td><strong>Bulk Export</strong></td>
+<td>❌</td>
+<td>✅ GET <code>/export/?format=csv</code></td>
+<td><strong>API exclusive</strong></td>
+</tr>
+<tr>
+<td><strong>Date-Filtered Export</strong></td>
+<td>❌</td>
+<td>✅ <code>&amp;start_date=&amp;end_date=</code></td>
+<td><strong>API exclusive</strong></td>
+</tr>
+<tr>
+<td><strong>Statistics Dashboard</strong></td>
+<td>✅ Statistics page</td>
+<td>✅ GET <code>/statistics/</code></td>
+<td>Both show same metrics</td>
+</tr>
+<tr>
+<td><strong>Success Rate Analytics</strong></td>
+<td>✅ Visual charts</td>
+<td>✅ JSON response</td>
+<td>Same data, different format</td>
+</tr>
+<tr>
+<td><strong>Error Pattern Analysis</strong></td>
+<td>✅ Common errors table</td>
+<td>✅ Common errors report</td>
+<td>Same data, different format</td>
+</tr>
+<tr>
+<td><strong>Top Commands Report</strong></td>
+<td>✅ Visual ranking</td>
+<td>✅ Statistics endpoint</td>
+<td>Same data, different format</td>
+</tr>
+<tr>
+<td><strong>Recent Activity Widget</strong></td>
+<td>✅ Last 24h stats</td>
+<td>✅ Statistics endpoint</td>
+<td>Web shows widget, API returns data</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="api-exclusive-use-cases">API-Exclusive Use Cases<a class="headerlink" href="#api-exclusive-use-cases" title="Permanent link">&para;</a></h2>
+<p>The following capabilities are <strong>only available</strong> through the API and have no Web Interface equivalent:</p>
+<h3 id="1-bulk-multi-device-execution">1. Bulk Multi-Device Execution<a class="headerlink" href="#1-bulk-multi-device-execution" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Execute command across multiple devices simultaneously</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;https://netbox.example.com/api/plugins/toolkit/commands/bulk-execute/&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Token YOUR_TOKEN&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">    &quot;executions&quot;: [</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s1">      {</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s1">        &quot;command_id&quot;: 5,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s1">        &quot;device_id&quot;: 101,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="s1">        &quot;credential_token&quot;: &quot;YOUR_CREDENTIAL_TOKEN&quot;,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="s1">        &quot;variables&quot;: {&quot;vlan_id&quot;: &quot;100&quot;, &quot;description&quot;: &quot;Guest Network&quot;}</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="s1">      },</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="s1">      {</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="s1">        &quot;command_id&quot;: 5,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="s1">        &quot;device_id&quot;: 102,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="s1">        &quot;credential_token&quot;: &quot;YOUR_CREDENTIAL_TOKEN&quot;,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="s1">        &quot;variables&quot;: {&quot;vlan_id&quot;: &quot;100&quot;, &quot;description&quot;: &quot;Guest Network&quot;}</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="s1">      }</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="s1">    ]</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="s1">  }&#39;</span>
+</span></code></pre></div>
+<h3 id="2-bulk-export-with-date-filtering">2. Bulk Export with Date Filtering<a class="headerlink" href="#2-bulk-export-with-date-filtering" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Export filtered logs for compliance reporting</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>GET<span class="w"> </span>/api/plugins/toolkit/command-logs/export/?format<span class="o">=</span>csv<span class="p">&amp;</span><span class="nv">start_date</span><span class="o">=</span><span class="m">2025</span>-01-01<span class="p">&amp;</span><span class="nv">end_date</span><span class="o">=</span><span class="m">2025</span>-12-31
+</span></code></pre></div>
+<h3 id="3-programmatic-variable-discovery">3. Programmatic Variable Discovery<a class="headerlink" href="#3-programmatic-variable-discovery" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Discover available variable choices for a device</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>GET<span class="w"> </span>/api/plugins/toolkit/commands/1/variable-choices/?device_id<span class="o">=</span><span class="m">123</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Returns NetBox data (interfaces, VLANs, IPs) available for that device</span>
+</span></code></pre></div>
+<h3 id="4-programmatic-statistics-access">4. Programmatic Statistics Access<a class="headerlink" href="#4-programmatic-statistics-access" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Get execution statistics in JSON format for integration with monitoring systems</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>GET<span class="w"> </span>/api/plugins/toolkit/command-logs/statistics/
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Response includes:</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># - Overall success rate</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># - Last 24h execution counts</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># - Top 10 most-used commands</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># - Common error patterns</span>
+</span></code></pre></div>
+<p><strong>Note:</strong> While statistics are viewable in both the Web Interface (visual dashboard) and API (JSON response), the API format is designed for programmatic integration with external monitoring and reporting systems.</p>
+<hr />
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<p>The NetBox Toolkit Plugin provides <strong>complete feature parity</strong> between its web interface and API for core functionality, with the API offering <strong>additional capabilities</strong> for automation, integration, and programmatic workflows. Users can seamlessly transition between both interfaces based on their specific use cases.</p>
+<p><strong>Key Distinctions:</strong></p>
+<ul>
+<li><strong>Credential Management</strong>: <strong>Web Interface only</strong> - All credential CRUD operations must be done via web for security</li>
+<li><strong>Statistics &amp; Analytics</strong>: Available in both—Web Interface provides visual dashboards, API provides JSON for programmatic integration</li>
+<li><strong>Bulk Operations</strong>: API-exclusive for multi-device command execution</li>
+<li><strong>Export</strong>: Web Interface supports single-log CSV export, API supports bulk export with date filtering</li>
+<li><strong>Command Execution</strong>: Single device in Web Interface, single or bulk in API</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 NetBox Toolkit Contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/bonzo81/netbox-toolkit-plugin" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tracking", "navigation.prune", "navigation.indexes", "navigation.top", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "search.highlight", "search.share", "content.action.edit", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>
