@@ -157,7 +157,7 @@ class CommandForm(NetBoxModelForm):
 class CommandLogForm(NetBoxModelForm):
     class Meta:
         model = CommandLog
-        fields = ("command", "device", "output", "username")
+        fields = ("command", "device", "output", "username", "notes")
 
 
 class CommandVariableForm(forms.ModelForm):

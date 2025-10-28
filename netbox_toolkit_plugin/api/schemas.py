@@ -106,6 +106,11 @@ COMMAND_BULK_EXECUTE_SCHEMA = extend_schema(
                             "default": 30,
                             "description": "Command execution timeout in seconds",
                         },
+                        "notes": {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "description": "Optional notes/comments about this command execution (e.g., 'pre-change OSPF config')",
+                        },
                     },
                     "required": ["command_id", "device_id", "credential_token"],
                 },

@@ -47,6 +47,12 @@
               <td>{{ object.execution_duration|floatformat:3 }}s</td>
             </tr>
             {% endif %}
+            {% if object.notes %}
+            <tr>
+              <th scope="row">Notes</th>
+              <td>{{ object.notes }}</td>
+            </tr>
+            {% endif %}
             {% comment %}
             <!-- Parsing status removed - focus on execution history -->
             {% if object.get_fresh_parsed_data %}

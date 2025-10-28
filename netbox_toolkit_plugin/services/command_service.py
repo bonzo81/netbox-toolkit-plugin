@@ -28,6 +28,7 @@ class CommandExecutionService:
         username: str,
         password: str,
         max_retries: int = 1,
+        notes: str = "",
     ) -> "CommandResult":
         """
         Execute a command with connection retry capability.
@@ -38,6 +39,7 @@ class CommandExecutionService:
             username: Authentication username
             password: Authentication password
             max_retries: Maximum number of retry attempts
+            notes: Optional notes/comments about this command execution
 
         Returns:
             CommandResult with execution details
@@ -81,11 +83,7 @@ class CommandExecutionService:
                 logger.info(
                     "Command execution completed successfully on %s", device.name
                 )
-                command_log = self._log_command_execution(
-                    command, device, result, username
-                )
-                result.command_log_id = command_log.id
-                return result
+                return self._finalize_result(command, device, result, username, notes)
 
             except Exception as e:
                 last_error = e
@@ -140,13 +138,11 @@ class CommandExecutionService:
                     auth_failed_result = self._enhance_error_result(
                         auth_failed_result, e, device
                     )
-                    command_log = self._log_command_execution(
-                        command, device, auth_failed_result, username
-                    )
-                    auth_failed_result.command_log_id = command_log.id
                     # Return the failed result instead of raising an exception
                     # This allows the web interface to handle it gracefully
-                    return auth_failed_result
+                    return self._finalize_result(
+                        command, device, auth_failed_result, username, notes
+                    )
 
                 # Log if this is a retryable connection error
                 if self._is_connection_error(error_msg):
@@ -185,11 +181,9 @@ class CommandExecutionService:
                                 "Command executed successfully using Netmiko fallback on %s",
                                 device.name,
                             )
-                            command_log = self._log_command_execution(
-                                command, device, result, username
+                            return self._finalize_result(
+                                command, device, result, username, notes
                             )
-                            result.command_log_id = command_log.id
-                            return result
 
                     except Exception as fallback_error:
                         logger.warning(
@@ -224,13 +218,8 @@ class CommandExecutionService:
         if last_error:
             error_result = self._enhance_error_result(error_result, last_error, device)
 
-        # Log the failed execution
-        command_log = self._log_command_execution(
-            command, device, error_result, username
-        )
-        error_result.command_log_id = command_log.id
-
-        return error_result
+        # Log the failed execution and return
+        return self._finalize_result(command, device, error_result, username, notes)
 
     def execute_command_with_token(
         self,
@@ -239,6 +228,7 @@ class CommandExecutionService:
         credential_token: str,
         user,
         max_retries: int = 1,
+        notes: str = "",
     ) -> "CommandResult":
         """
         Execute a command using stored credentials via token.
@@ -249,6 +239,7 @@ class CommandExecutionService:
             credential_token: Credential token for stored credentials
             user: User requesting the execution
             max_retries: Maximum number of retry attempts
+            notes: Optional notes/comments about this command execution
 
         Returns:
             CommandResult with execution details
@@ -292,6 +283,7 @@ class CommandExecutionService:
             username=credentials["username"],
             password=credentials["password"],
             max_retries=max_retries,
+            notes=notes,
         )
 
     def execute_command_with_credential_set(
@@ -301,6 +293,7 @@ class CommandExecutionService:
         credential_set_id: int,
         user,
         max_retries: int = 1,
+        notes: str = "",
     ) -> "CommandResult":
         """
         Execute a command using a credential set ID directly.
@@ -311,6 +304,7 @@ class CommandExecutionService:
             credential_set_id: ID of the credential set to use
             user: User requesting the execution
             max_retries: Maximum number of retry attempts
+            notes: Optional notes/comments about this command execution
 
         Returns:
             CommandResult with execution details
@@ -368,12 +362,49 @@ class CommandExecutionService:
             username=credentials["username"],
             password=credentials["password"],
             max_retries=max_retries,
+            notes=notes,
         )
 
+    def _finalize_result(
+        self,
+        command: "Command",
+        device: Any,
+        result: "CommandResult",
+        username: str,
+        notes: str = "",
+    ) -> "CommandResult":
+        """
+        Log command execution and attach the log ID to the result.
+
+        This helper method consolidates the common pattern of logging
+        execution and attaching the command_log_id to the result.
+
+        Args:
+            command: Command that was executed
+            device: Target device
+            result: Execution result
+            username: Username used for execution
+            notes: Optional notes about this execution
+
+        Returns:
+            The result with command_log_id attached
+        """
+        command_log = self._log_command_execution(
+            command, device, result, username, notes
+        )
+        result.command_log_id = command_log.id
+        return result
+
     def _log_command_execution(
-        self, command: Command, device: Device, result: CommandResult, username: str
+        self,
+        command: Command,
+        device: Device,
+        result: CommandResult,
+        username: str,
+        notes: str = "",
     ) -> CommandLog:
         """Log command execution to database."""
+
         if result.success:
             output = result.output
             # If syntax error was detected, note it in the success flag
@@ -408,6 +439,7 @@ class CommandExecutionService:
             success=success,
             error_message=error_message,
             execution_duration=result.execution_time,
+            notes=notes,
         )
 
         if result.has_syntax_error:

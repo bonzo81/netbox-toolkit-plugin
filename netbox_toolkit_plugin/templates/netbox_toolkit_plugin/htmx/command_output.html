@@ -7,10 +7,13 @@ HTMX partial template for command output results
         <!-- Successful command output -->
         <div class="alert alert-success d-flex align-items-start mb-3" role="alert">
             <i class="mdi mdi-check-circle me-2 mt-1 text-success"></i>
-            <div>
+            <div class="flex-fill">
                 <strong class="text-success">Command executed successfully</strong>
                 {% if execution_time %}
                     <br><small class="text-muted">Execution time: {{ execution_time|floatformat:3 }}s</small>
+                {% endif %}
+                {% if execution_notes %}
+                    <br><small class="text-muted"><i class="mdi mdi-note-text-outline me-1"></i><strong>Notes:</strong> {{ execution_notes }}</small>
                 {% endif %}
             </div>
         </div>

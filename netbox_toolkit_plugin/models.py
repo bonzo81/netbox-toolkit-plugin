@@ -84,6 +84,10 @@ class CommandLog(NetBoxModel):
     execution_duration = models.FloatField(
         blank=True, null=True, help_text="Command execution time in seconds"
     )
+    notes = models.TextField(
+        blank=True,
+        help_text="Optional notes or comments about this command execution (e.g., 'pre-change OSPF config')",
+    )
 
     def __str__(self):
         return f"{self.command} on {self.device}"

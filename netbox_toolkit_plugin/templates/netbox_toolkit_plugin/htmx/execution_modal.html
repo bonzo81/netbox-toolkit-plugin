@@ -249,6 +249,20 @@ This replaces the static modal with dynamic content
                             </div>
                         {% endif %}
 
+                        <!-- Optional Notes/Comments Section (always visible) -->
+                        <div class="mb-3 mt-4">
+                            <label for="commandNotes" class="form-label">
+                                <i class="mdi mdi-note-text-outline me-1"></i>Notes <span class="text-muted">(Optional)</span>
+                            </label>
+                            <textarea class="form-control" id="commandNotes" name="notes" rows="2" 
+                                      placeholder="Add notes about this execution (e.g., 'pre-change OSPF config', 'post-change verification')"
+                                      data-test="notes-field"></textarea>
+                            <small class="form-text text-muted">
+                                <i class="mdi mdi-information-outline me-1"></i>
+                                Optional notes will be saved with the command execution history for future reference.
+                            </small>
+                        </div>
+
                         <div class="modal-footer">
                             <div class="btn-list w-100 justify-content-end">
                                 <button type="button" class="btn btn-secondary" data-modal-close>

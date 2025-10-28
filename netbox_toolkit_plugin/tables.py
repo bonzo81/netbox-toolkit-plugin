@@ -62,6 +62,7 @@ class CommandLogTable(NetBoxTable):
             "execution_time",
             "success",
             "execution_duration",
+            "notes",
         )
         default_columns = (
             "pk",
@@ -70,6 +71,7 @@ class CommandLogTable(NetBoxTable):
             "username",
             "execution_time",
             "success",
+            "notes",
         )
         # Remove exclude = ("id",) to allow NetBox's automatic ID column to work with table configuration
 
