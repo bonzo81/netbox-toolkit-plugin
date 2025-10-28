@@ -464,7 +464,12 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
                     command_service = CommandExecutionService()
                     notes = validated_data.get("notes", "")
                     result = command_service.execute_command_with_token(
-                        command, device, credential_token, request.user, max_retries=1, notes=notes
+                        command,
+                        device,
+                        credential_token,
+                        request.user,
+                        max_retries=1,
+                        notes=notes,
                     )
 
                     # Note: Command log entry is automatically created by the service

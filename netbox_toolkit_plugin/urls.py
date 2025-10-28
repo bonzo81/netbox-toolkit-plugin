@@ -34,6 +34,7 @@ urlpatterns = [
     # Command Log views
     path("logs/", views.CommandLogListView.as_view(), name="commandlog_list"),
     path("logs/add/", views.CommandLogEditView.as_view(), name="commandlog_add"),
+    path("logs/delete/", views.CommandLogBulkDeleteView.as_view(), name="commandlog_bulk_delete"),
     path("logs/<int:pk>/", views.CommandLogView.as_view(), name="commandlog_view"),
     path(
         "logs/<int:pk>/edit/",

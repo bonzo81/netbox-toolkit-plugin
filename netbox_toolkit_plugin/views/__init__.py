@@ -7,6 +7,7 @@ organized by functionality for better maintainability.
 
 # Import all view classes to maintain backward compatibility
 from .command_log_views import (
+    CommandLogBulkDeleteView,
     CommandLogDeleteView,
     CommandLogEditView,
     CommandLogExportCSVView,
@@ -59,6 +60,7 @@ __all__ = [
     "CommandLogView",
     "CommandLogEditView",
     "CommandLogDeleteView",
+    "CommandLogBulkDeleteView",
     "CommandLogExportCSVView",
     "ToolkitStatisticsView",
     # Device Credential Set Views
