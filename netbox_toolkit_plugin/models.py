@@ -128,10 +128,10 @@ class CommandVariable(models.Model):
 
     VARIABLE_TYPES = [
         ("text", "Free Text"),
-        ("netbox_interface", "Device Interface (Interface Name)"),
-        ("netbox_vlan", "VLAN (VLAN ID)"),
-        ("netbox_vlan_name", "VLAN (VLAN Name)"),
-        ("netbox_ip", "IP Address (without prefix)"),
+        ("netbox_interface", "Device - Interface Name"),
+        ("netbox_vlan", "Device - VLAN ID"),
+        ("netbox_vlan_name", "Device - VLAN Name"),
+        ("netbox_ip", "Device - IP Address (without prefix)"),
     ]
 
     variable_type = models.CharField(
