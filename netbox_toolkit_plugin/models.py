@@ -89,6 +89,11 @@ class CommandLog(NetBoxModel):
         help_text="Optional notes or comments about this command execution (e.g., 'pre-change OSPF config')",
     )
 
+    class Meta:
+        # Command logs are immutable audit records - only allow view/delete, not add/change
+        default_permissions = ("view", "delete")
+        ordering = ["-execution_time"]
+
     def __str__(self):
         return f"{self.command} on {self.device}"
 
