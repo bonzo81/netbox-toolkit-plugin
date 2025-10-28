@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.6 (2025-10-28)
+
+* Command Execution Notes Feature
+* Remove Command Log "Edit" and "Add" buttons
+* Configuration Validation Improvements
+* UI Improvemnts
+* Minor Field Updates
+
 ## 0.1.5 (2025-10-16)
 
 * **Bug Fix**: Fixed missing model parameter in command changelog URL that caused TypeError when viewing command change logs (#19)
