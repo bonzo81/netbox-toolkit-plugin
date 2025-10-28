@@ -3,6 +3,23 @@
 
 {% block title %}Command Logs{% endblock %}
 
+{% block controls %}
+  {# Command logs are created programmatically - hide Add button #}
+  {# Override entire controls block to prevent NetBox auto-generating Add button #}
+  <div class="btn-list">
+    {# Intentionally empty - no Add button for command logs #}
+  </div>
+{% endblock controls %}
+
+{% block bulk_buttons %}
+  {# Command logs are read-only - only allow bulk delete, not bulk edit #}
+  {% if perms.netbox_toolkit_plugin.delete_commandlog %}
+    <button type="submit" name="_delete" formaction="{% url 'plugins:netbox_toolkit_plugin:commandlog_bulk_delete' %}?return_url={{ request.path }}" class="btn btn-danger">
+      <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i> Delete Selected
+    </button>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
   {{ block.super }}
 {% endblock %}

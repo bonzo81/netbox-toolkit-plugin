@@ -84,6 +84,15 @@ class CommandLog(NetBoxModel):
     execution_duration = models.FloatField(
         blank=True, null=True, help_text="Command execution time in seconds"
     )
+    notes = models.TextField(
+        blank=True,
+        help_text="Optional notes or comments about this command execution (e.g., 'pre-change OSPF config')",
+    )
+
+    class Meta:
+        # Command logs are immutable audit records - only allow view/delete, not add/change
+        default_permissions = ("view", "delete")
+        ordering = ["-execution_time"]
 
     def __str__(self):
         return f"{self.command} on {self.device}"
@@ -119,10 +128,10 @@ class CommandVariable(models.Model):
 
     VARIABLE_TYPES = [
         ("text", "Free Text"),
-        ("netbox_interface", "Device Interface (Interface Name)"),
-        ("netbox_vlan", "VLAN (VLAN ID)"),
-        ("netbox_vlan_name", "VLAN (VLAN Name)"),
-        ("netbox_ip", "IP Address (without prefix)"),
+        ("netbox_interface", "Device - Interface Name"),
+        ("netbox_vlan", "Device - VLAN ID"),
+        ("netbox_vlan_name", "Device - VLAN Name"),
+        ("netbox_ip", "Device - IP Address (without prefix)"),
     ]
 
     variable_type = models.CharField(

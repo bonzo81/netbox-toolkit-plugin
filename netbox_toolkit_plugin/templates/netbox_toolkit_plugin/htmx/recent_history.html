@@ -10,6 +10,11 @@ HTMX partial template for recent command history
                 <div class="text-truncate" style="font-size: 0.85rem; line-height: 1.2;" title="{{ log.command }}">
                     <strong>{{ log.command|truncatechars:40 }}</strong>
                 </div>
+                {% if log.notes %}
+                <div class="text-muted" style="font-size: 0.75rem; line-height: 1.2;">
+                    <i class="mdi mdi-note-text-outline me-1"></i>{{ log.notes|truncatechars:60 }}
+                </div>
+                {% endif %}
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <small class="text-muted text-truncate" style="flex-shrink: 1;">{{ log.username }}</small>
                     <small class="text-muted" style="flex-shrink: 0; margin-left: 8px;">{{ log.execution_time|timesince }} ago</small>

@@ -4,7 +4,24 @@
 
 {% block style %}
 <link href="{% static 'netbox_toolkit_plugin/css/toolkit.css' %}" rel="stylesheet">
+<style>
+  /* Hide any edit buttons that might appear for command logs */
+  .btn[href*="commandlog"][href*="/edit/"],
+  a.btn-warning[href*="commandlog"] {
+    display: none !important;
+  }
+</style>
 {% endblock %}
+
+{% block control-buttons %}
+  {# Command logs are read-only audit records - only show delete button #}
+  {# Override control-buttons to prevent NetBox from auto-generating edit buttons #}
+  {% if perms.netbox_toolkit_plugin.delete_commandlog %}
+    <a href="{% url 'plugins:netbox_toolkit_plugin:commandlog_delete' pk=object.pk %}" class="btn btn-danger">
+      <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i> Delete
+    </a>
+  {% endif %}
+{% endblock control-buttons %}
 
 {% block content %}
   <div class="row mb-3">
@@ -45,6 +62,12 @@
             <tr>
               <th scope="row">Duration</th>
               <td>{{ object.execution_duration|floatformat:3 }}s</td>
+            </tr>
+            {% endif %}
+            {% if object.notes %}
+            <tr>
+              <th scope="row">Notes</th>
+              <td>{{ object.notes }}</td>
             </tr>
             {% endif %}
             {% comment %}

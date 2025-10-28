@@ -16,7 +16,7 @@ This replaces the static modal with dynamic content
                 <div class="modal-header">
                     <div class="w-100">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="modal-title mb-0">Execute Command</h5>
+                            <h5 class="modal-title mb-0">Execute Command on {{ device.name }}</h5>
                             <button type="button" class="btn-close" data-modal-close aria-label="Close"></button>
                         </div>
                         <!-- Rate Limiting Information in Header -->
@@ -138,7 +138,6 @@ This replaces the static modal with dynamic content
                                             <i class="mdi mdi-shield-alert me-1"></i>
                                             <small>
                                                 <strong>Note:</strong> Credentials entered here are used only for this command execution and are not stored.
-                                                For API usage, please use stored credential sets.
                                             </small>
                                         </div>
                                     </div>
@@ -243,11 +242,20 @@ This replaces the static modal with dynamic content
                                     <i class="mdi mdi-shield-alert me-1"></i>
                                     <small>
                                         <strong>Note:</strong> Credentials entered here are used only for this command execution and are not stored.
-                                        For API usage, please use stored credential sets.
                                     </small>
                                 </div>
                             </div>
                         {% endif %}
+
+                        <!-- Optional Notes/Comments Section (always visible) -->
+                        <div class="mb-3 mt-4">
+                            <label for="commandNotes" class="form-label">
+                                <i class="mdi mdi-note-text-outline me-1"></i>Notes <span class="text-muted">(Optional)</span>
+                            </label>
+                            <textarea class="form-control" id="commandNotes" name="notes" rows="2"
+                                      placeholder="e.g., 'pre-change verification', 'troubleshooting ticket #1234'"
+                                      data-test="notes-field"></textarea>
+                        </div>
 
                         <div class="modal-footer">
                             <div class="btn-list w-100 justify-content-end">

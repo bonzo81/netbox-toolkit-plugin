@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from netbox.views.generic import (
+    BulkDeleteView,
     ObjectDeleteView,
     ObjectEditView,
     ObjectListView,
@@ -62,6 +63,22 @@ class CommandLogEditView(ObjectEditView):
 
 class CommandLogDeleteView(ObjectDeleteView):
     queryset = CommandLog.objects.all()
+
+
+class CommandLogBulkDeleteView(BulkDeleteView):
+    """Bulk delete view for command logs."""
+
+    queryset = CommandLog.objects.all()
+    filterset = None  # Will update this after import
+    table = None  # Will update this after import
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from ..filtersets import CommandLogFilterSet
+        from ..tables import CommandLogTable
+
+        self.filterset = CommandLogFilterSet
+        self.table = CommandLogTable
 
 
 class CommandLogExportCSVView(View):

@@ -208,8 +208,9 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
 
         # Execute command using the service with credential token
         command_service = CommandExecutionService()
+        notes = validated_data.get("notes", "")
         result = command_service.execute_command_with_token(
-            command, device, credential_token, request.user, max_retries=1
+            command, device, credential_token, request.user, max_retries=1, notes=notes
         )
 
         # Determine overall success - failed if either execution failed or syntax error detected
@@ -461,8 +462,14 @@ class CommandViewSet(NetBoxModelViewSet, APIResponseMixin, PermissionCheckMixin)
 
                     # Execute command using credential token
                     command_service = CommandExecutionService()
+                    notes = validated_data.get("notes", "")
                     result = command_service.execute_command_with_token(
-                        command, device, credential_token, request.user, max_retries=1
+                        command,
+                        device,
+                        credential_token,
+                        request.user,
+                        max_retries=1,
+                        notes=notes,
                     )
 
                     # Note: Command log entry is automatically created by the service

@@ -1,5 +1,7 @@
 """Device-related views for the NetBox Toolkit Plugin."""
 
+import logging
+
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -14,6 +16,8 @@ from ..models import Command, DeviceCredentialSet
 from ..services.command_service import CommandExecutionService
 from ..services.device_service import DeviceService
 from ..services.rate_limiting_service import RateLimitingService
+
+logger = logging.getLogger(__name__)
 
 
 @register_model_view(Device, name="toolkit", path="toolkit")
@@ -322,6 +326,7 @@ class DeviceCommandOutputView(View):
         )  # Default to stored for backward compatibility
         username = request.POST.get("username")
         password = request.POST.get("password")
+        notes = request.POST.get("notes", "")  # Get optional notes
 
         if not command_id:
             return HttpResponse(
@@ -392,6 +397,7 @@ class DeviceCommandOutputView(View):
                     credential_set_id=int(credential_set_id),
                     user=request.user,
                     max_retries=1,
+                    notes=notes,
                 )
             elif auth_method == "onthefly":
                 # Use direct username/password method
@@ -401,6 +407,7 @@ class DeviceCommandOutputView(View):
                     username=username,
                     password=password,
                     max_retries=1,
+                    notes=notes,
                 )
 
             # Render just the command output section
@@ -418,6 +425,7 @@ class DeviceCommandOutputView(View):
                     "syntax_error_type": getattr(result, "syntax_error_type", None),
                     "syntax_error_vendor": getattr(result, "syntax_error_vendor", None),
                     "command_log_id": getattr(result, "command_log_id", None),
+                    "execution_notes": notes,  # Pass notes to template
                 },
             )
 

@@ -77,14 +77,17 @@ class CommandLogFilterSet(NetBoxModelFilterSet):
         lookup_expr="icontains",
         label="Command name contains",
     )
+    notes_icontains = django_filters.CharFilter(
+        field_name="notes", lookup_expr="icontains", label="Notes contains"
+    )
 
     class Meta:
         model = CommandLog
-        fields = ("command", "device", "username", "success")
+        fields = ("command", "device", "username", "success", "notes")
 
     def search(self, queryset, name, value):
         """
-        Search across command name, device name, username
+        Search across command name, device name, username, and notes
         """
         if not value.strip():
             return queryset
@@ -92,6 +95,7 @@ class CommandLogFilterSet(NetBoxModelFilterSet):
             Q(command__name__icontains=value)
             | Q(device__name__icontains=value)
             | Q(username__icontains=value)
+            | Q(notes__icontains=value)
         )
 
 

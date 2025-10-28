@@ -44,6 +44,13 @@ class CommandExecutionSerializer(serializers.Serializer):
         max_value=300,
         help_text="Command execution timeout in seconds (5-300)",
     )
+    notes = serializers.CharField(
+        max_length=1000,
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Optional notes/comments about this command execution (e.g., 'pre-change OSPF config')",
+    )
 
     def validate_device_id(self, value):
         """Validate that the device exists and has required attributes"""
@@ -166,6 +173,7 @@ class CommandLogSerializer(NetBoxModelSerializer):
             "success",
             "error_message",
             "execution_duration",
+            "notes",
             "created",
             "last_updated",
         )
@@ -178,6 +186,7 @@ class CommandLogSerializer(NetBoxModelSerializer):
             "username",
             "execution_time",
             "success",
+            "notes",
         )
 
 

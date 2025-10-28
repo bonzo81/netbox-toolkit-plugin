@@ -31,15 +31,14 @@ urlpatterns = [
         views.CommandVariableFormView.as_view(),
         name="command_add_variable",
     ),
-    # Command Log views
+    # Command Log views (read-only audit records - no add/edit routes)
     path("logs/", views.CommandLogListView.as_view(), name="commandlog_list"),
-    path("logs/add/", views.CommandLogEditView.as_view(), name="commandlog_add"),
-    path("logs/<int:pk>/", views.CommandLogView.as_view(), name="commandlog_view"),
     path(
-        "logs/<int:pk>/edit/",
-        views.CommandLogEditView.as_view(),
-        name="commandlog_edit",
+        "logs/delete/",
+        views.CommandLogBulkDeleteView.as_view(),
+        name="commandlog_bulk_delete",
     ),
+    path("logs/<int:pk>/", views.CommandLogView.as_view(), name="commandlog_view"),
     path(
         "logs/<int:pk>/delete/",
         views.CommandLogDeleteView.as_view(),

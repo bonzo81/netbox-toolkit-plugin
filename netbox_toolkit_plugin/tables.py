@@ -1,6 +1,7 @@
 import logging
 
 from netbox.tables import NetBoxTable
+from netbox.tables.columns import ActionsColumn
 
 import django_tables2 as tables
 
@@ -51,6 +52,8 @@ class CommandLogTable(NetBoxTable):
     )
     device = tables.Column(linkify=True)
     success = tables.BooleanColumn(verbose_name="Status", yesno=("Success", "Failed"))
+    # Override actions column to only show delete, not edit
+    actions = ActionsColumn(actions=("delete",))
 
     class Meta(NetBoxTable.Meta):
         model = CommandLog
@@ -62,6 +65,7 @@ class CommandLogTable(NetBoxTable):
             "execution_time",
             "success",
             "execution_duration",
+            "notes",
         )
         default_columns = (
             "pk",
@@ -70,8 +74,8 @@ class CommandLogTable(NetBoxTable):
             "username",
             "execution_time",
             "success",
+            "notes",
         )
-        # Remove exclude = ("id",) to allow NetBox's automatic ID column to work with table configuration
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

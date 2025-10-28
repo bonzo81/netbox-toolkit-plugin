@@ -157,7 +157,7 @@ class CommandForm(NetBoxModelForm):
 class CommandLogForm(NetBoxModelForm):
     class Meta:
         model = CommandLog
-        fields = ("command", "device", "output", "username")
+        fields = ("command", "device", "output", "username", "notes")
 
 
 class CommandVariableForm(forms.ModelForm):
@@ -178,13 +178,7 @@ class CommandVariableForm(forms.ModelForm):
             "help_text": forms.Textarea(attrs={"rows": 2}),
         }
         help_texts = {
-            "variable_type": (
-                "Type of variable input. "
-                "VLAN (VLAN ID): substitutes the numeric VLAN ID (e.g., '100'). "
-                "VLAN (VLAN Name): substitutes the VLAN name (e.g., 'MANAGEMENT'). "
-                "IP Address: substitutes only the IP without prefix (e.g., '192.168.1.1', not '192.168.1.1/24'). "
-                "Interface variables use the interface name."
-            ),
+            "variable_type": "Type of variable input and what value will be substituted in the command.",
             "help_text": (
                 "Additional help text shown to users when executing commands. "
                 "Clarify which value format your command expects."
